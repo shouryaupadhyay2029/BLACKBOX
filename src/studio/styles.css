@@ -1047,7 +1047,7 @@ body {
 .dom-stage-wrapper {
   flex: 1;
   position: relative;
-  background: #080A18 url('/telemetry-hud-grid.jpg') center center / cover no-repeat !important;
+  background: #080A18 url('/telemetry-grid.jpg') center center / cover no-repeat !important;
   box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.95);
   overflow: hidden;
   display: flex;
@@ -1437,7 +1437,7 @@ body {
 .diff-stage-deck,
 .live-stage-deck {
   background: linear-gradient(180deg, rgba(7, 9, 22, 0.94) 0%, rgba(11, 14, 34, 0.97) 100%),
-              url('/telemetry-hud-grid.jpg') center top / cover fixed no-repeat !important;
+              url('/constellation-mesh.jpg') center top / cover fixed no-repeat !important;
   min-height: calc(100vh - 124px);
   display: flex;
   flex-direction: column;
