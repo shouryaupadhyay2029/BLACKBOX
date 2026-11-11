@@ -14,6 +14,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execSync } from 'node:child_process';
 import { BlackboxDaemonServer } from '../src/daemon/server.js';
 import { WiretapProxy } from '../src/daemon/wiretap-proxy.js';
 import { CapsuleVault } from '../src/core/capsule-vault.js';
@@ -21,6 +22,30 @@ import { BlackboxMcpServer } from '../src/mcp/mcp-server.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function freePortIfOccupied(port) {
+  if (process.platform === 'win32') {
+    try {
+      const out = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      const lines = out.trim().split('\n');
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 5 && parts[1].endsWith(`:${port}`) && (parts[3] === 'LISTENING' || parts[3] === 'ESTABLISHED')) {
+          const pid = parts[parts.length - 1];
+          if (pid && pid !== '0' && pid !== String(process.pid)) {
+            try {
+              execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore' });
+            } catch {
+              // ignore
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+}
 
 const args = process.argv.slice(2);
 const subcommand = args[0] || 'help';
@@ -155,6 +180,9 @@ async function main() {
 
   if (subcommand === 'demo') {
     const demoPort = Number(parseFlag('--demo-port', 4400));
+    freePortIfOccupied(port);
+    freePortIfOccupied(demoPort);
+
     const daemon = new BlackboxDaemonServer({
       port,
       projectCwd: path.resolve(__dirname, '..'),
@@ -177,6 +205,7 @@ async function main() {
   }
 
   if (subcommand === 'studio') {
+    freePortIfOccupied(port);
     const daemon = new BlackboxDaemonServer({ port, projectCwd: process.cwd() });
     await daemon.start();
     printBanner(port);

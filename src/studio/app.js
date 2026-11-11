@@ -23,10 +23,48 @@ const capsuleMetaText = document.getElementById('capsuleMetaText');
 const causalChainFlow = document.getElementById('causalChainFlow');
 
 const domReplayFrame = document.getElementById('domReplayFrame');
+const domStageWrapper = document.getElementById('domStageWrapper');
+const domStageViewport = document.getElementById('domStageViewport');
+const domResPill = document.getElementById('domResPill');
+const btnToggleDomFit = document.getElementById('btnToggleDomFit');
+const btnExpandDomStage = document.getElementById('btnExpandDomStage');
 const domUrlPill = document.getElementById('domUrlPill');
 const domClickBadge = document.getElementById('domClickBadge');
 const cursorLaser = document.getElementById('cursorLaser');
 const cursorLaserLabel = document.getElementById('cursorLaserLabel');
+let isDomFitMode = true;
+let currentDomViewport = { width: 1280, height: 800 };
+
+function updateDomReplayScaling() {
+  if (!domStageWrapper || !domStageViewport) return;
+  const vpW = currentDomViewport.width || 1280;
+  const vpH = currentDomViewport.height || 800;
+
+  domStageViewport.style.width = `${vpW}px`;
+  domStageViewport.style.height = `${vpH}px`;
+
+  const stageW = domStageWrapper.clientWidth || 600;
+  const stageH = domStageWrapper.clientHeight || 400;
+
+  let scale = 1;
+  if (isDomFitMode) {
+    const scaleX = (stageW - 24) / vpW;
+    const scaleY = (stageH - 24) / vpH;
+    scale = Math.min(scaleX, scaleY);
+    scale = Math.max(0.15, Math.min(1.25, scale));
+    domStageWrapper.style.overflow = 'hidden';
+  } else {
+    scale = 1.0;
+    domStageWrapper.style.overflow = 'auto';
+  }
+
+  domStageViewport.style.transform = `scale(${scale.toFixed(3)})`;
+  domStageViewport.style.transformOrigin = 'center center';
+
+  if (domResPill) {
+    domResPill.textContent = `${vpW}×${vpH} · ${isDomFitMode ? Math.round(scale * 100) + '%' : '100%'}`;
+  }
+}
 const browserConsoleList = document.getElementById('browserConsoleList');
 const browserStoragePre = document.getElementById('browserStoragePre');
 const consoleCount = document.getElementById('consoleCount');
@@ -573,39 +611,83 @@ function syncTimeScrubber(relMs) {
     lastRenderedDomEventId = activeDomEvt.id;
     domUrlPill.textContent = activeDomEvt.payload?.url || 'http://localhost/...';
     
+    if (activeDomEvt.payload?.viewport) {
+      currentDomViewport = {
+        width: activeDomEvt.payload.viewport.width || 1280,
+        height: activeDomEvt.payload.viewport.height || 800,
+      };
+    }
+
     let rawHtml =
       activeDomEvt.payload?.html ||
-      '<html><body style="font-family:sans-serif;padding:20px;color:#C2C1B4;">No DOM Snapshot</body></html>';
+      '<html><body style="font-family:sans-serif;padding:30px;color:#AFAEA2;background:#0B0E20;">No DOM Snapshot recorded at this point in flight.</body></html>';
     
-    // Inject transparent styling so the snapshot page doesn't blast an opaque white card over the background
-    const darkTransparentReset = `
-      <style id="__blackbox_canvas_transparent_reset__">
-        html, body {
-          background: transparent !important;
-          color: #E4E3DB !important;
+    // Inject clean high-contrast dark theme & button fallbacks without destroying existing styling
+    const darkThemeInjection = `
+      <style id="__blackbox_monitor_theme__">
+        html {
+          background: #0B0E20;
+          color-scheme: dark;
+        }
+        body {
+          background: #0B0E20 !important;
+          color: #F4F3EE !important;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+          margin: 0;
+          padding: 24px !important;
+          box-sizing: border-box;
+          min-height: 100vh;
+        }
+        h1, h2, h3, h4 {
+          color: #F4F3EE !important;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+          margin-top: 0;
         }
-        .card, .container, .top-banner, .output-box, form, input, button, div[class*="card"] {
-          background: rgba(14, 18, 42, 0.5) !important;
-          backdrop-filter: blur(8px) !important;
-          color: #E4E3DB !important;
-          border-color: rgba(175, 174, 162, 0.25) !important;
+        h1 {
+          font-size: 20px !important;
+          border-bottom: 1px solid rgba(175, 174, 162, 0.25);
+          padding-bottom: 10px;
         }
+        /* Fallback for bare unstyled buttons */
+        button:not([class]), button.btn-stub, #btnInstantCrash:not([class*="btn-"]) {
+          font-family: inherit !important;
+          font-size: 13px !important;
+          font-weight: 700 !important;
+          padding: 10px 18px !important;
+          border-radius: 6px !important;
+          border: 1px solid #D21319 !important;
+          background: #D21319 !important;
+          color: #FFFFFF !important;
+          cursor: pointer !important;
+          box-shadow: 0 4px 14px rgba(210, 19, 25, 0.4) !important;
+          transition: transform 0.15s ease, background 0.15s ease !important;
+        }
+        button:hover {
+          filter: brightness(1.15);
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(11, 14, 32, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(175, 174, 162, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D21319; }
       </style>
     `;
     if (rawHtml.includes('</head>')) {
-      rawHtml = rawHtml.replace('</head>', `${darkTransparentReset}</head>`);
+      rawHtml = rawHtml.replace('</head>', `${darkThemeInjection}</head>`);
     } else {
-      rawHtml = darkTransparentReset + rawHtml;
+      rawHtml = darkThemeInjection + rawHtml;
     }
     domReplayFrame.srcdoc = rawHtml;
+    updateDomReplayScaling();
   }
 
   // 2. Update Click Laser Overlay
   if (activeClickEvt) {
-    const vp = activeDomEvt?.payload?.viewport || { width: 1000, height: 700 };
-    const xPct = Math.min(95, Math.max(5, ((activeClickEvt.payload?.clientX || 200) / (vp.width || 1000)) * 100));
-    const yPct = Math.min(95, Math.max(5, ((activeClickEvt.payload?.clientY || 200) / (vp.height || 700)) * 100));
+    const vpW = currentDomViewport.width || 1280;
+    const vpH = currentDomViewport.height || 800;
+    const clickX = activeClickEvt.payload?.clientX ?? 200;
+    const clickY = activeClickEvt.payload?.clientY ?? 200;
+    const xPct = Math.min(98, Math.max(2, (clickX / vpW) * 100));
+    const yPct = Math.min(98, Math.max(2, (clickY / vpH) * 100));
     cursorLaser.style.display = 'block';
     cursorLaser.style.left = `${xPct}%`;
     cursorLaser.style.top = `${yPct}%`;
@@ -698,6 +780,9 @@ function activatePaneTab(pane, tab) {
   parentPane.querySelectorAll('.tab-panel').forEach((panel) => {
     panel.classList.toggle('active', panel.id === `${pane}-${tab}`);
   });
+  if (pane === 'p1' && tab === 'dom') {
+    setTimeout(updateDomReplayScaling, 40);
+  }
 }
 
 function setupModeSwitcher() {
@@ -761,6 +846,17 @@ function setupViewSwitcher() {
           quadGrid.classList.add('view-plane-4');
         }
       }
+
+      if (btnExpandDomStage) {
+        if (view === 'plane-1') {
+          btnExpandDomStage.textContent = '⛶ Quad';
+          btnExpandDomStage.classList.add('active');
+        } else {
+          btnExpandDomStage.textContent = '⛶ Focus';
+          btnExpandDomStage.classList.remove('active');
+        }
+      }
+      setTimeout(updateDomReplayScaling, 50);
     });
   });
 }
@@ -880,6 +976,36 @@ function setupActions() {
   });
 
   document.getElementById('runDiffBtn').addEventListener('click', runCapsuleDiff);
+
+  if (btnToggleDomFit) {
+    btnToggleDomFit.addEventListener('click', () => {
+      isDomFitMode = !isDomFitMode;
+      btnToggleDomFit.textContent = isDomFitMode ? 'Fit' : '100%';
+      btnToggleDomFit.classList.toggle('active', !isDomFitMode);
+      updateDomReplayScaling();
+    });
+  }
+
+  if (btnExpandDomStage) {
+    btnExpandDomStage.addEventListener('click', () => {
+      const quadGrid = document.getElementById('quadGrid');
+      const isExpanded = quadGrid?.classList.contains('view-plane-1');
+      if (isExpanded) {
+        quadGrid.className = 'quad-grid';
+        btnExpandDomStage.textContent = '⛶ Focus';
+        btnExpandDomStage.classList.remove('active');
+      } else {
+        quadGrid.className = 'quad-grid view-plane-1';
+        btnExpandDomStage.textContent = '⛶ Quad';
+        btnExpandDomStage.classList.add('active');
+      }
+      setTimeout(updateDomReplayScaling, 50);
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    updateDomReplayScaling();
+  });
 }
 
 // --- 5. Live Flight Deck & Capsule Differ ---

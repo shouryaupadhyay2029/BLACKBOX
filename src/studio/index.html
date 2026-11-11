@@ -115,14 +115,23 @@
             <!-- DOM Viewport Tab -->
             <div class="tab-panel active" id="p1-dom">
               <div class="dom-viewport-bar">
-                <span class="url-pill" id="domUrlPill">http://localhost/...</span>
-                <span class="click-indicator" id="domClickBadge">No active click at T</span>
+                <div class="viewport-bar-left">
+                  <span class="url-pill" id="domUrlPill">http://localhost/...</span>
+                  <span class="dom-res-pill" id="domResPill">1280×800 · Fit</span>
+                </div>
+                <div class="viewport-bar-right">
+                  <span class="click-indicator" id="domClickBadge">Idle at T</span>
+                  <button class="stage-tool-btn" id="btnToggleDomFit" title="Toggle Scale: Fit to Box vs 100% Real Size">Fit</button>
+                  <button class="stage-tool-btn" id="btnExpandDomStage" title="Toggle Fullscreen Focus on Plane 1">⛶ Focus</button>
+                </div>
               </div>
               <div class="dom-stage-wrapper" id="domStageWrapper">
-                <iframe id="domReplayFrame" sandbox="allow-same-origin" title="DOM Snapshot Replay"></iframe>
-                <div class="cursor-laser" id="cursorLaser" style="display:none;">
-                  <div class="laser-ring"></div>
-                  <div class="laser-label" id="cursorLaserLabel">Click</div>
+                <div class="dom-stage-viewport" id="domStageViewport">
+                  <iframe id="domReplayFrame" sandbox="allow-same-origin" title="DOM Snapshot Replay"></iframe>
+                  <div class="cursor-laser" id="cursorLaser" style="display:none;">
+                    <div class="laser-ring"></div>
+                    <div class="laser-label" id="cursorLaserLabel">Click</div>
+                  </div>
                 </div>
               </div>
             </div>
