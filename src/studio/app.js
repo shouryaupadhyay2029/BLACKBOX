@@ -145,7 +145,7 @@ function renderCapsuleSidebar() {
         <div class="capsule-card ${isActive ? 'active' : ''}" data-cap-id="${escapeHtml(c.id)}">
           <div class="cap-top">
             <span class="cap-badge ${isFault ? 'fault' : 'ok'}">${
-        isFault ? '⚡ FAULT' : '📸 SNAPSHOT'
+        isFault ? '✦ FAULT' : '✦ SNAPSHOT'
       }</span>
             <span class="cap-time">${escapeHtml(timeStr)}</span>
           </div>
@@ -200,7 +200,7 @@ function renderCausalBanner(capsule) {
   const summary = capsule.causal?.rootCauseSummary || {};
   const isFault = summary.status === 'FAULT_DETECTED';
 
-  capsuleStatusTag.textContent = isFault ? '⚡ FAULT DETECTED' : '📸 HEALTHY SNAPSHOT';
+  capsuleStatusTag.textContent = isFault ? '✦ FAULT DETECTED' : '✦ HEALTHY SNAPSHOT';
   capsuleStatusTag.className = `status-tag ${isFault ? 'fault' : ''}`;
   capsuleHeadline.textContent = summary.headline || capsule.title;
 
@@ -213,7 +213,7 @@ function renderCausalBanner(capsule) {
   const chains = capsule.causal?.causalChains || [];
   if (chains.length === 0) {
     causalChainFlow.innerHTML =
-      '<div style="font-size:11px;color:#94a3b8;">No unhandled fault chains in this capsule window. Scrub timeline below to inspect all 4 planes.</div>';
+      '<div style="font-size:11px;color:#AFAEA2;font-family:var(--font-mono);">No unhandled fault chains in this capsule window. Scrub timeline below to inspect all 4 planes.</div>';
     return;
   }
 
@@ -223,7 +223,7 @@ function renderCausalBanner(capsule) {
       const timeBadge =
         step.relTimeMs !== null ? `+${(step.relTimeMs / 1000).toFixed(2)}s` : 'WORKING TREE';
       return `
-        ${idx > 0 ? '<span class="chain-arrow">→</span>' : ''}
+        ${idx > 0 ? '<span class="chain-arrow">—✦→</span>' : ''}
         <div class="chain-node">
           <div class="chain-node-top">
             <span class="plane-badge plane-${step.plane.toLowerCase()}">${escapeHtml(
