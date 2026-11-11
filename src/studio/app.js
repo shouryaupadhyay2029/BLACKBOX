@@ -96,6 +96,7 @@ async function initStudio() {
   setupVaultToggle();
   setupActions();
   setupWorkflowInteractivity();
+  setupHexCliSection();
 
   await fetchDaemonStatus();
   await loadCapsulesList();
@@ -925,12 +926,60 @@ function setupModeSwitcher() {
       const mode = btn.getAttribute('data-mode');
       document.querySelectorAll('.mode-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
+
+      if (mode === 'cli') {
+        Object.entries(stages).forEach(([k, el]) => {
+          if (el) el.style.display = k === 'inspector' ? 'flex' : 'none';
+        });
+        const cliSec = document.getElementById('hexCliSection');
+        if (cliSec) {
+          cliSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return;
+      }
+
       Object.entries(stages).forEach(([k, el]) => {
         if (el) el.style.display = k === mode ? 'flex' : 'none';
       });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
+}
+
+function setupHexCliSection() {
+  const tabs = document.querySelectorAll('.hex-tab');
+  const codeText = document.getElementById('hexInstallCodeText');
+  const copyBtn = document.getElementById('hexCopyBtn');
+  const runDemoBtn = document.getElementById('hexRunDemoBtn');
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      const cmd = tab.getAttribute('data-cmd');
+      if (codeText && cmd) {
+        codeText.textContent = cmd;
+      }
+    });
+  });
+
+  if (copyBtn && codeText) {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(codeText.textContent.trim());
+        showToast('✓ Copied command to clipboard!');
+      } catch {
+        showToast('Command: ' + codeText.textContent.trim());
+      }
+    });
+  }
+
+  if (runDemoBtn) {
+    runDemoBtn.addEventListener('click', () => {
+      window.open('http://localhost:4400/', '_blank');
+      showToast('⚡ Opening NexusPay Sandbox at http://localhost:4400/');
+    });
+  }
 }
 
 function setupWorkflowInteractivity() {

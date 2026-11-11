@@ -23,6 +23,7 @@
       <button class="mode-btn" id="modeLiveBtn" data-mode="live">LIVE DECK</button>
       <button class="mode-btn" id="modeDiffBtn" data-mode="diff">REGRESSION DIFFER</button>
       <button class="mode-btn" id="modeWorkflowBtn" data-mode="workflow">✦ SYSTEM ARCHITECTURE</button>
+      <button class="mode-btn" id="modeCliBtn" data-mode="cli">✦ CLI &amp; AGENTS</button>
     </nav>
 
     <!-- Telemetry & Action Suite -->
@@ -415,6 +416,304 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Hex-Style CLI & Developer Experience Showcase Section -->
+      <section class="hex-cli-section" id="hexCliSection">
+        
+        <!-- Part 1: Hero CLI Exhibit (Command (line) and conquer) -->
+        <div class="hex-hero-block">
+          <div class="hex-hero-left">
+            <div class="hex-eyebrow-pill">
+              <span class="hex-prompt-glyph">&gt;_ The Blackbox CLI</span>
+              <span class="hex-eyebrow-divider">·</span>
+              <a href="#hexFeatures" class="hex-eyebrow-link">Read the announcement &gt;</a>
+            </div>
+
+            <h2 class="hex-hero-title">
+              Command (line) <br />
+              <em class="hex-serif-italic">and conquer</em>
+            </h2>
+
+            <p class="hex-hero-desc">
+              Supervise projects, record 60s flight telemetry, auto-freeze crashes, and connect your agents... without leaving your terminal.
+            </p>
+
+            <div class="hex-install-container">
+              <div class="hex-install-tabs">
+                <button class="hex-tab active" data-cmd="npm i -g blackbox-flight-recorder">npm</button>
+                <button class="hex-tab" data-cmd="curl -fsSL https://blackbox.run/install.sh | bash">curl</button>
+                <button class="hex-tab" data-cmd="npx blackbox run &quot;npm run dev&quot;">npx</button>
+                <button class="hex-tab" data-cmd="pnpm add -g blackbox-flight-recorder">pnpm</button>
+              </div>
+
+              <div class="hex-install-box">
+                <div class="crop-corner top-left"></div>
+                <div class="crop-corner top-right"></div>
+                <div class="crop-corner bottom-left"></div>
+                <div class="crop-corner bottom-right"></div>
+                <span class="hex-install-code" id="hexInstallCodeText">npm i -g blackbox-flight-recorder</span>
+                <button class="hex-copy-btn" id="hexCopyBtn" title="Copy to clipboard">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="hex-cta-row">
+              <a href="#hexFeatures" class="hex-link-item">
+                <span class="hex-link-icon">📖</span>
+                <span>Read the CLI docs</span>
+              </a>
+              <a href="/?mode=live" class="hex-link-item highlight">
+                <span>→ Launch Flight Deck</span>
+              </a>
+              <button class="hex-link-item btn-inline" id="hexRunDemoBtn">
+                <span>✦ Run Demo Sandbox</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="hex-hero-right">
+            <div class="hex-terminal-window">
+              <div class="hex-term-titlebar">
+                <div class="hex-term-dots">
+                  <span class="dot-red"></span>
+                  <span class="dot-yellow"></span>
+                  <span class="dot-green"></span>
+                </div>
+                <span class="hex-term-title">Blackbox CLI</span>
+              </div>
+              <div class="hex-term-body">
+                <pre class="hex-ascii-logo">
+██████╗ ██╗      █████╗  ██████╗██╗  ██╗██████╗  ██████╗ ██╗  ██╗
+██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝██╔══██╗██╔═══██╗╚██╗██╔╝
+██████╔╝██║     ███████║██║     █████═╝ ██████╔╝██║   ██║ ╚███╔╝ 
+██╔══██╗██║     ██╔══██║██║     ██╔═██╗ ██╔══██╗██║   ██║ ██╔██╗ 
+██████╔╝███████╗██║  ██║╚██████╗██║ ╚██╗██████╔╝╚██████╔╝██╔╝ ██╗
+╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝</pre>
+                <div class="hex-term-welcome">
+                  Welcome to the Blackbox CLI.<br />
+                  Type a command and press Enter. Try <span class="term-hl">`blackbox help`</span> to get started.
+                </div>
+                <div class="hex-term-line">
+                  <span class="term-prompt">→ ~</span> <span class="term-cmd">blackbox run "npm run dev"</span>
+                </div>
+                <div class="hex-term-res">
+                  <span class="term-ok">✓</span> Supervised PID 4821 (vite v5.4.10)<br />
+                  <span class="term-ok">✓</span> Transparent Wiretap Proxy active on <span class="term-cyan">:4000</span><br />
+                  <span class="term-ok">✓</span> 60s Horological RingBuffer active (0 disk I/O, RAM circular)<br />
+                  <span class="term-ok">✓</span> Studio Flight Deck open at <span class="term-cyan">http://localhost:9876</span>
+                </div>
+                <div class="hex-term-line">
+                  <span class="term-prompt">→ ~</span> <span class="term-cmd">blackbox freeze --reason "Checkout 500 Anomaly"</span>
+                </div>
+                <div class="hex-term-res">
+                  <span class="term-ok">✓</span> Capsule frozen: <span class="term-dim">(cap_2026-11-11_4u2j)</span><br />
+                  <span class="term-fault">💥</span> Culprit: <span class="term-red">demo-server.js:46</span> (96% confidence)<br />
+                  <span class="term-ok">✓</span> AI Root-Cause Dossier compiled & ready for MCP
+                </div>
+                <div class="hex-term-line">
+                  <span class="term-prompt">→ ~</span> <span class="term-cursor">█</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Part 2: 3-Column Card Grid (Telemetry where your agent works) -->
+        <div class="hex-cards-section" id="hexAgentSection">
+          <div class="hex-section-header">
+            <h2 class="hex-section-title">
+              Telemetry where <br />
+              <em class="hex-serif-italic">your agent works</em>
+            </h2>
+            <p class="hex-section-desc">
+              Build locally, inspect multi-plane time-travel, and collaborate with autonomous AI agents.
+            </p>
+          </div>
+
+          <div class="hex-cards-grid">
+            <!-- Card 1: Works in any terminal -->
+            <div class="hex-card">
+              <div class="hex-card-content">
+                <h3 class="hex-card-title">Works in any terminal</h3>
+                <p class="hex-card-text">
+                  Interact directly with Blackbox from your terminal. Supervise dev servers, freeze runtime anomalies, and manage archival capsules from the command line.
+                </p>
+              </div>
+              <div class="hex-mini-window">
+                <div class="hex-term-titlebar mini">
+                  <div class="hex-term-dots mini">
+                    <span class="dot-red"></span>
+                    <span class="dot-yellow"></span>
+                    <span class="dot-green"></span>
+                  </div>
+                  <span class="hex-term-title">Blackbox CLI</span>
+                </div>
+                <div class="hex-mini-body">
+                  <div class="hex-term-line mini">
+                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox capsules list</span>
+                  </div>
+                  <div class="hex-term-res mini">
+                    <span class="term-ok">✓</span> Vault: 21 capsules found<br />
+                    • <span class="term-red">[FAULT]</span> cap_4u2j (HTTP 500)<br />
+                    • <span class="term-ok">[SNAPSHOT]</span> cap_aspp (Baseline)
+                  </div>
+                  <div class="hex-term-line mini">
+                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox inspect cap_4u2j</span>
+                  </div>
+                  <div class="hex-term-res mini">
+                    <span class="term-cyan">Causal Chain:</span> Click → HTTP 500 → V8 TypeError<br />
+                    <span class="term-dim">demo-server.js:46 (calculateAndChargeOrder)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Plays nicely with coding agents -->
+            <div class="hex-card">
+              <div class="hex-card-content">
+                <h3 class="hex-card-title">Plays nicely with coding agents</h3>
+                <p class="hex-card-text">
+                  Use Claude Code, Cursor, or Gemini CLI to analyze crashes and patch bugs. Connect your agent to the live runtime with our stdio MCP server: <code>blackbox mcp</code>
+                </p>
+              </div>
+              <div class="hex-mini-window">
+                <div class="hex-term-titlebar mini">
+                  <div class="hex-term-dots mini">
+                    <span class="dot-red"></span>
+                    <span class="dot-yellow"></span>
+                    <span class="dot-green"></span>
+                  </div>
+                  <span class="hex-term-title">Claude Code v2.1.87</span>
+                </div>
+                <div class="hex-mini-body agent-theme">
+                  <div class="agent-banner">
+                    <pre class="agent-mascot">
+  ╭──────╮
+  │ 👾   │ Claude Code
+  ╰──────╯</pre>
+                  </div>
+                  <div class="hex-term-line mini">
+                    <span class="term-prompt">&gt;</span> <span class="term-cmd">Inspect latest crash with Blackbox MCP</span>
+                  </div>
+                  <div class="hex-term-res mini">
+                    <span class="term-ok">✓</span> Tool call: <span class="term-dim">blackbox_get_latest_crash_capsule()</span><br />
+                    <span class="term-ok">✓</span> Root cause identified: <span class="term-red">merchantSplitRule null-ref</span><br />
+                    <span class="term-cyan">&gt; Applying patch to demo-server.js:46...</span> <span class="term-cursor">█</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Orchestrate and automate -->
+            <div class="hex-card">
+              <div class="hex-card-content">
+                <h3 class="hex-card-title">Orchestrate and automate</h3>
+                <p class="hex-card-text">
+                  The Blackbox CLI is a standard UNIX tool — trigger automations from GitHub Actions, or your own orchestration layer to capture multi-plane artifacts on CI failure.
+                </p>
+              </div>
+              <div class="hex-mini-window">
+                <div class="hex-term-titlebar mini">
+                  <div class="hex-term-dots mini">
+                    <span class="dot-red"></span>
+                    <span class="dot-yellow"></span>
+                    <span class="dot-green"></span>
+                  </div>
+                  <span class="hex-term-title">github.com / nexacorp / checkout</span>
+                </div>
+                <div class="hex-mini-body ci-theme">
+                  <div class="ci-header">
+                    <div class="ci-status-icon">✓</div>
+                    <div class="ci-title-group">
+                      <div class="ci-pr-title">Update Settlement Gateway #133</div>
+                      <div class="ci-pr-meta">alexchen opened #133 · 2 min ago</div>
+                    </div>
+                  </div>
+                  <div class="ci-job-box">
+                    <div class="ci-job-row">
+                      <span class="ci-job-status-dot"></span>
+                      <span class="ci-job-name">e2e-blackbox-flight.yml</span>
+                      <span class="ci-job-time">38s</span>
+                    </div>
+                    <div class="ci-job-sub">
+                      ✓ Auto-frozen capsule artifact uploaded: <code>cap_4u2j.blackbox.json</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Part 3: 2-Column Code Control Matrix (Everything you need to control Blackbox with code) -->
+        <div class="hex-code-section" id="hexFeatures">
+          <div class="hex-code-left">
+            <div class="hex-code-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                <path d="M10 6.5h4M6.5 10v7.5a2 2 0 0 0 2 2H14"></path>
+              </svg>
+            </div>
+            <h2 class="hex-code-title">
+              <em class="hex-serif-italic">Everything</em><br />
+              you need to<br />
+              control Blackbox<br />
+              with code
+            </h2>
+          </div>
+
+          <div class="hex-code-right">
+            <div class="hex-feature-grid">
+              <div class="hex-feature-item">
+                <div class="hex-feat-header">
+                  <span class="hex-feat-icon">+</span>
+                  <h4 class="hex-feat-title">Supervise &amp; wiretap</h4>
+                </div>
+                <p class="hex-feat-desc">
+                  Wrap any dev command in seconds. Use <code>blackbox run</code> to capture terminal stdout/stderr bursts and inject <code>x-blackbox-trace</code> correlation headers across all localhost HTTP requests.
+                </p>
+              </div>
+
+              <div class="hex-feature-item">
+                <div class="hex-feat-header">
+                  <span class="hex-feat-icon">▷</span>
+                  <h4 class="hex-feat-title">Run &amp; validate</h4>
+                </div>
+                <p class="hex-feat-desc">
+                  Execute target services programmatically with <code>blackbox demo</code> or <code>blackbox run</code>. Integrate into test runners to catch regressions and keep time-travel telemetry in sync with every pull request.
+                </p>
+              </div>
+
+              <div class="hex-feature-item">
+                <div class="hex-feat-header">
+                  <span class="hex-feat-icon">✱</span>
+                  <h4 class="hex-feat-title">Put the agent to work</h4>
+                </div>
+                <p class="hex-feat-desc">
+                  Kick off AI coding agents from where your team already works. Use <code>blackbox mcp</code> to let Claude or Cursor query the 60s ring buffer, inspect fault chains, and apply surgical code patches directly.
+                </p>
+              </div>
+
+              <div class="hex-feature-item">
+                <div class="hex-feat-header">
+                  <span class="hex-feat-icon">◫</span>
+                  <h4 class="hex-feat-title">Keep context up to date</h4>
+                </div>
+                <p class="hex-feat-desc">
+                  Keep your debugging context in line with your repo. Use <code>blackbox inspect</code> to compile zero-hallucination Root-Cause Dossiers and <code>blackbox capsules</code> to archive, diff, and export state.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </section>
 
       <!-- Bottom Master Horological Time-Travel Scrubber -->
