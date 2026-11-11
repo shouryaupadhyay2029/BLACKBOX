@@ -510,15 +510,15 @@
           display: flex;
           align-items: center;
           gap: 10px;
-          background: rgba(11, 15, 25, 0.92);
+          background: rgba(14, 17, 36, 0.94);
           backdrop-filter: blur(12px);
-          border: 1px solid rgba(99, 102, 241, 0.45);
+          border: 1px solid rgba(175, 174, 162, 0.35);
           border-radius: 999px;
-          padding: 7px 14px;
+          padding: 7px 15px;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
           font-size: 12px;
-          color: #e2e8f0;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+          color: #F4F3EE;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
           user-select: none;
         }
         .blackbox-dot {
@@ -534,42 +534,47 @@
           box-shadow: 0 0 8px #f59e0b;
         }
         .blackbox-dot.error {
-          background: #ef4444;
-          box-shadow: 0 0 12px #ef4444;
+          background: #D21319;
+          box-shadow: 0 0 12px #D21319;
         }
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.55; transform: scale(0.88); }
         }
         .blackbox-brand {
-          font-weight: 700;
-          letter-spacing: 0.06em;
-          color: #a5b4fc;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          color: #F4F3EE;
         }
         .blackbox-stats {
-          color: #94a3b8;
+          color: #AFAEA2;
           font-size: 11px;
         }
         .blackbox-btn {
-          background: linear-gradient(135deg, #6366f1, #ec4899);
-          border: none;
+          background: #D21319;
+          border: 1px solid #FF262E;
           color: #ffffff;
-          font-weight: 600;
+          font-weight: 700;
           font-size: 11px;
-          padding: 5px 11px;
+          padding: 5px 12px;
           border-radius: 999px;
           cursor: pointer;
+          box-shadow: 0 2px 10px rgba(210, 19, 25, 0.4);
           transition: transform 0.15s ease, opacity 0.15s ease;
         }
         .blackbox-btn:hover {
           transform: translateY(-1px);
-          opacity: 0.95;
+          filter: brightness(1.1);
         }
         .blackbox-link {
-          color: #38bdf8;
+          color: #AFAEA2;
           text-decoration: none;
           font-size: 11px;
           font-weight: 600;
+        }
+        .blackbox-link:hover {
+          color: #F4F3EE;
+          text-decoration: underline;
         }
         .blackbox-toast {
           position: fixed;

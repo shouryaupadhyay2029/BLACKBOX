@@ -3,26 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BLACKBOX Studio — Localhost Flight Recorder & Causal Time-Travel</title>
+  <title>BLACKBOX Studio — Localhost Flight Recorder & Causal Time-Travel Engine</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <!-- Top Command Header -->
   <header class="topbar">
     <div class="brand-cluster">
-      <div class="logo-orb"></div>
+      <div class="logo-orb">⚡</div>
       <div>
         <div class="brand-title">BLACKBOX <span class="brand-sub">STUDIO</span></div>
-        <div class="brand-tagline">Browser ↔ Network ↔ Backend Terminal ↔ Git Working-Tree Time Machine</div>
+        <div class="brand-tagline">Browser ↔ Network ↔ Backend Terminal ↔ Git Time Machine</div>
       </div>
+      <button class="vault-toggle-btn active" id="toggleVaultBtn" title="Toggle Capsule Vault Sidebar">
+        <span>📁</span>
+        <span>Vault</span>
+        <span class="badge-count" id="capsuleCountBadge">0</span>
+      </button>
     </div>
 
+    <!-- Mode Switcher -->
     <div class="mode-switcher">
       <button class="mode-btn active" id="modeInspectorBtn" data-mode="inspector">🕰️ Capsule Time-Travel</button>
       <button class="mode-btn" id="modeLiveBtn" data-mode="live">🔴 Live Flight Deck</button>
       <button class="mode-btn" id="modeDiffBtn" data-mode="diff">⚖️ Capsule Differ</button>
     </div>
 
+    <!-- Layout & Plane Focus Switcher -->
+    <div class="view-switcher" id="viewSwitcher" title="Change Layout View & Focus">
+      <button class="view-btn active" data-view="grid" title="Spacious Quad Grid">🔲 Quad Grid</button>
+      <button class="view-btn" data-view="plane-1" title="Deep-dive Plane 1: Browser Replay">🌐 Browser</button>
+      <button class="view-btn" data-view="plane-2" title="Deep-dive Plane 2: Network Waterfall">⚡ Network</button>
+      <button class="view-btn" data-view="plane-3" title="Deep-dive Plane 3: Terminal & Source Code">💻 Code</button>
+      <button class="view-btn" data-view="plane-4" title="Deep-dive Plane 4: Git & AI Diagnostic">🌿 AI & Git</button>
+      <button class="view-btn" data-view="flow" title="Full Vertical Flow View">📜 Flow</button>
+    </div>
+
+    <!-- Telemetry & Action Buttons -->
     <div class="telemetry-cluster">
       <div class="stat-pill" title="Rolling 60-Second Ring Buffer">
         <span class="dot live" id="daemonDot"></span>
@@ -34,13 +51,13 @@
       </div>
       <label class="autofreeze-toggle" title="Automatically freeze a capsule 350ms after any unhandled crash or HTTP 500">
         <input type="checkbox" id="autoFreezeCheck" checked />
-        <span>Auto-Freeze on Crash</span>
+        <span>Auto-Freeze</span>
       </label>
       <button class="action-btn btn-freeze" id="freezeNowBtn" title="Shortcut: Alt+Shift+B">
-        ❄️ Freeze Capsule Now
+        ❄️ Freeze Capsule
       </button>
       <button class="action-btn btn-ai" id="copyAiPromptBtn" title="Copy surgical Markdown Root-Cause Packet for AI Coding Agents">
-        🤖 Copy AI Root-Cause Packet
+        🤖 Copy AI Packet
       </button>
       <button class="action-btn btn-secondary" id="exportCapsuleBtn" title="Download .blackbox.json Capsule">
         📥 Export
@@ -49,26 +66,26 @@
   </header>
 
   <!-- Main Studio Layout -->
-  <div class="studio-body">
+  <div class="studio-body" id="studioBody">
     <!-- Left Sidebar: Capsule Vault -->
-    <aside class="capsule-sidebar">
+    <aside class="capsule-sidebar" id="capsuleSidebar">
       <div class="sidebar-header">
         <span>CAPSULE VAULT</span>
-        <span class="badge-count" id="capsuleCountBadge">0</span>
+        <button class="mini-btn" id="collapseSidebarBtn" style="flex:none;padding:2px 8px;" title="Collapse Vault Sidebar">◀ Hide</button>
       </div>
       <div class="sidebar-actions">
         <input type="file" id="importFileInput" accept=".json" style="display:none" />
-        <button class="mini-btn" id="importCapsuleBtn">📂 Import Capsule</button>
+        <button class="mini-btn" id="importCapsuleBtn">📂 Import</button>
         <button class="mini-btn" id="refreshCapsulesBtn">↻ Refresh</button>
       </div>
       <div class="capsule-list" id="capsuleList">
-        <div class="empty-hint">No capsules frozen yet. Trigger a bug or click "Freeze Capsule Now".</div>
+        <div class="empty-hint">No capsules frozen yet. Trigger a bug in your app or click "Freeze Capsule".</div>
       </div>
     </aside>
 
     <!-- Center / Right Main Stage -->
     <main class="main-stage" id="inspectorStage">
-      <!-- Causal Fault Chain Banner -->
+      <!-- Causal Fault Chain Executive Banner -->
       <section class="causal-banner" id="causalBanner">
         <div class="causal-header">
           <div class="causal-headline-group">
@@ -80,10 +97,10 @@
         <div class="causal-chain-flow" id="causalChainFlow"></div>
       </section>
 
-      <!-- 4-Pane Synchronized Grid -->
-      <section class="quad-grid">
+      <!-- 4-Pane Synchronized Grid (Supports Grid, Plane Deep-Dive & Flow Views) -->
+      <section class="quad-grid" id="quadGrid">
         <!-- Pane 1: Visual DOM Replay & Browser State -->
-        <div class="pane">
+        <div class="pane" id="paneBrowser">
           <div class="pane-header">
             <div class="pane-title">
               <span class="plane-badge plane-browser">PLANE 1 · BROWSER</span>
@@ -122,7 +139,7 @@
         </div>
 
         <!-- Pane 2: Causal Network Waterfall & Payload Inspector -->
-        <div class="pane">
+        <div class="pane" id="paneNetwork">
           <div class="pane-header">
             <div class="pane-title">
               <span class="plane-badge plane-network">PLANE 2 · NETWORK</span>
@@ -146,7 +163,7 @@
         </div>
 
         <!-- Pane 3: Backend Terminal Stream & Source Code X-Ray -->
-        <div class="pane">
+        <div class="pane" id="paneTerminal">
           <div class="pane-header">
             <div class="pane-title">
               <span class="plane-badge plane-terminal">PLANE 3 · TERMINAL & CODE</span>
@@ -170,7 +187,7 @@
         </div>
 
         <!-- Pane 4: Git Working Tree Diff & AI Root-Cause Packet -->
-        <div class="pane">
+        <div class="pane" id="paneGitAi">
           <div class="pane-header">
             <div class="pane-title">
               <span class="plane-badge plane-git">PLANE 4 · GIT & AI BRIDGE</span>
@@ -244,10 +261,13 @@
     <!-- Mode 3: Capsule Regression Differ Stage -->
     <main class="main-stage" id="diffStage" style="display:none;">
       <div class="diff-deck-header">
-        <h2>⚖️ Capsule Differential & Regression Analyzer</h2>
+        <div>
+          <h2>⚖️ Capsule Differential & Regression Analyzer</h2>
+          <p>Inspect HTTP status regressions, latency shifts, new backend exceptions, and uncommitted Git drift between two snapshots.</p>
+        </div>
         <div class="diff-selectors">
-          <label>Baseline Capsule (A): <select id="diffSelectA"></select></label>
-          <label>Comparison Capsule (B): <select id="diffSelectB"></select></label>
+          <label>Baseline (A): <select id="diffSelectA"></select></label>
+          <label>Comparison (B): <select id="diffSelectB"></select></label>
           <button class="action-btn btn-freeze" id="runDiffBtn">Compare Capsules</button>
         </div>
       </div>

@@ -54,6 +54,8 @@ const liveStreamFeed = document.getElementById('liveStreamFeed');
 async function initStudio() {
   setupTabs();
   setupModeSwitcher();
+  setupViewSwitcher();
+  setupVaultToggle();
   setupActions();
 
   await fetchDaemonStatus();
@@ -689,6 +691,52 @@ function setupModeSwitcher() {
       Object.entries(stages).forEach(([k, el]) => {
         el.style.display = k === mode ? 'flex' : 'none';
       });
+    });
+  });
+}
+
+function setupVaultToggle() {
+  const toggleBtn = document.getElementById('toggleVaultBtn');
+  const collapseBtn = document.getElementById('collapseSidebarBtn');
+  const studioBody = document.getElementById('studioBody');
+
+  const toggle = () => {
+    if (!studioBody) return;
+    studioBody.classList.toggle('sidebar-collapsed');
+    const isCollapsed = studioBody.classList.contains('sidebar-collapsed');
+    if (toggleBtn) {
+      toggleBtn.classList.toggle('active', !isCollapsed);
+    }
+  };
+
+  if (toggleBtn) toggleBtn.addEventListener('click', toggle);
+  if (collapseBtn) collapseBtn.addEventListener('click', toggle);
+}
+
+function setupViewSwitcher() {
+  const quadGrid = document.getElementById('quadGrid');
+  const viewBtns = document.querySelectorAll('.view-btn');
+
+  viewBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const view = btn.getAttribute('data-view');
+      viewBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (quadGrid) {
+        quadGrid.className = 'quad-grid';
+        if (view === 'flow') {
+          quadGrid.classList.add('view-flow');
+        } else if (view === 'plane-1') {
+          quadGrid.classList.add('view-plane-1');
+        } else if (view === 'plane-2') {
+          quadGrid.classList.add('view-plane-2');
+        } else if (view === 'plane-3') {
+          quadGrid.classList.add('view-plane-3');
+        } else if (view === 'plane-4') {
+          quadGrid.classList.add('view-plane-4');
+        }
+      }
     });
   });
 }
