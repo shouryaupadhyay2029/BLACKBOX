@@ -368,6 +368,10 @@ export class BlackboxDaemonServer {
           '.js': 'application/javascript; charset=utf-8',
           '.json': 'application/json; charset=utf-8',
           '.svg': 'image/svg+xml',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.webp': 'image/webp',
         };
         res.writeHead(200, {
           'Content-Type': mimeMap[ext] || 'text/plain; charset=utf-8',
