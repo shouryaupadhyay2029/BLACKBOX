@@ -11,34 +11,20 @@
   <header class="topbar">
     <div class="brand-cluster">
       <span class="brand-glyph">✦</span>
-      <div>
+      <div class="brand-title-group">
         <div class="brand-title">BLACKBOX <span class="brand-sub">STUDIO</span></div>
         <div class="brand-tagline">ARCHIVAL TIME MACHINE · CAUSAL FLIGHT RECORDER</div>
       </div>
-      <button class="vault-toggle-btn" id="toggleVaultBtn" title="Toggle Archival Vault">
-        <span>✦ ARCHIVE VAULT</span>
-        <span class="badge-count" id="capsuleCountBadge">0</span>
-      </button>
     </div>
 
-    <!-- Mode Switcher -->
-    <div class="mode-switcher">
+    <!-- Mode Navigation (Clean, Spacious Glassmorphic Pill Tab) -->
+    <nav class="mode-switcher" id="modeSwitcher">
       <button class="mode-btn active" id="modeInspectorBtn" data-mode="inspector">✦ TIME-TRAVEL</button>
-      <button class="mode-btn" id="modeLiveBtn" data-mode="live">LIVE FLIGHT DECK</button>
-      <button class="mode-btn" id="modeDiffBtn" data-mode="diff">CAPSULE DIFFER</button>
-    </div>
+      <button class="mode-btn" id="modeLiveBtn" data-mode="live">LIVE DECK</button>
+      <button class="mode-btn" id="modeDiffBtn" data-mode="diff">REGRESSION DIFFER</button>
+    </nav>
 
-    <!-- Layout & Plane Focus Switcher -->
-    <div class="view-switcher" id="viewSwitcher" title="Change Layout View & Focus">
-      <button class="view-btn active" data-view="grid" title="Quad Grid Exhibit">✦ QUAD VIEW</button>
-      <button class="view-btn" data-view="plane-1" title="Deep-dive Plane 1: Browser Replay">I. BROWSER</button>
-      <button class="view-btn" data-view="plane-2" title="Deep-dive Plane 2: Network Waterfall">II. NETWORK</button>
-      <button class="view-btn" data-view="plane-3" title="Deep-dive Plane 3: Source Code X-Ray">III. CODE</button>
-      <button class="view-btn" data-view="plane-4" title="Deep-dive Plane 4: AI & Git Diagnostic">IV. AI & GIT</button>
-      <button class="view-btn" data-view="flow" title="Full Vertical Flow View">FLOW</button>
-    </div>
-
-    <!-- Telemetry & Action Cluster -->
+    <!-- Telemetry & Action Suite -->
     <div class="telemetry-cluster">
       <div class="stat-pill" title="Rolling 60-Second Ring Buffer">
         <span class="dot live" id="daemonDot"></span>
@@ -46,17 +32,18 @@
       </div>
       <div class="stat-pill" title="Git Working Tree State">
         <span>✦</span>
-        <span id="gitStatText">git: checking...</span>
+        <span id="gitStatText">git: clean</span>
       </div>
-      <label class="autofreeze-toggle" title="Automatically freeze a capsule 350ms after any unhandled crash or HTTP 500">
-        <input type="checkbox" id="autoFreezeCheck" checked />
-        <span>AUTO-FREEZE</span>
-      </label>
+      <input type="checkbox" id="autoFreezeCheck" checked style="display:none;" />
+      <button class="vault-toggle-btn" id="toggleVaultBtn" title="Toggle Archival Vault Drawer">
+        <span>✦ ARCHIVE VAULT</span>
+        <span class="badge-count" id="capsuleCountBadge">0</span>
+      </button>
       <button class="action-btn btn-freeze" id="freezeNowBtn" title="Shortcut: Alt+Shift+B">
-        ✦ FREEZE CAPSULE
+        ✦ FREEZE
       </button>
       <button class="action-btn btn-ai" id="copyAiPromptBtn" title="Copy surgical Markdown Root-Cause Packet for AI Coding Agents">
-        ✦ COPY AI PACKET
+        ✦ AI PACKET
       </button>
       <button class="action-btn btn-secondary" id="exportCapsuleBtn" title="Download .blackbox.json Capsule">
         EXPORT
@@ -84,16 +71,41 @@
 
     <!-- Center / Right Main Stage -->
     <main class="main-stage" id="inspectorStage">
-      <!-- Causal Fault Chain Executive Banner -->
+      <!-- Causal Fault Chain Executive Banner (Zero overlapping: pristine structured flex flow) -->
       <section class="causal-banner" id="causalBanner">
-        <div class="causal-header">
-          <div class="causal-headline-group">
+        <!-- Eyebrow Row: Status + Dossier ID on left, Coordinates on right -->
+        <div class="causal-top-meta">
+          <div class="meta-left">
             <span class="status-tag" id="capsuleStatusTag">READY</span>
-            <h2 id="capsuleHeadline">Select or freeze a capsule to inspect causal time-travel state</h2>
+            <span class="dossier-pill" id="capsuleIdBadge">ARCHIVE DOSSIER</span>
           </div>
-          <div class="causal-meta" id="capsuleMetaText"></div>
+          <div class="meta-right">
+            <span class="geo-stamp">✦ 44°00'N 98°76'E · LOCALHOST FLIGHT RECORDER</span>
+          </div>
         </div>
-        <div class="causal-chain-flow" id="causalChainFlow"></div>
+
+        <!-- Headline Row: Massive, airy serif headline with generous line height -->
+        <div class="causal-headline-wrapper">
+          <h1 class="causal-headline" id="capsuleHeadline">
+            Select or freeze a capsule to inspect causal time-travel state
+          </h1>
+        </div>
+
+        <!-- Culprit Telemetry Row: Dedicated pill box for primary culprit and confidence -->
+        <div class="causal-culprit-strip" id="capsuleMetaStrip">
+          <div class="culprit-box">
+            <span class="culprit-kicker">PRIMARY ROOT-CAUSE CULPRIT</span>
+            <span class="culprit-target" id="capsuleMetaText">No active fault chain recorded</span>
+          </div>
+        </div>
+
+        <!-- Causal Event Propagation Sequence -->
+        <div class="causal-chain-section">
+          <div class="chain-header-label">✦ END-TO-END CAUSAL PROPAGATION CHAIN</div>
+          <div class="causal-chain-flow" id="causalChainFlow"></div>
+        </div>
+
+        <!-- Quick Jump Links -->
         <div class="scroll-jump-bar">
           <span class="scroll-jump-label">✦ SCROLL TO EXPLORE ↓</span>
           <div class="scroll-jump-links">
@@ -104,6 +116,25 @@
           </div>
         </div>
       </section>
+
+      <!-- Exhibition Controls Bar above the 4 Telemetry Planes -->
+      <div class="planes-control-bar">
+        <div class="planes-title-group">
+          <span class="planes-glyph">✦</span>
+          <div>
+            <div class="planes-section-title">THE 4 FLIGHT TELEMETRY PLANES</div>
+            <div class="planes-section-desc">SYNCHRONIZED CLIENT · NETWORK · RUNTIME & REPO TIME-TRAVEL</div>
+          </div>
+        </div>
+        <div class="view-pill-group" id="viewSwitcher" title="Change Layout View & Focus">
+          <button class="view-btn active" data-view="grid" title="Quad Grid Exhibit">✦ QUAD VIEW</button>
+          <button class="view-btn" data-view="flow" title="Vertical Story Flow">✦ STORY FLOW</button>
+          <button class="view-btn" data-view="plane-1" title="Deep-dive Plane 1: Browser Replay">I. REPLAY</button>
+          <button class="view-btn" data-view="plane-2" title="Deep-dive Plane 2: Network Waterfall">II. NETWORK</button>
+          <button class="view-btn" data-view="plane-3" title="Deep-dive Plane 3: Source Code X-Ray">III. CODE</button>
+          <button class="view-btn" data-view="plane-4" title="Deep-dive Plane 4: AI & Git Diagnostic">IV. AI & GIT</button>
+        </div>
+      </div>
 
       <!-- 4-Pane Synchronized Telemetry Exhibits -->
       <section class="quad-grid" id="quadGrid">

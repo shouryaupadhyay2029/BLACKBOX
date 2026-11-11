@@ -238,20 +238,31 @@ function renderCausalBanner(capsule) {
   const summary = capsule.causal?.rootCauseSummary || {};
   const isFault = summary.status === 'FAULT_DETECTED';
 
+  const capsuleIdBadge = document.getElementById('capsuleIdBadge');
+  if (capsuleIdBadge) {
+    capsuleIdBadge.textContent = capsule.id ? `DOSSIER · ${capsule.id}` : 'ARCHIVE DOSSIER';
+  }
+
   capsuleStatusTag.textContent = isFault ? '✦ FAULT DETECTED' : '✦ HEALTHY SNAPSHOT';
   capsuleStatusTag.className = `status-tag ${isFault ? 'fault' : ''}`;
   capsuleHeadline.textContent = summary.headline || capsule.title;
 
-  capsuleMetaText.textContent = summary.culpritFile
-    ? `Culprit: ${summary.culpritFile}${summary.culpritLine ? `:${summary.culpritLine}` : ''} (${
-        summary.confidence || ''
-      })`
-    : `Trigger: ${capsule.triggerReason}`;
+  const rawCulprit = summary.culpritFile || '';
+  const shortCulprit = rawCulprit.replace(/^.*?[\\/]blackbox[\\/]/i, '').replace(/\\/g, '/');
+  const lineSuffix = summary.culpritLine ? `:${summary.culpritLine}` : '';
+  const confidence = summary.confidence ? ` · ${summary.confidence.replace(/_/g, ' ')}` : '';
+
+  if (rawCulprit) {
+    capsuleMetaText.textContent = `${shortCulprit || rawCulprit}${lineSuffix}${confidence}`;
+    capsuleMetaText.title = rawCulprit;
+  } else {
+    capsuleMetaText.textContent = `Trigger Reason: ${capsule.triggerReason || 'MANUAL_FREEZE'}`;
+  }
 
   const chains = capsule.causal?.causalChains || [];
   if (chains.length === 0) {
     causalChainFlow.innerHTML =
-      '<div style="font-size:11px;color:#AFAEA2;font-family:var(--font-mono);">No unhandled fault chains in this capsule window. Scrub timeline below to inspect all 4 planes.</div>';
+      '<div style="font-size:11px;color:#AFAEA2;font-family:var(--font-mono);padding:8px 0;">No unhandled fault chains in this capsule window. Scrub timeline below to inspect all 4 planes.</div>';
     return;
   }
 
