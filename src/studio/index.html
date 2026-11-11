@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KALA Blackbox Studio — Localhost Flight Recorder & Causal Time-Travel</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- Top Command Header -->
+  <header class="topbar">
+    <div class="brand-cluster">
+      <div class="logo-orb"></div>
+      <div>
+        <div class="brand-title">KALA <span class="brand-sub">BLACKBOX STUDIO</span></div>
+        <div class="brand-tagline">Browser ↔ Network ↔ Backend Terminal ↔ Git Working-Tree Time Machine</div>
+      </div>
+    </div>
+
+    <div class="mode-switcher">
+      <button class="mode-btn active" id="modeInspectorBtn" data-mode="inspector">🕰️ Capsule Time-Travel</button>
+      <button class="mode-btn" id="modeLiveBtn" data-mode="live">🔴 Live Flight Deck</button>
+      <button class="mode-btn" id="modeDiffBtn" data-mode="diff">⚖️ Capsule Differ</button>
+    </div>
+
+    <div class="telemetry-cluster">
+      <div class="stat-pill" title="Rolling 60-Second Ring Buffer">
+        <span class="dot live" id="daemonDot"></span>
+        <span id="bufferStatText">Buffer: 0 evts</span>
+      </div>
+      <div class="stat-pill" title="Git Working Tree State">
+        <span>🌿</span>
+        <span id="gitStatText">git: checking...</span>
+      </div>
+      <label class="autofreeze-toggle" title="Automatically freeze a capsule 350ms after any unhandled crash or HTTP 500">
+        <input type="checkbox" id="autoFreezeCheck" checked />
+        <span>Auto-Freeze on Crash</span>
+      </label>
+      <button class="action-btn btn-freeze" id="freezeNowBtn" title="Shortcut: Alt+Shift+B">
+        ❄️ Freeze Capsule Now
+      </button>
+      <button class="action-btn btn-ai" id="copyAiPromptBtn" title="Copy surgical Markdown Root-Cause Packet for AI Coding Agents">
+        🤖 Copy AI Root-Cause Packet
+      </button>
+      <button class="action-btn btn-secondary" id="exportCapsuleBtn" title="Download .kala.json Capsule">
+        📥 Export
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Studio Layout -->
+  <div class="studio-body">
+    <!-- Left Sidebar: Capsule Vault -->
+    <aside class="capsule-sidebar">
+      <div class="sidebar-header">
+        <span>CAPSULE VAULT</span>
+        <span class="badge-count" id="capsuleCountBadge">0</span>
+      </div>
+      <div class="sidebar-actions">
+        <input type="file" id="importFileInput" accept=".json" style="display:none" />
+        <button class="mini-btn" id="importCapsuleBtn">📂 Import .kala.json</button>
+        <button class="mini-btn" id="refreshCapsulesBtn">↻ Refresh</button>
+      </div>
+      <div class="capsule-list" id="capsuleList">
+        <div class="empty-hint">No capsules frozen yet. Trigger a bug or click "Freeze Capsule Now".</div>
+      </div>
+    </aside>
+
+    <!-- Center / Right Main Stage -->
+    <main class="main-stage" id="inspectorStage">
+      <!-- Causal Fault Chain Banner -->
+      <section class="causal-banner" id="causalBanner">
+        <div class="causal-header">
+          <div class="causal-headline-group">
+            <span class="status-tag" id="capsuleStatusTag">READY</span>
+            <h2 id="capsuleHeadline">Select or freeze a capsule to inspect causal time-travel state</h2>
+          </div>
+          <div class="causal-meta" id="capsuleMetaText"></div>
+        </div>
+        <div class="causal-chain-flow" id="causalChainFlow"></div>
+      </section>
+
+      <!-- 4-Pane Synchronized Grid -->
+      <section class="quad-grid">
+        <!-- Pane 1: Visual DOM Replay & Browser State -->
+        <div class="pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <span class="plane-badge plane-browser">PLANE 1 · BROWSER</span>
+              <span>Visual DOM Replay & Client State</span>
+            </div>
+            <div class="pane-tabs">
+              <button class="tab-btn active" data-pane="p1" data-tab="dom">DOM Viewport</button>
+              <button class="tab-btn" data-pane="p1" data-tab="console">Console (<span id="consoleCount">0</span>)</button>
+              <button class="tab-btn" data-pane="p1" data-tab="storage">Storage</button>
+            </div>
+          </div>
+          <div class="pane-body">
+            <!-- DOM Viewport Tab -->
+            <div class="tab-panel active" id="p1-dom">
+              <div class="dom-viewport-bar">
+                <span class="url-pill" id="domUrlPill">http://localhost/...</span>
+                <span class="click-indicator" id="domClickBadge">No active click at T</span>
+              </div>
+              <div class="dom-stage-wrapper" id="domStageWrapper">
+                <iframe id="domReplayFrame" sandbox="allow-same-origin" title="DOM Snapshot Replay"></iframe>
+                <div class="cursor-laser" id="cursorLaser" style="display:none;">
+                  <div class="laser-ring"></div>
+                  <div class="laser-label" id="cursorLaserLabel">Click</div>
+                </div>
+              </div>
+            </div>
+            <!-- Console Tab -->
+            <div class="tab-panel" id="p1-console">
+              <div class="log-list" id="browserConsoleList"></div>
+            </div>
+            <!-- Storage Tab -->
+            <div class="tab-panel" id="p1-storage">
+              <pre class="code-block" id="browserStoragePre">{}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pane 2: Causal Network Waterfall & Payload Inspector -->
+        <div class="pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <span class="plane-badge plane-network">PLANE 2 · NETWORK</span>
+              <span>Causal HTTP / WS Waterfall & Payloads</span>
+            </div>
+            <div class="pane-tabs">
+              <button class="tab-btn active" data-pane="p2" data-tab="waterfall">Requests (<span id="netCount">0</span>)</button>
+              <button class="tab-btn" data-pane="p2" data-tab="payload">Payload Inspector</button>
+            </div>
+          </div>
+          <div class="pane-body">
+            <div class="tab-panel active" id="p2-waterfall">
+              <div class="waterfall-list" id="networkWaterfallList"></div>
+            </div>
+            <div class="tab-panel" id="p2-payload">
+              <div class="payload-inspector" id="networkPayloadInspector">
+                <div class="empty-hint">Click any network request row to inspect its Trace-ID, headers, request body, and response payload.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pane 3: Backend Terminal Stream & Source Code X-Ray -->
+        <div class="pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <span class="plane-badge plane-terminal">PLANE 3 · TERMINAL & CODE</span>
+              <span>Backend stdout/stderr & Local Source X-Ray</span>
+            </div>
+            <div class="pane-tabs">
+              <button class="tab-btn active" data-pane="p3" data-tab="terminal">Terminal Stream (<span id="termCount">0</span>)</button>
+              <button class="tab-btn" data-pane="p3" data-tab="xray">Source Code X-Ray</button>
+            </div>
+          </div>
+          <div class="pane-body">
+            <div class="tab-panel active" id="p3-terminal">
+              <div class="terminal-output" id="terminalStreamList"></div>
+            </div>
+            <div class="tab-panel" id="p3-xray">
+              <div class="xray-container" id="sourceXrayContainer">
+                <div class="empty-hint">When a backend or frontend stack trace is captured, KALA automatically resolves the local file on disk and highlights the exact crashing line here.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pane 4: Git Working Tree Diff & AI Root-Cause Packet -->
+        <div class="pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <span class="plane-badge plane-git">PLANE 4 · GIT & AI BRIDGE</span>
+              <span>Uncommitted Git Diff & AI Diagnostic Packet</span>
+            </div>
+            <div class="pane-tabs">
+              <button class="tab-btn active" data-pane="p4" data-tab="git">Git Working Tree</button>
+              <button class="tab-btn" data-pane="p4" data-tab="aiprompt">AI Root-Cause Markdown</button>
+            </div>
+          </div>
+          <div class="pane-body">
+            <div class="tab-panel active" id="p4-git">
+              <div class="git-inspector" id="gitInspectorContainer"></div>
+            </div>
+            <div class="tab-panel" id="p4-aiprompt">
+              <pre class="code-block" id="aiMarkdownPreview">Select a capsule to view its compiled AI Root-Cause Diagnostic Packet.</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Master Synchronized Time-Travel Scrubber -->
+      <footer class="scrubber-bar">
+        <div class="scrubber-controls">
+          <button class="ctrl-btn" id="playPauseBtn" title="Play / Pause Time-Travel Replay">▶ Play</button>
+          <button class="ctrl-btn" id="stepPrevBtn" title="Previous Event">⏮</button>
+          <button class="ctrl-btn" id="stepNextBtn" title="Next Event">⏭</button>
+          <select id="playbackSpeedSelect" class="speed-select" title="Playback Speed">
+            <option value="1">1.0x</option>
+            <option value="0.5">0.5x Slow</option>
+            <option value="0.2">0.2x Micro</option>
+          </select>
+        </div>
+
+        <div class="scrubber-track-area">
+          <div class="scrubber-markers" id="scrubberMarkers"></div>
+          <input
+            type="range"
+            id="timeScrubber"
+            class="time-slider"
+            min="0"
+            max="1000"
+            value="1000"
+          />
+        </div>
+
+        <div class="scrubber-readout">
+          <div class="time-primary" id="scrubberTimeReadout">+0.00s / 0.00s</div>
+          <div class="time-sub" id="scrubberEventReadout">0 / 0 events</div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- Mode 2: Live Flight Deck Stage -->
+    <main class="main-stage" id="liveStage" style="display:none;">
+      <div class="live-deck-header">
+        <div>
+          <h2>🔴 Live 60-Second Rolling Flight Deck</h2>
+          <p>Real-time telemetry streaming from Browser DOM, Localhost Network, Backend Terminal Processes, and Git.</p>
+        </div>
+        <div class="live-legend">
+          <span class="plane-badge plane-browser">BROWSER</span>
+          <span class="plane-badge plane-network">NETWORK</span>
+          <span class="plane-badge plane-terminal">TERMINAL</span>
+          <span class="plane-badge plane-git">GIT</span>
+        </div>
+      </div>
+      <div class="live-stream-feed" id="liveStreamFeed"></div>
+    </main>
+
+    <!-- Mode 3: Capsule Regression Differ Stage -->
+    <main class="main-stage" id="diffStage" style="display:none;">
+      <div class="diff-deck-header">
+        <h2>⚖️ Capsule Differential & Regression Analyzer</h2>
+        <div class="diff-selectors">
+          <label>Baseline Capsule (A): <select id="diffSelectA"></select></label>
+          <label>Comparison Capsule (B): <select id="diffSelectB"></select></label>
+          <button class="action-btn btn-freeze" id="runDiffBtn">Compare Capsules</button>
+        </div>
+      </div>
+      <div class="diff-results" id="diffResultsContainer">
+        <div class="empty-hint">Select two capsules above and click "Compare Capsules" to inspect HTTP status regressions, latency shifts, new backend exceptions, and Git changes.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-banner" id="studioToast"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

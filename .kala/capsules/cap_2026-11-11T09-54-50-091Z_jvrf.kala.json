@@ -1,0 +1,973 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "cap_2026-11-11T09-54-50-091Z_jvrf",
+  "createdAt": "2026-11-11T09:54:50.091Z",
+  "createdAtMs": 1794390890091,
+  "triggerReason": "HTTP_500",
+  "title": "HTTP 500 on POST /api/checkout",
+  "notes": "",
+  "status": "FAULT_DETECTED",
+  "window": {
+    "startTimeMs": 1794390888708.4172,
+    "endTimeMs": 1794390889725,
+    "durationMs": 1016.582763671875,
+    "totalEvents": 10,
+    "planeCounts": {
+      "BROWSER": 3,
+      "NETWORK": 2,
+      "TERMINAL": 5,
+      "GIT": 0,
+      "SYSTEM": 0
+    }
+  },
+  "causal": {
+    "totalChains": 1,
+    "causalChains": [
+      {
+        "chainId": "chain_1",
+        "traceId": "tr_crash_checkout_999",
+        "confidence": "TEMPORAL_AND_ROUTE_MATCH (96%)",
+        "severity": "CRITICAL",
+        "steps": [
+          {
+            "plane": "BROWSER",
+            "relTimeMs": 1012.6,
+            "title": "User clicked \"Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])\"",
+            "detail": "Selector: #btnInstantCrash"
+          },
+          {
+            "plane": "NETWORK",
+            "relTimeMs": 1016.6,
+            "title": "POST /api/checkout -> HTTP 500 (4ms)",
+            "detail": "Trace-ID: tr_crash_checkout_999"
+          },
+          {
+            "plane": "TERMINAL",
+            "relTimeMs": 1015.9,
+            "title": "Backend stderr: [OrderEngine] [FATAL] [trace:tr_crash_checkout_999] Unhandled checkout exception on POST /api/checkout:",
+            "detail": "Location: demo-server.js:46 in calculateAndChargeOrder()"
+          }
+        ],
+        "triggerUi": {
+          "timestampMs": 1794390889721,
+          "relTimeMs": 1012.58,
+          "selector": "#btnInstantCrash",
+          "text": "Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])",
+          "tagName": "BUTTON"
+        },
+        "networkRequest": {
+          "method": "POST",
+          "url": "/api/checkout",
+          "status": 500,
+          "durationMs": 4,
+          "requestBody": {
+            "customerEmail": "founder@vajra-labs.dev",
+            "subtotal": 2380,
+            "settlementMode": "USD-INSTANT",
+            "items": [
+              {
+                "sku": "VJ-CORE-01",
+                "qty": 1
+              }
+            ]
+          },
+          "responseBody": {
+            "ok": false,
+            "error": "Cannot read properties of null (reading 'partnerShare')",
+            "code": "CHECKOUT_SETTLEMENT_CRASH",
+            "traceId": "tr_crash_checkout_999"
+          }
+        },
+        "backendError": {
+          "timestampMs": 1794390889724.3613,
+          "relTimeMs": 1015.94,
+          "processName": "nexuspay-api",
+          "rawText": "[OrderEngine] [FATAL] [trace:tr_crash_checkout_999] Unhandled checkout exception on POST /api/checkout:\nTypeError: Cannot read properties of null (reading 'partnerShare')\n    at calculateAndChargeOrder (file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js:46:63)\n    at Server.<anonymous> (file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js:104:22)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n",
+          "primaryFrame": {
+            "functionName": "calculateAndChargeOrder",
+            "rawFile": "file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js",
+            "resolvedPath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+            "lineNumber": 46,
+            "columnNumber": 63,
+            "isUserCode": true,
+            "snippet": {
+              "filePath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+              "fileName": "demo-server.js",
+              "targetLine": 46,
+              "startLine": 40,
+              "endLine": 52,
+              "lines": [
+                {
+                  "lineNumber": 40,
+                  "isTarget": false,
+                  "code": ""
+                },
+                {
+                  "lineNumber": 41,
+                  "isTarget": false,
+                  "code": "  const mode = orderPayload.settlementMode || 'USD-INSTANT';"
+                },
+                {
+                  "lineNumber": 42,
+                  "isTarget": false,
+                  "code": "  const selectedGateway = gatewayRegistry[mode];"
+                },
+                {
+                  "lineNumber": 43,
+                  "isTarget": false,
+                  "code": ""
+                },
+                {
+                  "lineNumber": 44,
+                  "isTarget": false,
+                  "code": "  // CRASH LINE: Dereferencing `.partnerShare` on null `merchantSplitRule`!"
+                },
+                {
+                  "lineNumber": 45,
+                  "isTarget": false,
+                  "code": "  const partnerFee ="
+                },
+                {
+                  "lineNumber": 46,
+                  "isTarget": true,
+                  "code": "    orderPayload.subtotal * selectedGateway.merchantSplitRule.partnerShare;"
+                },
+                {
+                  "lineNumber": 47,
+                  "isTarget": false,
+                  "code": ""
+                },
+                {
+                  "lineNumber": 48,
+                  "isTarget": false,
+                  "code": "  return {"
+                },
+                {
+                  "lineNumber": 49,
+                  "isTarget": false,
+                  "code": "    orderId: `ord_${Date.now()}`,"
+                },
+                {
+                  "lineNumber": 50,
+                  "isTarget": false,
+                  "code": "    chargedAmount: orderPayload.subtotal + partnerFee,"
+                },
+                {
+                  "lineNumber": 51,
+                  "isTarget": false,
+                  "code": "  };"
+                },
+                {
+                  "lineNumber": 52,
+                  "isTarget": false,
+                  "code": "}"
+                }
+              ]
+            }
+          },
+          "frames": [
+            {
+              "functionName": "calculateAndChargeOrder",
+              "rawFile": "file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js",
+              "resolvedPath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+              "lineNumber": 46,
+              "columnNumber": 63,
+              "isUserCode": true,
+              "snippet": {
+                "filePath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+                "fileName": "demo-server.js",
+                "targetLine": 46,
+                "startLine": 40,
+                "endLine": 52,
+                "lines": [
+                  {
+                    "lineNumber": 40,
+                    "isTarget": false,
+                    "code": ""
+                  },
+                  {
+                    "lineNumber": 41,
+                    "isTarget": false,
+                    "code": "  const mode = orderPayload.settlementMode || 'USD-INSTANT';"
+                  },
+                  {
+                    "lineNumber": 42,
+                    "isTarget": false,
+                    "code": "  const selectedGateway = gatewayRegistry[mode];"
+                  },
+                  {
+                    "lineNumber": 43,
+                    "isTarget": false,
+                    "code": ""
+                  },
+                  {
+                    "lineNumber": 44,
+                    "isTarget": false,
+                    "code": "  // CRASH LINE: Dereferencing `.partnerShare` on null `merchantSplitRule`!"
+                  },
+                  {
+                    "lineNumber": 45,
+                    "isTarget": false,
+                    "code": "  const partnerFee ="
+                  },
+                  {
+                    "lineNumber": 46,
+                    "isTarget": true,
+                    "code": "    orderPayload.subtotal * selectedGateway.merchantSplitRule.partnerShare;"
+                  },
+                  {
+                    "lineNumber": 47,
+                    "isTarget": false,
+                    "code": ""
+                  },
+                  {
+                    "lineNumber": 48,
+                    "isTarget": false,
+                    "code": "  return {"
+                  },
+                  {
+                    "lineNumber": 49,
+                    "isTarget": false,
+                    "code": "    orderId: `ord_${Date.now()}`,"
+                  },
+                  {
+                    "lineNumber": 50,
+                    "isTarget": false,
+                    "code": "    chargedAmount: orderPayload.subtotal + partnerFee,"
+                  },
+                  {
+                    "lineNumber": 51,
+                    "isTarget": false,
+                    "code": "  };"
+                  },
+                  {
+                    "lineNumber": 52,
+                    "isTarget": false,
+                    "code": "}"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "Server.<anonymous>",
+              "rawFile": "file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js",
+              "resolvedPath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+              "lineNumber": 104,
+              "columnNumber": 22,
+              "isUserCode": true,
+              "snippet": {
+                "filePath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+                "fileName": "demo-server.js",
+                "targetLine": 104,
+                "startLine": 98,
+                "endLine": 110,
+                "lines": [
+                  {
+                    "lineNumber": 98,
+                    "isTarget": false,
+                    "code": "  }"
+                  },
+                  {
+                    "lineNumber": 99,
+                    "isTarget": false,
+                    "code": ""
+                  },
+                  {
+                    "lineNumber": 100,
+                    "isTarget": false,
+                    "code": "  // Route 2: Checkout Endpoint (Triggers real full-stack TypeError crash on USD-INSTANT)"
+                  },
+                  {
+                    "lineNumber": 101,
+                    "isTarget": false,
+                    "code": "  if (url.pathname === '/api/checkout' && req.method === 'POST') {"
+                  },
+                  {
+                    "lineNumber": 102,
+                    "isTarget": false,
+                    "code": "    const body = await readBody(req);"
+                  },
+                  {
+                    "lineNumber": 103,
+                    "isTarget": false,
+                    "code": "    try {"
+                  },
+                  {
+                    "lineNumber": 104,
+                    "isTarget": true,
+                    "code": "      const result = calculateAndChargeOrder(body, traceId);"
+                  },
+                  {
+                    "lineNumber": 105,
+                    "isTarget": false,
+                    "code": "      console.log(`[OrderEngine] [trace:${traceId}] Order completed: ${result.orderId}`);"
+                  },
+                  {
+                    "lineNumber": 106,
+                    "isTarget": false,
+                    "code": "      res.writeHead(200, { 'Content-Type': 'application/json' });"
+                  },
+                  {
+                    "lineNumber": 107,
+                    "isTarget": false,
+                    "code": "      res.end(JSON.stringify({ ok: true, traceId, result }));"
+                  },
+                  {
+                    "lineNumber": 108,
+                    "isTarget": false,
+                    "code": "    } catch (err) {"
+                  },
+                  {
+                    "lineNumber": 109,
+                    "isTarget": false,
+                    "code": "      // Emit full stack trace to stderr so KALA ProcessSupervisor captures & parses it"
+                  },
+                  {
+                    "lineNumber": 110,
+                    "isTarget": false,
+                    "code": "      console.error("
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "process.processTicksAndRejections",
+              "rawFile": "node:internal/process/task_queues",
+              "resolvedPath": null,
+              "lineNumber": 105,
+              "columnNumber": 5,
+              "isUserCode": false,
+              "snippet": null
+            }
+          ]
+        },
+        "browserError": null,
+        "gitDiffOverlaps": []
+      }
+    ],
+    "rootCauseSummary": {
+      "status": "FAULT_DETECTED",
+      "headline": "Clicking \"Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])\" triggered POST /api/checkout [500], crashing backend at demo-server.js:46",
+      "explanation": "Clicking \"Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])\" triggered POST /api/checkout [500], crashing backend at demo-server.js:46",
+      "confidence": "TEMPORAL_AND_ROUTE_MATCH (96%)",
+      "culpritFile": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+      "culpritLine": 46,
+      "culpritFunction": "calculateAndChargeOrder",
+      "sourceSnippet": {
+        "filePath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+        "fileName": "demo-server.js",
+        "targetLine": 46,
+        "startLine": 40,
+        "endLine": 52,
+        "lines": [
+          {
+            "lineNumber": 40,
+            "isTarget": false,
+            "code": ""
+          },
+          {
+            "lineNumber": 41,
+            "isTarget": false,
+            "code": "  const mode = orderPayload.settlementMode || 'USD-INSTANT';"
+          },
+          {
+            "lineNumber": 42,
+            "isTarget": false,
+            "code": "  const selectedGateway = gatewayRegistry[mode];"
+          },
+          {
+            "lineNumber": 43,
+            "isTarget": false,
+            "code": ""
+          },
+          {
+            "lineNumber": 44,
+            "isTarget": false,
+            "code": "  // CRASH LINE: Dereferencing `.partnerShare` on null `merchantSplitRule`!"
+          },
+          {
+            "lineNumber": 45,
+            "isTarget": false,
+            "code": "  const partnerFee ="
+          },
+          {
+            "lineNumber": 46,
+            "isTarget": true,
+            "code": "    orderPayload.subtotal * selectedGateway.merchantSplitRule.partnerShare;"
+          },
+          {
+            "lineNumber": 47,
+            "isTarget": false,
+            "code": ""
+          },
+          {
+            "lineNumber": 48,
+            "isTarget": false,
+            "code": "  return {"
+          },
+          {
+            "lineNumber": 49,
+            "isTarget": false,
+            "code": "    orderId: `ord_${Date.now()}`,"
+          },
+          {
+            "lineNumber": 50,
+            "isTarget": false,
+            "code": "    chargedAmount: orderPayload.subtotal + partnerFee,"
+          },
+          {
+            "lineNumber": 51,
+            "isTarget": false,
+            "code": "  };"
+          },
+          {
+            "lineNumber": 52,
+            "isTarget": false,
+            "code": "}"
+          }
+        ]
+      },
+      "gitHit": null
+    },
+    "timelineMarkers": [
+      {
+        "id": "evt_7_6e4f6",
+        "relTimeMs": 1012.58,
+        "timestampMs": 1794390889721,
+        "kind": "ui_action",
+        "label": "CLICK: #btnInstantCrash",
+        "severity": "info"
+      },
+      {
+        "id": "evt_10_8huqa",
+        "relTimeMs": 1015.94,
+        "timestampMs": 1794390889724.3613,
+        "kind": "terminal_error",
+        "label": "Terminal stderr: [OrderEngine] [FATAL] [trace:tr_crash_checkout_999] Unhandled checkout exception",
+        "severity": "fatal"
+      },
+      {
+        "id": "evt_8_aom4i",
+        "relTimeMs": 1016.58,
+        "timestampMs": 1794390889725,
+        "kind": "network_error",
+        "label": "HTTP 500 POST /api/checkout",
+        "severity": "fatal"
+      }
+    ],
+    "counts": {
+      "uiActions": 1,
+      "networkCalls": 2,
+      "failedNetworkCalls": 1,
+      "terminalErrors": 1,
+      "browserErrors": 0
+    }
+  },
+  "git": {
+    "isGitRepo": false,
+    "cwd": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala",
+    "branch": null,
+    "headCommit": null,
+    "headSubject": null,
+    "isDirty": false,
+    "modifiedFiles": [],
+    "diffFiles": [],
+    "rawDiff": ""
+  },
+  "environment": {
+    "nodeVersion": "v22.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "pid": 26636,
+    "cwd": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala",
+    "variables": {
+      "ANTIGRAVITY_CSRF_TOKEN": "9a***REDACTED(36 chars)***"
+    }
+  },
+  "events": [
+    {
+      "id": "evt_1_hw6wg",
+      "seq": 1,
+      "timestampMs": 1794390888708.4172,
+      "serverTimeMs": 1794390888708.4172,
+      "isoTime": "2026-11-11T09:54:48.708Z",
+      "plane": "TERMINAL",
+      "type": "PROCESS_START",
+      "severity": "info",
+      "traceId": null,
+      "source": "nexuspay-api",
+      "payload": {
+        "name": "nexuspay-api",
+        "command": "node \"C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js\"",
+        "pid": 30020,
+        "cwd": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala"
+      }
+    },
+    {
+      "id": "evt_2_zepf8",
+      "seq": 2,
+      "timestampMs": 1794390888798.6084,
+      "serverTimeMs": 1794390888820.3777,
+      "isoTime": "2026-11-11T09:54:48.798Z",
+      "plane": "TERMINAL",
+      "type": "TERMINAL_STDOUT",
+      "severity": "info",
+      "traceId": null,
+      "source": "nexuspay-api",
+      "payload": {
+        "processName": "nexuspay-api",
+        "rawAnsi": "[DemoBackend] Target service listening at http://localhost:4488\n",
+        "text": "[DemoBackend] Target service listening at http://localhost:4488\n"
+      }
+    },
+    {
+      "id": "evt_3_ayrge",
+      "seq": 3,
+      "timestampMs": 1794390889638.4375,
+      "serverTimeMs": 1794390889638.4375,
+      "isoTime": "2026-11-11T09:54:49.638Z",
+      "plane": "BROWSER",
+      "type": "DOM_SNAPSHOT",
+      "severity": "info",
+      "traceId": null,
+      "source": "http://localhost:4488/",
+      "payload": {
+        "url": "http://localhost:4488/",
+        "title": "NexusPay Storefront",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "html": "<!DOCTYPE html><html><body><h1>NexusPay Checkout</h1><button id=\"btnInstantCrash\">Instant Settlement</button></body></html>"
+      }
+    },
+    {
+      "id": "evt_4_ruklk",
+      "seq": 4,
+      "timestampMs": 1794390889638.4707,
+      "serverTimeMs": 1794390889638.4707,
+      "isoTime": "2026-11-11T09:54:49.638Z",
+      "plane": "BROWSER",
+      "type": "STORAGE_SNAPSHOT",
+      "severity": "info",
+      "traceId": null,
+      "source": "http://localhost:4488/",
+      "payload": {
+        "localStorage": {
+          "nexus_session_tier": "ENTERPRISE_PRO"
+        },
+        "sessionStorage": {}
+      }
+    },
+    {
+      "id": "evt_6_rxiu0",
+      "seq": 6,
+      "timestampMs": 1794390889645.8555,
+      "serverTimeMs": 1794390889719.7258,
+      "isoTime": "2026-11-11T09:54:49.645Z",
+      "plane": "TERMINAL",
+      "type": "TERMINAL_STDOUT",
+      "severity": "info",
+      "traceId": null,
+      "source": "nexuspay-api",
+      "payload": {
+        "processName": "nexuspay-api",
+        "rawAnsi": "[InventoryAPI] [trace:tr_healthy_001] GET /api/inventory -> Returning 3 active SKUs (200 OK)\n",
+        "text": "[InventoryAPI] [trace:tr_healthy_001] GET /api/inventory -> Returning 3 active SKUs (200 OK)\n"
+      }
+    },
+    {
+      "id": "evt_5_rey5w",
+      "seq": 5,
+      "timestampMs": 1794390889651.1724,
+      "serverTimeMs": 1794390889651.1724,
+      "isoTime": "2026-11-11T09:54:49.651Z",
+      "plane": "NETWORK",
+      "type": "HTTP_TRACE",
+      "severity": "info",
+      "traceId": "tr_healthy_001",
+      "source": "http://localhost:4488/",
+      "payload": {
+        "method": "GET",
+        "url": "/api/inventory",
+        "status": 200,
+        "durationMs": 12,
+        "responseBody": {
+          "ok": true,
+          "traceId": "tr_healthy_001",
+          "items": [
+            {
+              "sku": "VJ-CORE-01",
+              "name": "Vajra Quantum Processor Node",
+              "price": 1490,
+              "stock": 8
+            },
+            {
+              "sku": "KL-BOX-99",
+              "name": "Kala Telemetry Hardware Tap",
+              "price": 420,
+              "stock": 19
+            },
+            {
+              "sku": "NX-MESH-04",
+              "name": "Hyperion Fiber Backplane",
+              "price": 890,
+              "stock": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "evt_7_6e4f6",
+      "seq": 7,
+      "timestampMs": 1794390889721,
+      "serverTimeMs": 1794390889722.1443,
+      "isoTime": "2026-11-11T09:54:49.721Z",
+      "plane": "BROWSER",
+      "type": "UI_CLICK",
+      "severity": "info",
+      "traceId": "tr_crash_checkout_999",
+      "source": "http://localhost:4488/",
+      "payload": {
+        "selector": "#btnInstantCrash",
+        "tagName": "BUTTON",
+        "text": "Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])",
+        "clientX": 620,
+        "clientY": 340
+      }
+    },
+    {
+      "id": "evt_9_exdqb",
+      "seq": 9,
+      "timestampMs": 1794390889724.2092,
+      "serverTimeMs": 1794390889748.646,
+      "isoTime": "2026-11-11T09:54:49.724Z",
+      "plane": "TERMINAL",
+      "type": "TERMINAL_STDOUT",
+      "severity": "info",
+      "traceId": null,
+      "source": "nexuspay-api",
+      "payload": {
+        "processName": "nexuspay-api",
+        "rawAnsi": "[OrderEngine] [trace:tr_crash_checkout_999] Validating cart for customer=\"founder@vajra-labs.dev\" items=1\n",
+        "text": "[OrderEngine] [trace:tr_crash_checkout_999] Validating cart for customer=\"founder@vajra-labs.dev\" items=1\n"
+      }
+    },
+    {
+      "id": "evt_10_8huqa",
+      "seq": 10,
+      "timestampMs": 1794390889724.3613,
+      "serverTimeMs": 1794390889752.054,
+      "isoTime": "2026-11-11T09:54:49.724Z",
+      "plane": "TERMINAL",
+      "type": "TERMINAL_STDERR",
+      "severity": "error",
+      "traceId": null,
+      "source": "nexuspay-api",
+      "payload": {
+        "processName": "nexuspay-api",
+        "rawAnsi": "[OrderEngine] [FATAL] [trace:tr_crash_checkout_999] Unhandled checkout exception on POST /api/checkout:\nTypeError: Cannot read properties of null (reading 'partnerShare')\n    at calculateAndChargeOrder (file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js:46:63)\n    at Server.<anonymous> (file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js:104:22)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n",
+        "text": "[OrderEngine] [FATAL] [trace:tr_crash_checkout_999] Unhandled checkout exception on POST /api/checkout:\nTypeError: Cannot read properties of null (reading 'partnerShare')\n    at calculateAndChargeOrder (file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js:46:63)\n    at Server.<anonymous> (file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js:104:22)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n",
+        "stackInfo": {
+          "hasStack": true,
+          "frames": [
+            {
+              "functionName": "calculateAndChargeOrder",
+              "rawFile": "file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js",
+              "resolvedPath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+              "lineNumber": 46,
+              "columnNumber": 63,
+              "isUserCode": true,
+              "snippet": {
+                "filePath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+                "fileName": "demo-server.js",
+                "targetLine": 46,
+                "startLine": 40,
+                "endLine": 52,
+                "lines": [
+                  {
+                    "lineNumber": 40,
+                    "isTarget": false,
+                    "code": ""
+                  },
+                  {
+                    "lineNumber": 41,
+                    "isTarget": false,
+                    "code": "  const mode = orderPayload.settlementMode || 'USD-INSTANT';"
+                  },
+                  {
+                    "lineNumber": 42,
+                    "isTarget": false,
+                    "code": "  const selectedGateway = gatewayRegistry[mode];"
+                  },
+                  {
+                    "lineNumber": 43,
+                    "isTarget": false,
+                    "code": ""
+                  },
+                  {
+                    "lineNumber": 44,
+                    "isTarget": false,
+                    "code": "  // CRASH LINE: Dereferencing `.partnerShare` on null `merchantSplitRule`!"
+                  },
+                  {
+                    "lineNumber": 45,
+                    "isTarget": false,
+                    "code": "  const partnerFee ="
+                  },
+                  {
+                    "lineNumber": 46,
+                    "isTarget": true,
+                    "code": "    orderPayload.subtotal * selectedGateway.merchantSplitRule.partnerShare;"
+                  },
+                  {
+                    "lineNumber": 47,
+                    "isTarget": false,
+                    "code": ""
+                  },
+                  {
+                    "lineNumber": 48,
+                    "isTarget": false,
+                    "code": "  return {"
+                  },
+                  {
+                    "lineNumber": 49,
+                    "isTarget": false,
+                    "code": "    orderId: `ord_${Date.now()}`,"
+                  },
+                  {
+                    "lineNumber": 50,
+                    "isTarget": false,
+                    "code": "    chargedAmount: orderPayload.subtotal + partnerFee,"
+                  },
+                  {
+                    "lineNumber": 51,
+                    "isTarget": false,
+                    "code": "  };"
+                  },
+                  {
+                    "lineNumber": 52,
+                    "isTarget": false,
+                    "code": "}"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "Server.<anonymous>",
+              "rawFile": "file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js",
+              "resolvedPath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+              "lineNumber": 104,
+              "columnNumber": 22,
+              "isUserCode": true,
+              "snippet": {
+                "filePath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+                "fileName": "demo-server.js",
+                "targetLine": 104,
+                "startLine": 98,
+                "endLine": 110,
+                "lines": [
+                  {
+                    "lineNumber": 98,
+                    "isTarget": false,
+                    "code": "  }"
+                  },
+                  {
+                    "lineNumber": 99,
+                    "isTarget": false,
+                    "code": ""
+                  },
+                  {
+                    "lineNumber": 100,
+                    "isTarget": false,
+                    "code": "  // Route 2: Checkout Endpoint (Triggers real full-stack TypeError crash on USD-INSTANT)"
+                  },
+                  {
+                    "lineNumber": 101,
+                    "isTarget": false,
+                    "code": "  if (url.pathname === '/api/checkout' && req.method === 'POST') {"
+                  },
+                  {
+                    "lineNumber": 102,
+                    "isTarget": false,
+                    "code": "    const body = await readBody(req);"
+                  },
+                  {
+                    "lineNumber": 103,
+                    "isTarget": false,
+                    "code": "    try {"
+                  },
+                  {
+                    "lineNumber": 104,
+                    "isTarget": true,
+                    "code": "      const result = calculateAndChargeOrder(body, traceId);"
+                  },
+                  {
+                    "lineNumber": 105,
+                    "isTarget": false,
+                    "code": "      console.log(`[OrderEngine] [trace:${traceId}] Order completed: ${result.orderId}`);"
+                  },
+                  {
+                    "lineNumber": 106,
+                    "isTarget": false,
+                    "code": "      res.writeHead(200, { 'Content-Type': 'application/json' });"
+                  },
+                  {
+                    "lineNumber": 107,
+                    "isTarget": false,
+                    "code": "      res.end(JSON.stringify({ ok: true, traceId, result }));"
+                  },
+                  {
+                    "lineNumber": 108,
+                    "isTarget": false,
+                    "code": "    } catch (err) {"
+                  },
+                  {
+                    "lineNumber": 109,
+                    "isTarget": false,
+                    "code": "      // Emit full stack trace to stderr so KALA ProcessSupervisor captures & parses it"
+                  },
+                  {
+                    "lineNumber": 110,
+                    "isTarget": false,
+                    "code": "      console.error("
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "process.processTicksAndRejections",
+              "rawFile": "node:internal/process/task_queues",
+              "resolvedPath": null,
+              "lineNumber": 105,
+              "columnNumber": 5,
+              "isUserCode": false,
+              "snippet": null
+            }
+          ],
+          "primaryUserFrame": {
+            "functionName": "calculateAndChargeOrder",
+            "rawFile": "file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js",
+            "resolvedPath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+            "lineNumber": 46,
+            "columnNumber": 63,
+            "isUserCode": true,
+            "snippet": {
+              "filePath": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js",
+              "fileName": "demo-server.js",
+              "targetLine": 46,
+              "startLine": 40,
+              "endLine": 52,
+              "lines": [
+                {
+                  "lineNumber": 40,
+                  "isTarget": false,
+                  "code": ""
+                },
+                {
+                  "lineNumber": 41,
+                  "isTarget": false,
+                  "code": "  const mode = orderPayload.settlementMode || 'USD-INSTANT';"
+                },
+                {
+                  "lineNumber": 42,
+                  "isTarget": false,
+                  "code": "  const selectedGateway = gatewayRegistry[mode];"
+                },
+                {
+                  "lineNumber": 43,
+                  "isTarget": false,
+                  "code": ""
+                },
+                {
+                  "lineNumber": 44,
+                  "isTarget": false,
+                  "code": "  // CRASH LINE: Dereferencing `.partnerShare` on null `merchantSplitRule`!"
+                },
+                {
+                  "lineNumber": 45,
+                  "isTarget": false,
+                  "code": "  const partnerFee ="
+                },
+                {
+                  "lineNumber": 46,
+                  "isTarget": true,
+                  "code": "    orderPayload.subtotal * selectedGateway.merchantSplitRule.partnerShare;"
+                },
+                {
+                  "lineNumber": 47,
+                  "isTarget": false,
+                  "code": ""
+                },
+                {
+                  "lineNumber": 48,
+                  "isTarget": false,
+                  "code": "  return {"
+                },
+                {
+                  "lineNumber": 49,
+                  "isTarget": false,
+                  "code": "    orderId: `ord_${Date.now()}`,"
+                },
+                {
+                  "lineNumber": 50,
+                  "isTarget": false,
+                  "code": "    chargedAmount: orderPayload.subtotal + partnerFee,"
+                },
+                {
+                  "lineNumber": 51,
+                  "isTarget": false,
+                  "code": "  };"
+                },
+                {
+                  "lineNumber": 52,
+                  "isTarget": false,
+                  "code": "}"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "evt_8_aom4i",
+      "seq": 8,
+      "timestampMs": 1794390889725,
+      "serverTimeMs": 1794390889725.8064,
+      "isoTime": "2026-11-11T09:54:49.725Z",
+      "plane": "NETWORK",
+      "type": "HTTP_TRACE",
+      "severity": "fatal",
+      "traceId": "tr_crash_checkout_999",
+      "source": "http://localhost:4488/",
+      "payload": {
+        "method": "POST",
+        "url": "/api/checkout",
+        "status": 500,
+        "startTimeMs": 1794390889726,
+        "durationMs": 4,
+        "triggerSelector": "#btnInstantCrash",
+        "requestBody": {
+          "customerEmail": "founder@vajra-labs.dev",
+          "subtotal": 2380,
+          "settlementMode": "USD-INSTANT",
+          "items": [
+            {
+              "sku": "VJ-CORE-01",
+              "qty": 1
+            }
+          ]
+        },
+        "responseBody": {
+          "ok": false,
+          "error": "Cannot read properties of null (reading 'partnerShare')",
+          "code": "CHECKOUT_SETTLEMENT_CRASH",
+          "traceId": "tr_crash_checkout_999"
+        }
+      }
+    }
+  ],
+  "aiDiagnosticMarkdown": "# KALA Flight Recorder — Full-Stack Bug Capsule (cap_2026-11-11T09-54-50-091Z_jvrf)\n- **Captured At:** 2026-11-11T09:54:50.091Z\n- **Trigger:** `HTTP_500`\n- **Diagnosis Status:** `FAULT_DETECTED`\n- **Headline:** Clicking \"Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])\" triggered POST /api/checkout [500], crashing backend at demo-server.js:46\n- **Primary Culprit Location:** `C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js:46` in `calculateAndChargeOrder()`\n\n## 1. End-to-End Causal Fault Chain\n### Chain `chain_1` — Confidence: TEMPORAL_AND_ROUTE_MATCH (96%)\n1. **[+1012.6ms] [BROWSER]** User clicked \"Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])\" — _Selector: #btnInstantCrash_\n2. **[+1016.6ms] [NETWORK]** POST /api/checkout -> HTTP 500 (4ms) — _Trace-ID: tr_crash_checkout_999_\n3. **[+1015.9ms] [TERMINAL]** Backend stderr: [OrderEngine] [FATAL] [trace:tr_crash_checkout_999] Unhandled checkout exception on POST /api/checkout: — _Location: demo-server.js:46 in calculateAndChargeOrder()_\n\n#### Network Payload (`POST /api/checkout` -> HTTP 500)\n**Request Body:**\n```json\n{\n  \"customerEmail\": \"founder@vajra-labs.dev\",\n  \"subtotal\": 2380,\n  \"settlementMode\": \"USD-INSTANT\",\n  \"items\": [\n    {\n      \"sku\": \"VJ-CORE-01\",\n      \"qty\": 1\n    }\n  ]\n}\n```\n**Response Body:**\n```json\n{\n  \"ok\": false,\n  \"error\": \"Cannot read properties of null (reading 'partnerShare')\",\n  \"code\": \"CHECKOUT_SETTLEMENT_CRASH\",\n  \"traceId\": \"tr_crash_checkout_999\"\n}\n```\n#### Backend Terminal Stack Trace (`nexuspay-api`)\n```text\n[OrderEngine] [FATAL] [trace:tr_crash_checkout_999] Unhandled checkout exception on POST /api/checkout:\nTypeError: Cannot read properties of null (reading 'partnerShare')\n    at calculateAndChargeOrder (file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js:46:63)\n    at Server.<anonymous> (file:///C:/Users/Shourya%20Upadhyay/.gemini/antigravity/scratch/kala/src/demo/demo-server.js:104:22)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n```\n#### Local Source Code X-Ray (`C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js:46`)\n```javascript\n      40 | \n      41 |   const mode = orderPayload.settlementMode || 'USD-INSTANT';\n      42 |   const selectedGateway = gatewayRegistry[mode];\n      43 | \n      44 |   // CRASH LINE: Dereferencing `.partnerShare` on null `merchantSplitRule`!\n      45 |   const partnerFee =\n>>>   46 |     orderPayload.subtotal * selectedGateway.merchantSplitRule.partnerShare;\n      47 | \n      48 |   return {\n      49 |     orderId: `ord_${Date.now()}`,\n      50 |     chargedAmount: orderPayload.subtotal + partnerFee,\n      51 |   };\n      52 | }\n```"
+}

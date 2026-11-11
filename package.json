@@ -1,0 +1,31 @@
+{
+  "name": "kala-flight-recorder",
+  "version": "1.0.0",
+  "description": "KALA — The Localhost Flight Recorder & Causal Time-Travel Bug Capsule System (Browser <-> Network <-> Backend Terminal <-> Git Diff + MCP)",
+  "type": "module",
+  "bin": {
+    "kala": "./bin/kala.js",
+    "kala-mcp": "./bin/kala-mcp.js"
+  },
+  "scripts": {
+    "start": "node ./bin/kala.js demo",
+    "demo": "node ./bin/kala.js demo",
+    "studio": "node ./bin/kala.js studio",
+    "mcp": "node ./bin/kala-mcp.js",
+    "test": "node ./test/verify-all.js"
+  },
+  "keywords": [
+    "flight-recorder",
+    "time-travel-debugging",
+    "localhost",
+    "bug-capsule",
+    "mcp",
+    "devtools",
+    "causal-tracing"
+  ],
+  "author": "Shourya Upadhyay",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

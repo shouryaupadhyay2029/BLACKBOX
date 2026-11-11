@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusPay Storefront — KALA Target Sandbox (Port 4400)</title>
+  <script
+    src="http://localhost:__KALA_PORT__/sdk/browser-agent.js"
+    data-kala-endpoint="http://localhost:__KALA_PORT__"
+  ></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 32px;
+      background: #0b0f19;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+    .top-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(236, 72, 153, 0.12));
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 22px;
+    }
+    p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 13.5px;
+    }
+    .studio-btn {
+      background: #6366f1;
+      color: white;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 9px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+    }
+    .card p {
+      margin-bottom: 16px;
+      line-height: 1.45;
+    }
+    .btn {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: transform 0.12s;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+    .btn-healthy {
+      background: #10b981;
+      color: #052e16;
+    }
+    .btn-crash {
+      background: linear-gradient(135deg, #ef4444, #db2777);
+      color: white;
+    }
+    .btn-warn {
+      background: #f59e0b;
+      color: #1c1917;
+    }
+    .output-box {
+      margin-top: 20px;
+      background: #070a12;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: Consolas, monospace;
+      font-size: 12.5px;
+      color: #38bdf8;
+      min-height: 90px;
+      white-space: pre-wrap;
+    }
+    .form-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .form-row input {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 7px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-banner">
+      <div>
+        <h1>⚡ NexusPay Checkout Sandbox (Monitored by KALA)</h1>
+        <p>Every click, DOM mutation, HTTP payload, backend terminal stack trace, and Git diff is recorded in KALA's 60s rolling ring buffer.</p>
+      </div>
+      <a class="studio-btn" href="http://localhost:__KALA_PORT__" target="_blank">Open KALA Blackbox Studio ↗</a>
+    </div>
+
+    <div class="form-row">
+      <input type="text" id="customerEmailInput" value="founder@vajra-labs.dev" placeholder="Customer Email" />
+      <input type="number" id="orderSubtotalInput" value="2380" placeholder="Order Subtotal ($)" />
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>✅ 1. Healthy Full-Stack Flows</h3>
+        <p>Triggers normal HTTP 200 calls and backend stdout logs so you can see healthy baseline telemetry in the ring buffer.</p>
+        <button class="btn btn-healthy" id="btnFetchInventory" data-testid="fetch-inventory">
+          📦 Fetch Live Hardware Inventory (GET /api/inventory)
+        </button>
+        <button class="btn btn-healthy" id="btnStandardCheckout" data-testid="standard-checkout">
+          💳 Run Standard Settlement (POST /api/checkout [200 OK])
+        </button>
+      </div>
+
+      <div class="card">
+        <h3>💥 2. Trigger Real Full-Stack Bugs (Auto-Freezes Capsule)</h3>
+        <p>Click any fault button below. KALA will correlate your click, the HTTP 500/503 payload, the backend terminal stack trace, local source code line, and uncommitted Git diff.</p>
+        <button class="btn btn-crash" id="btnInstantCrash" data-testid="instant-settlement-crash">
+          🔥 Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])
+        </button>
+        <button class="btn btn-crash" id="btnLedgerCrash" data-testid="ledger-merkle-crash">
+          ⚡ Trigger Ledger Merkle Mismatch (POST /api/ledger/sync [HTTP 503])
+        </button>
+        <button class="btn btn-warn" id="btnFrontendCrash" data-testid="frontend-dom-crash">
+          💣 Trigger Uncaught Frontend Exception (window.onerror)
+        </button>
+      </div>
+    </div>
+
+    <div class="output-box" id="responseOutput">Ready. Click any button above to generate live full-stack telemetry...</div>
+  </div>
+
+  <script>
+    const out = document.getElementById('responseOutput');
+    localStorage.setItem('nexus_session_tier', 'ENTERPRISE_PRO');
+    localStorage.setItem('nexus_active_region', 'ap-south-1');
+
+    document.getElementById('btnFetchInventory').addEventListener('click', async () => {
+      out.textContent = 'Requesting GET /api/inventory...';
+      const res = await fetch('/api/inventory');
+      const data = await res.json();
+      out.textContent = '200 OK — Inventory Response:\n' + JSON.stringify(data, null, 2);
+    });
+
+    document.getElementById('btnStandardCheckout').addEventListener('click', async () => {
+      const email = document.getElementById('customerEmailInput').value;
+      const subtotal = Number(document.getElementById('orderSubtotalInput').value) || 1490;
+      out.textContent = 'Submitting Standard Checkout...';
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerEmail: email,
+          subtotal,
+          settlementMode: 'USD-STANDARD',
+          items: [{ sku: 'VJ-CORE-01', qty: 1 }],
+        }),
+      });
+      const data = await res.json();
+      out.textContent = `HTTP ${res.status} — Standard Checkout:\n` + JSON.stringify(data, null, 2);
+    });
+
+    document.getElementById('btnInstantCrash').addEventListener('click', async () => {
+      const email = document.getElementById('customerEmailInput').value;
+      const subtotal = Number(document.getElementById('orderSubtotalInput').value) || 2380;
+      out.style.color = '#f87171';
+      out.textContent = 'Executing Instant Settlement (will crash backend with TypeError)...';
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerEmail: email,
+          subtotal,
+          settlementMode: 'USD-INSTANT',
+          items: [{ sku: 'VJ-CORE-01', qty: 1 }, { sku: 'KL-BOX-99', qty: 2 }],
+        }),
+      });
+      const data = await res.json();
+      out.textContent =
+        `❌ HTTP ${res.status} CRASH CAPTURED BY KALA!\n` +
+        JSON.stringify(data, null, 2) +
+        `\n\n👉 KALA automatically froze a Bug Capsule linking your click, this 500 payload, the backend stderr stack trace, and source code line!`;
+    });
+
+    document.getElementById('btnLedgerCrash').addEventListener('click', async () => {
+      out.style.color = '#f87171';
+      out.textContent = 'Syncing Ledger Shard #7...';
+      const res = await fetch('/api/ledger/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shardId: 7,
+          merkleRoot: 'STALE_ROOT_0x00',
+        }),
+      });
+      const data = await res.json();
+      out.textContent = `❌ HTTP ${res.status} LEDGER FAULT:\n` + JSON.stringify(data, null, 2);
+    });
+
+    document.getElementById('btnFrontendCrash').addEventListener('click', () => {
+      out.style.color = '#fbbf24';
+      out.textContent = 'Throwing uncaught client-side exception...';
+      // Intentional client-side exception
+      const brokenState = null;
+      brokenState.renderReconciliationTree();
+    });
+  </script>
+</body>
+</html>

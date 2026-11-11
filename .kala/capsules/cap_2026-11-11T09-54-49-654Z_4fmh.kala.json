@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "cap_2026-11-11T09-54-49-654Z_4fmh",
+  "createdAt": "2026-11-11T09:54:49.654Z",
+  "createdAtMs": 1794390889654,
+  "triggerReason": "BASELINE_CHECK",
+  "title": "Healthy Inventory Baseline",
+  "notes": "",
+  "status": "HEALTHY_SNAPSHOT",
+  "window": {
+    "startTimeMs": 1794390888708.4172,
+    "endTimeMs": 1794390889651.1724,
+    "durationMs": 942.755126953125,
+    "totalEvents": 5,
+    "planeCounts": {
+      "BROWSER": 2,
+      "NETWORK": 1,
+      "TERMINAL": 2,
+      "GIT": 0,
+      "SYSTEM": 0
+    }
+  },
+  "causal": {
+    "totalChains": 0,
+    "causalChains": [],
+    "rootCauseSummary": {
+      "status": "HEALTHY_SNAPSHOT",
+      "headline": "Manual Flight Recorder Snapshot (No unhandled crashes detected in window)",
+      "explanation": "All browser interactions, network payloads, terminal streams, and Git working-tree state were captured cleanly.",
+      "culpritFile": null,
+      "culpritLine": null
+    },
+    "timelineMarkers": [],
+    "counts": {
+      "uiActions": 0,
+      "networkCalls": 1,
+      "failedNetworkCalls": 0,
+      "terminalErrors": 0,
+      "browserErrors": 0
+    }
+  },
+  "git": {
+    "isGitRepo": false,
+    "cwd": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala",
+    "branch": null,
+    "headCommit": null,
+    "headSubject": null,
+    "isDirty": false,
+    "modifiedFiles": [],
+    "diffFiles": [],
+    "rawDiff": ""
+  },
+  "environment": {
+    "nodeVersion": "v22.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "pid": 26636,
+    "cwd": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala",
+    "variables": {
+      "ANTIGRAVITY_CSRF_TOKEN": "9a***REDACTED(36 chars)***"
+    }
+  },
+  "events": [
+    {
+      "id": "evt_1_hw6wg",
+      "seq": 1,
+      "timestampMs": 1794390888708.4172,
+      "serverTimeMs": 1794390888708.4172,
+      "isoTime": "2026-11-11T09:54:48.708Z",
+      "plane": "TERMINAL",
+      "type": "PROCESS_START",
+      "severity": "info",
+      "traceId": null,
+      "source": "nexuspay-api",
+      "payload": {
+        "name": "nexuspay-api",
+        "command": "node \"C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala\\src\\demo\\demo-server.js\"",
+        "pid": 30020,
+        "cwd": "C:\\Users\\Shourya Upadhyay\\.gemini\\antigravity\\scratch\\kala"
+      }
+    },
+    {
+      "id": "evt_2_zepf8",
+      "seq": 2,
+      "timestampMs": 1794390888798.6084,
+      "serverTimeMs": 1794390888820.3777,
+      "isoTime": "2026-11-11T09:54:48.798Z",
+      "plane": "TERMINAL",
+      "type": "TERMINAL_STDOUT",
+      "severity": "info",
+      "traceId": null,
+      "source": "nexuspay-api",
+      "payload": {
+        "processName": "nexuspay-api",
+        "rawAnsi": "[DemoBackend] Target service listening at http://localhost:4488\n",
+        "text": "[DemoBackend] Target service listening at http://localhost:4488\n"
+      }
+    },
+    {
+      "id": "evt_3_ayrge",
+      "seq": 3,
+      "timestampMs": 1794390889638.4375,
+      "serverTimeMs": 1794390889638.4375,
+      "isoTime": "2026-11-11T09:54:49.638Z",
+      "plane": "BROWSER",
+      "type": "DOM_SNAPSHOT",
+      "severity": "info",
+      "traceId": null,
+      "source": "http://localhost:4488/",
+      "payload": {
+        "url": "http://localhost:4488/",
+        "title": "NexusPay Storefront",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "html": "<!DOCTYPE html><html><body><h1>NexusPay Checkout</h1><button id=\"btnInstantCrash\">Instant Settlement</button></body></html>"
+      }
+    },
+    {
+      "id": "evt_4_ruklk",
+      "seq": 4,
+      "timestampMs": 1794390889638.4707,
+      "serverTimeMs": 1794390889638.4707,
+      "isoTime": "2026-11-11T09:54:49.638Z",
+      "plane": "BROWSER",
+      "type": "STORAGE_SNAPSHOT",
+      "severity": "info",
+      "traceId": null,
+      "source": "http://localhost:4488/",
+      "payload": {
+        "localStorage": {
+          "nexus_session_tier": "ENTERPRISE_PRO"
+        },
+        "sessionStorage": {}
+      }
+    },
+    {
+      "id": "evt_5_rey5w",
+      "seq": 5,
+      "timestampMs": 1794390889651.1724,
+      "serverTimeMs": 1794390889651.1724,
+      "isoTime": "2026-11-11T09:54:49.651Z",
+      "plane": "NETWORK",
+      "type": "HTTP_TRACE",
+      "severity": "info",
+      "traceId": "tr_healthy_001",
+      "source": "http://localhost:4488/",
+      "payload": {
+        "method": "GET",
+        "url": "/api/inventory",
+        "status": 200,
+        "durationMs": 12,
+        "responseBody": {
+          "ok": true,
+          "traceId": "tr_healthy_001",
+          "items": [
+            {
+              "sku": "VJ-CORE-01",
+              "name": "Vajra Quantum Processor Node",
+              "price": 1490,
+              "stock": 8
+            },
+            {
+              "sku": "KL-BOX-99",
+              "name": "Kala Telemetry Hardware Tap",
+              "price": 420,
+              "stock": 19
+            },
+            {
+              "sku": "NX-MESH-04",
+              "name": "Hyperion Fiber Backplane",
+              "price": 890,
+              "stock": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "aiDiagnosticMarkdown": "# KALA Flight Recorder — Full-Stack Bug Capsule (cap_2026-11-11T09-54-49-654Z_4fmh)\n- **Captured At:** 2026-11-11T09:54:49.654Z\n- **Trigger:** `BASELINE_CHECK`\n- **Diagnosis Status:** `HEALTHY_SNAPSHOT`\n- **Headline:** Manual Flight Recorder Snapshot (No unhandled crashes detected in window)\n"
+}
