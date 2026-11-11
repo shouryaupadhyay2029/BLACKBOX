@@ -1,5 +1,5 @@
 /**
- * KALA MCP Server — Model Context Protocol (JSON-RPC 2.0 over stdio)
+ * BLACKBOX MCP Server — Model Context Protocol (JSON-RPC 2.0 over stdio)
  * Enables AI coding agents (Antigravity, Cursor, Claude Code, Windsurf, Zed)
  * to directly inspect full-stack bug capsules, causal chains, terminal stack traces,
  * local source code X-rays, and uncommitted Git diffs.
@@ -8,7 +8,7 @@
 import readline from 'node:readline';
 import { CapsuleVault } from '../core/capsule-vault.js';
 
-export class KalaMcpServer {
+export class BlackboxMcpServer {
   constructor(options = {}) {
     this.projectCwd = options.projectCwd || process.cwd();
     this.daemonUrl = options.daemonUrl || 'http://127.0.0.1:9876';
@@ -60,7 +60,7 @@ export class KalaMcpServer {
               tools: {},
             },
             serverInfo: {
-              name: 'kala-flight-recorder-mcp',
+              name: 'blackbox-flight-recorder-mcp',
               version: '1.0.0',
             },
           },
@@ -240,3 +240,6 @@ export class KalaMcpServer {
     throw new Error(`Unknown MCP tool: ${name}`);
   }
 }
+
+// Backward-compatibility alias
+export const KalaMcpServer = BlackboxMcpServer;

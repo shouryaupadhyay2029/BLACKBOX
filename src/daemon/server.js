@@ -1,5 +1,5 @@
 /**
- * KALA Daemon — Main Flight Recorder Engine & WebSocket/HTTP Bridge
+ * BLACKBOX Daemon — Main Flight Recorder Engine & WebSocket/HTTP Bridge
  * Coordinates the 60s Rolling Ring Buffer, Process Supervisor, Capsule Vault,
  * Auto-Freeze Grace Window Engine, Browser Telemetry Ingestion, and Blackbox Studio UI.
  */
@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import { KalaRingBuffer } from '../core/ring-buffer.js';
+import { BlackboxRingBuffer } from '../core/ring-buffer.js';
 import { CapsuleVault } from '../core/capsule-vault.js';
 import { captureGitState } from '../core/git-inspector.js';
 import { ProcessSupervisor } from './process-supervisor.js';
@@ -19,10 +19,10 @@ const __dirname = path.dirname(__filename);
 const STUDIO_DIR = path.resolve(__dirname, '../studio');
 const SDK_FILE = path.resolve(__dirname, '../sdk/browser-agent.js');
 
-export class KalaDaemonServer {
+export class BlackboxDaemonServer {
   /**
    * @param {object} options
-   * @param {number} [options.port=9876] Port for KALA Daemon & Studio UI
+   * @param {number} [options.port=9876] Port for Blackbox Daemon & Studio UI
    * @param {number} [options.windowMs=60000] Rolling buffer retention window (ms)
    * @param {string} [options.projectCwd] Target repository directory
    * @param {boolean} [options.autoFreeze=true] Auto-freeze capsule on unhandled crash/5xx
@@ -34,7 +34,7 @@ export class KalaDaemonServer {
     this.projectCwd = options.projectCwd || process.cwd();
     this.autoFreeze = options.autoFreeze ?? true;
 
-    this.ringBuffer = new KalaRingBuffer({ windowMs: this.windowMs });
+    this.ringBuffer = new BlackboxRingBuffer({ windowMs: this.windowMs });
     this.vault = new CapsuleVault({ projectCwd: this.projectCwd });
 
     this.supervisor = new ProcessSupervisor({
@@ -235,7 +235,7 @@ export class KalaDaemonServer {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader(
       'Access-Control-Allow-Headers',
-      'Content-Type, X-Kala-Trace-Id, X-Kala-Trigger-Action'
+      'Content-Type, X-Blackbox-Trace-Id, X-Blackbox-Trigger-Action, X-Kala-Trace-Id, X-Kala-Trigger-Action'
     );
 
     if (req.method === 'OPTIONS') {
@@ -446,3 +446,6 @@ export class KalaDaemonServer {
     if (this.httpServer) this.httpServer.close();
   }
 }
+
+// Backward-compatibility alias
+export const KalaDaemonServer = BlackboxDaemonServer;

@@ -1,20 +1,23 @@
 {
-  "name": "kala-flight-recorder",
+  "name": "blackbox-flight-recorder",
   "version": "1.0.0",
-  "description": "KALA — The Localhost Flight Recorder & Causal Time-Travel Bug Capsule System (Browser <-> Network <-> Backend Terminal <-> Git Diff + MCP)",
+  "description": "BLACKBOX — The Localhost Flight Recorder & Causal Time-Travel Bug Capsule System (Browser <-> Network <-> Backend Terminal <-> Git Diff + MCP)",
   "type": "module",
   "bin": {
-    "kala": "./bin/kala.js",
-    "kala-mcp": "./bin/kala-mcp.js"
+    "blackbox": "./bin/blackbox.js",
+    "blackbox-mcp": "./bin/blackbox-mcp.js",
+    "kala": "./bin/blackbox.js",
+    "kala-mcp": "./bin/blackbox-mcp.js"
   },
   "scripts": {
-    "start": "node ./bin/kala.js demo",
-    "demo": "node ./bin/kala.js demo",
-    "studio": "node ./bin/kala.js studio",
-    "mcp": "node ./bin/kala-mcp.js",
+    "start": "node ./bin/blackbox.js demo",
+    "demo": "node ./bin/blackbox.js demo",
+    "studio": "node ./bin/blackbox.js studio",
+    "mcp": "node ./bin/blackbox-mcp.js",
     "test": "node ./test/verify-all.js"
   },
   "keywords": [
+    "blackbox",
     "flight-recorder",
     "time-travel-debugging",
     "localhost",

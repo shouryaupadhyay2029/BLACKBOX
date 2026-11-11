@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "KALA — Localhost Flight Recorder & Time-Travel Capsule",
+  "name": "BLACKBOX — Localhost Flight Recorder & Time-Travel Capsule",
   "version": "1.0.0",
   "description": "Zero-config 60s rolling flight recorder linking Browser DOM, Network Traces, Local Terminal stdout/stderr, and Git Diff.",
   "permissions": ["activeTab", "storage", "scripting"],
@@ -15,7 +15,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "KALA Localhost Flight Recorder"
+    "default_title": "BLACKBOX Localhost Flight Recorder"
   },
   "content_scripts": [
     {
@@ -34,7 +34,7 @@
       "suggested_key": {
         "default": "Alt+Shift+B"
       },
-      "description": "Freeze a KALA Time-Travel Bug Capsule immediately"
+      "description": "Freeze a Blackbox Time-Travel Bug Capsule immediately"
     }
   }
 }

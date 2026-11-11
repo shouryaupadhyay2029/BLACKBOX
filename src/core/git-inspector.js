@@ -194,7 +194,7 @@ export function correlateStackWithGitDiff(stackFrames = [], gitState = null) {
  */
 export function captureRedactedEnv(envObj = process.env) {
   const safeEnv = {};
-  const allowlistPrefixes = ['NODE_', 'NPM_', 'PORT', 'HOST', 'KALA_', 'VITE_', 'NEXT_PUBLIC_'];
+  const allowlistPrefixes = ['NODE_', 'NPM_', 'PORT', 'HOST', 'BLACKBOX_', 'KALA_', 'VITE_', 'NEXT_PUBLIC_'];
 
   for (const [key, val] of Object.entries(envObj)) {
     if (val === undefined) continue;

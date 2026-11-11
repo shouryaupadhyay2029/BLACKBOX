@@ -1,9 +1,9 @@
 /**
- * KALA Daemon — Zero-Config Localhost HTTP Wiretap & Reverse Proxy
+ * BLACKBOX Daemon — Zero-Config Localhost HTTP Wiretap & Reverse Proxy
  * Can optionally sit in front of any target localhost port, automatically:
- * 1. Injecting & propagating `X-Kala-Trace-Id` headers to the backend
+ * 1. Injecting & propagating `X-Blackbox-Trace-Id` headers to the backend
  * 2. Capturing full request/response bodies & timings into the Ring Buffer
- * 3. Auto-injecting the KALA Browser Agent script into HTML responses
+ * 3. Auto-injecting the Blackbox Browser Agent script into HTML responses
  */
 
 import http from 'node:http';
@@ -14,14 +14,14 @@ export class WiretapProxy {
    * @param {object} options
    * @param {number} options.listenPort Port for the wiretap proxy to listen on
    * @param {string} options.targetOrigin Target backend origin, e.g. 'http://127.0.0.1:4500'
-   * @param {number} [options.kalaPort=9876] KALA daemon port for script injection
-   * @param {import('../core/ring-buffer.js').KalaRingBuffer} options.ringBuffer
+   * @param {number} [options.port=9876] Blackbox daemon port for script injection
+   * @param {import('../core/ring-buffer.js').BlackboxRingBuffer} options.ringBuffer
    * @param {Function} [options.onHttp5xx] Callback when a 5xx response occurs
    */
   constructor(options = {}) {
     this.listenPort = options.listenPort;
     this.targetOrigin = options.targetOrigin;
-    this.kalaPort = options.kalaPort || 9876;
+    this.daemonPort = options.port || options.kalaPort || 9876;
     this.ringBuffer = options.ringBuffer;
     this.onHttp5xx = options.onHttp5xx || null;
     this.server = null;
@@ -33,6 +33,7 @@ export class WiretapProxy {
     this.server = http.createServer((clientReq, clientRes) => {
       const startTimeMs = nowPreciseMs();
       const traceId =
+        clientReq.headers['x-blackbox-trace-id'] ||
         clientReq.headers['x-kala-trace-id'] ||
         `tr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -44,6 +45,7 @@ export class WiretapProxy {
       const proxyHeaders = {
         ...clientReq.headers,
         host: targetUrl.host,
+        'x-blackbox-trace-id': traceId,
         'x-kala-trace-id': traceId,
         'accept-encoding': 'identity', // uncompressed so we can inspect/inject HTML cleanly
       };
@@ -107,12 +109,12 @@ export class WiretapProxy {
               }
             }
 
-            // If HTML response, automatically inject the KALA Browser Agent script if not present
+            // If HTML response, automatically inject the Blackbox Browser Agent script if not present
             let outBuffer = fullResBuffer;
             if (contentType.includes('text/html')) {
               const htmlStr = fullResBuffer.toString('utf8');
               if (!htmlStr.includes('/sdk/browser-agent.js')) {
-                const scriptTag = `<script src="http://localhost:${this.kalaPort}/sdk/browser-agent.js" data-kala-endpoint="http://localhost:${this.kalaPort}"></script>`;
+                const scriptTag = `<script src="http://localhost:${this.daemonPort}/sdk/browser-agent.js" data-blackbox-endpoint="http://localhost:${this.daemonPort}" data-kala-endpoint="http://localhost:${this.daemonPort}"></script>`;
                 const modifiedHtml = htmlStr.includes('</head>')
                   ? htmlStr.replace('</head>', `${scriptTag}</head>`)
                   : `${scriptTag}${htmlStr}`;
@@ -123,6 +125,7 @@ export class WiretapProxy {
             const outHeaders = {
               ...proxyRes.headers,
               'content-length': String(outBuffer.length),
+              'x-blackbox-trace-id': traceId,
               'x-kala-trace-id': traceId,
             };
             clientRes.writeHead(proxyRes.statusCode || 200, outHeaders);
@@ -153,7 +156,7 @@ export class WiretapProxy {
         clientRes.writeHead(502, { 'Content-Type': 'application/json' });
         clientRes.end(
           JSON.stringify({
-            error: 'KALA Wiretap Proxy Error: Target backend unreachable',
+            error: 'Blackbox Wiretap Proxy Error: Target backend unreachable',
             target: this.targetOrigin,
             detail: err.message,
           })

@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NexusPay Storefront — KALA Target Sandbox (Port 4400)</title>
+  <title>NexusPay Storefront — Blackbox Target Sandbox (Port 4400)</title>
   <script
-    src="http://localhost:__KALA_PORT__/sdk/browser-agent.js"
-    data-kala-endpoint="http://localhost:__KALA_PORT__"
+    src="http://localhost:__BLACKBOX_PORT__/sdk/browser-agent.js"
+    data-blackbox-endpoint="http://localhost:__BLACKBOX_PORT__"
   ></script>
   <style>
     body {
@@ -124,10 +124,10 @@
   <div class="container">
     <div class="top-banner">
       <div>
-        <h1>⚡ NexusPay Checkout Sandbox (Monitored by KALA)</h1>
-        <p>Every click, DOM mutation, HTTP payload, backend terminal stack trace, and Git diff is recorded in KALA's 60s rolling ring buffer.</p>
+        <h1>⚡ NexusPay Checkout Sandbox (Monitored by Blackbox)</h1>
+        <p>Every click, DOM mutation, HTTP payload, backend terminal stack trace, and Git diff is recorded in Blackbox's 60s rolling ring buffer.</p>
       </div>
-      <a class="studio-btn" href="http://localhost:__KALA_PORT__" target="_blank">Open KALA Blackbox Studio ↗</a>
+      <a class="studio-btn" href="http://localhost:__BLACKBOX_PORT__" target="_blank">Open Blackbox Studio ↗</a>
     </div>
 
     <div class="form-row">
@@ -149,7 +149,7 @@
 
       <div class="card">
         <h3>💥 2. Trigger Real Full-Stack Bugs (Auto-Freezes Capsule)</h3>
-        <p>Click any fault button below. KALA will correlate your click, the HTTP 500/503 payload, the backend terminal stack trace, local source code line, and uncommitted Git diff.</p>
+        <p>Click any fault button below. Blackbox will correlate your click, the HTTP 500/503 payload, the backend terminal stack trace, local source code line, and uncommitted Git diff.</p>
         <button class="btn btn-crash" id="btnInstantCrash" data-testid="instant-settlement-crash">
           🔥 Trigger Backend Null-Ref Crash (POST /api/checkout [HTTP 500])
         </button>
@@ -212,9 +212,9 @@
       });
       const data = await res.json();
       out.textContent =
-        `❌ HTTP ${res.status} CRASH CAPTURED BY KALA!\n` +
+        `❌ HTTP ${res.status} CRASH CAPTURED BY BLACKBOX!\n` +
         JSON.stringify(data, null, 2) +
-        `\n\n👉 KALA automatically froze a Bug Capsule linking your click, this 500 payload, the backend stderr stack trace, and source code line!`;
+        `\n\n👉 Blackbox automatically froze a Bug Capsule linking your click, this 500 payload, the backend stderr stack trace, and source code line!`;
     });
 
     document.getElementById('btnLedgerCrash').addEventListener('click', async () => {

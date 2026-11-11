@@ -767,7 +767,7 @@ function setupActions() {
     });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${activeCapsule.id}.kala.json`;
+    a.download = `${activeCapsule.id}.blackbox.json`;
     a.click();
   });
 

@@ -1,7 +1,7 @@
 /**
- * KALA Demo Target Backend Server (Port 4400)
- * A realistic fintech/e-commerce microservice supervised by KALA's ProcessSupervisor.
- * Emits real stdout/stderr logs and real V8 stack traces so KALA can demonstrate
+ * BLACKBOX Demo Target Backend Server (Port 4400)
+ * A realistic fintech/e-commerce microservice supervised by Blackbox ProcessSupervisor.
+ * Emits real stdout/stderr logs and real V8 stack traces so Blackbox can demonstrate
  * sub-millisecond Browser <-> Network <-> Backend Terminal <-> Source Code <-> Git Diff correlation.
  */
 
@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEMO_HTML_PATH = path.join(__dirname, 'demo-app.html');
 const PORT = Number(process.env.DEMO_PORT) || 4400;
-const KALA_PORT = Number(process.env.KALA_PORT) || 9876;
+const BLACKBOX_PORT = Number(process.env.BLACKBOX_PORT || process.env.KALA_PORT) || 9876;
 
 const inventory = [
   { sku: 'VJ-CORE-01', name: 'Vajra Quantum Processor Node', price: 1490, stock: 8 },
@@ -66,11 +66,17 @@ function verifyLedgerSignature(payload, traceId) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const traceId = req.headers['x-kala-trace-id'] || 'no-trace';
+  const traceId =
+    req.headers['x-blackbox-trace-id'] ||
+    req.headers['x-kala-trace-id'] ||
+    'no-trace';
   const url = new URL(req.url || '/', `http://localhost:${PORT}`);
 
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Kala-Trace-Id, X-Kala-Trigger-Action');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, X-Blackbox-Trace-Id, X-Blackbox-Trigger-Action, X-Kala-Trace-Id, X-Kala-Trigger-Action'
+  );
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -81,7 +87,8 @@ const server = http.createServer(async (req, res) => {
   // Serve Demo Frontend App
   if (url.pathname === '/' && req.method === 'GET') {
     let html = fs.readFileSync(DEMO_HTML_PATH, 'utf8');
-    html = html.replace(/__KALA_PORT__/g, String(KALA_PORT));
+    html = html.replace(/__BLACKBOX_PORT__/g, String(BLACKBOX_PORT));
+    html = html.replace(/__KALA_PORT__/g, String(BLACKBOX_PORT));
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(html);
     return;

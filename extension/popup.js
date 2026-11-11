@@ -1,9 +1,9 @@
-const KALA_URL = 'http://localhost:9876';
+const BLACKBOX_URL = 'http://localhost:9876';
 
 async function refreshPopup() {
   const badge = document.getElementById('statusBadge');
   try {
-    const res = await fetch(`${KALA_URL}/api/status`);
+    const res = await fetch(`${BLACKBOX_URL}/api/status`);
     const data = await res.json();
     badge.textContent = 'Daemon Online';
     document.getElementById('bufEvents').textContent = `${data.buffer.activeEvents} events (${data.buffer.memoryMB} MB)`;
@@ -20,7 +20,7 @@ async function refreshPopup() {
 
 document.getElementById('freezeBtn').addEventListener('click', async () => {
   try {
-    const res = await fetch(`${KALA_URL}/api/freeze`, {
+    const res = await fetch(`${BLACKBOX_URL}/api/freeze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ triggerReason: 'EXTENSION_POPUP_FREEZE' }),
@@ -30,12 +30,12 @@ document.getElementById('freezeBtn').addEventListener('click', async () => {
       chrome.tabs.create({ url: data.studioUrl });
     }
   } catch {
-    alert('KALA Daemon is not running on port 9876. Start it with: npx kala demo');
+    alert('Blackbox Daemon is not running on port 9876. Start it with: npx blackbox demo');
   }
 });
 
 document.getElementById('openStudioBtn').addEventListener('click', () => {
-  chrome.tabs.create({ url: KALA_URL });
+  chrome.tabs.create({ url: BLACKBOX_URL });
 });
 
 refreshPopup();

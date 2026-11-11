@@ -1,6 +1,6 @@
 /**
- * KALA Core — Capsule Vault, Persistence Engine, Capsule Differ & AI Diagnostic Compiler
- * Persists frozen `.kala.json` bug capsules, indexes metadata, diffs any two capsules,
+ * BLACKBOX Core — Capsule Vault, Persistence Engine, Capsule Differ & AI Diagnostic Compiler
+ * Persists frozen `.blackbox.json` bug capsules, indexes metadata, diffs any two capsules,
  * and compiles surgical root-cause diagnostic prompts for AI coding agents & MCP.
  */
 
@@ -17,8 +17,19 @@ export class CapsuleVault {
    */
   constructor(options = {}) {
     this.projectCwd = options.projectCwd || process.cwd();
-    this.storageDir =
-      options.storageDir || path.join(this.projectCwd, '.kala', 'capsules');
+
+    const blackboxDir = path.join(this.projectCwd, '.blackbox', 'capsules');
+    const legacyKalaDir = path.join(this.projectCwd, '.kala', 'capsules');
+
+    if (options.storageDir) {
+      this.storageDir = options.storageDir;
+    } else if (fs.existsSync(blackboxDir)) {
+      this.storageDir = blackboxDir;
+    } else if (fs.existsSync(legacyKalaDir)) {
+      this.storageDir = legacyKalaDir;
+    } else {
+      this.storageDir = blackboxDir;
+    }
 
     fs.mkdirSync(this.storageDir, { recursive: true });
     this.indexFile = path.join(this.storageDir, 'index.json');
@@ -79,7 +90,7 @@ export class CapsuleVault {
     capsule.aiDiagnosticMarkdown = this.compileAiDiagnosticPrompt(capsule);
 
     // Save full capsule file
-    const filePath = path.join(this.storageDir, `${id}.kala.json`);
+    const filePath = path.join(this.storageDir, `${id}.blackbox.json`);
     fs.writeFileSync(filePath, JSON.stringify(capsule, null, 2), 'utf8');
 
     // Update lightweight index
@@ -132,9 +143,18 @@ export class CapsuleVault {
     if (!target) return null;
 
     try {
-      const filePath =
-        target.filePath || path.join(this.storageDir, `${target.id}.kala.json`);
-      if (!fs.existsSync(filePath)) return null;
+      let filePath = target.filePath;
+      if (!filePath || !fs.existsSync(filePath)) {
+        const candidateBlackbox = path.join(this.storageDir, `${target.id}.blackbox.json`);
+        const candidateKala = path.join(this.storageDir, `${target.id}.kala.json`);
+        if (fs.existsSync(candidateBlackbox)) {
+          filePath = candidateBlackbox;
+        } else if (fs.existsSync(candidateKala)) {
+          filePath = candidateKala;
+        } else {
+          return null;
+        }
+      }
       return JSON.parse(fs.readFileSync(filePath, 'utf8'));
     } catch {
       return null;
@@ -142,12 +162,12 @@ export class CapsuleVault {
   }
 
   /**
-   * Imports an external `.kala.json` capsule payload into the local vault.
+   * Imports an external `.blackbox.json` / `.kala.json` capsule payload into the local vault.
    * @param {object} capsuleData
    */
   importCapsule(capsuleData) {
     if (!capsuleData || !capsuleData.events) {
-      throw new Error('Invalid KALA capsule format: missing events array');
+      throw new Error('Invalid Blackbox capsule format: missing events array');
     }
     const id =
       capsuleData.id ||
@@ -157,7 +177,7 @@ export class CapsuleVault {
       capsuleData.aiDiagnosticMarkdown = this.compileAiDiagnosticPrompt(capsuleData);
     }
 
-    const filePath = path.join(this.storageDir, `${id}.kala.json`);
+    const filePath = path.join(this.storageDir, `${id}.blackbox.json`);
     fs.writeFileSync(filePath, JSON.stringify(capsuleData, null, 2), 'utf8');
 
     const summaryEntry = {
@@ -234,7 +254,7 @@ export class CapsuleVault {
     const summary = capsule.causal?.rootCauseSummary || {};
     const chains = capsule.causal?.causalChains || [];
 
-    lines.push(`# KALA Flight Recorder — Full-Stack Bug Capsule (${capsule.id})`);
+    lines.push(`# BLACKBOX Flight Recorder — Full-Stack Bug Capsule (${capsule.id})`);
     lines.push(`- **Captured At:** ${capsule.createdAt}`);
     lines.push(`- **Trigger:** \`${capsule.triggerReason}\``);
     lines.push(`- **Diagnosis Status:** \`${summary.status || capsule.status}\``);

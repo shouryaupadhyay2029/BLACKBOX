@@ -1,10 +1,10 @@
-# ⚡ KALA (काल) — The Localhost Flight Recorder
+# ⚡ BLACKBOX — The Localhost Flight Recorder
 ### Causal Cross-Boundary Time-Travel Bug Capsule System for Developers
 > **Browser DOM ↔ HTTP/WS Network ↔ Backend Terminal `stdout`/`stderr` ↔ Local Source Code AST ↔ Uncommitted Git Diff**
 
 ---
 
-## 💡 What is KALA?
+## 💡 What is BLACKBOX?
 When a bug happens on `localhost`, the evidence is fragmented across three completely disconnected silos:
 1. **The Browser:** DOM state, user clicks, console errors, network request payloads.
 2. **The Terminal:** Backend terminal logs, Docker logs, unhandled runtime stack traces.
@@ -12,7 +12,7 @@ When a bug happens on `localhost`, the evidence is fragmented across three compl
 
 Existing tools only see one side of the coin: Chrome DevTools and Jam.dev are sandboxed inside the browser with **zero visibility** into your local terminal or backend code. Terminal loggers only see backend text with **zero context** on what UI button the user clicked 12ms before the crash.
 
-**KALA connects all four planes onto a single millisecond-accurate timeline.** It maintains an ultra-lightweight, lock-free **60-second rolling ring buffer** in memory. The moment an unhandled error occurs, an HTTP `5xx` returns, or you press `Alt+Shift+B`, KALA freezes a permanent **`.kala.json` Bug Capsule**.
+**BLACKBOX connects all four planes onto a single millisecond-accurate timeline.** It maintains an ultra-lightweight, lock-free **60-second rolling ring buffer** in memory. The moment an unhandled error occurs, an HTTP `5xx` returns, or you press `Alt+Shift+B`, Blackbox freezes a permanent **`.blackbox.json` Bug Capsule**.
 
 ---
 
@@ -28,7 +28,7 @@ Existing tools only see one side of the coin: Chrome DevTools and Jam.dev are sa
   2. Causal Network Waterfall & Payload Inspector
   3. Backend Terminal Stream & Source Code X-Ray
   4. Uncommitted Git Diff & AI Diagnostic Compiler
-- **Built-in Model Context Protocol (MCP) Server:** Native stdio JSON-RPC 2.0 server (`kala-mcp`) allowing AI coding agents (Antigravity, Cursor, Claude Code, Zed) to diagnose bugs with zero prompt-engineering.
+- **Built-in Model Context Protocol (MCP) Server:** Native stdio JSON-RPC 2.0 server (`blackbox-mcp`) allowing AI coding agents (Antigravity, Cursor, Claude Code, Zed) to diagnose bugs with zero prompt-engineering.
 - **Capsule Differ & Regression Engine:** Differential comparison of two capsules to detect HTTP status regressions, latency shifts, and new backend exceptions.
 
 ---
@@ -37,35 +37,34 @@ Existing tools only see one side of the coin: Chrome DevTools and Jam.dev are sa
 
 ### 1. Run the Interactive Sandbox Demo
 ```bash
-git clone https://github.com/your-username/kala.git
-cd kala
+cd "C:\Users\Shourya Upadhyay\OneDrive\Documents\ALL CODES\blackbox"
 npm install
 npm run demo
 ```
 This boots:
-* **KALA Blackbox Studio & Daemon:** `http://localhost:9876`
+* **Blackbox Studio & Daemon:** `http://localhost:9876`
 * **Target Sandbox App (NexusPay):** `http://localhost:4400`
 
-Click the crash button in the sandbox to watch KALA automatically freeze a capsule, highlight the root cause, and compile a complete diagnostic packet in under 400ms!
+Click the crash button in the sandbox to watch Blackbox automatically freeze a capsule, highlight the root cause, and compile a complete diagnostic packet in under 400ms!
 
 ### 2. Supervise Your Own Project
 ```bash
-# Supervise any dev command with KALA
-npx kala run "npm run dev" --name my-api
+# Supervise any dev command with Blackbox
+npx blackbox run "npm run dev" --name my-api
 
 # Or with the zero-config HTTP wiretap proxy:
-npx kala run "npm run dev" --proxy 4000:3000
+npx blackbox run "npm run dev" --proxy 4000:3000
 ```
 
 ### 3. CLI Commands
 ```bash
-kala demo                     # Launch Studio + Interactive Sandbox
-kala studio                   # Start Blackbox Studio & Daemon standalone
-kala run "<cmd>"              # Supervise a dev command
-kala freeze [--title "..."]   # Freeze active rolling buffer immediately
-kala capsules                 # List all saved bug capsules
-kala inspect [id|latest]      # Print AI diagnostic packet for a capsule
-kala mcp                      # Run stdio MCP Server for AI coding agents
+blackbox demo                     # Launch Studio + Interactive Sandbox
+blackbox studio                   # Start Blackbox Studio & Daemon standalone
+blackbox run "<cmd>"              # Supervise a dev command
+blackbox freeze [--title "..."]   # Freeze active rolling buffer immediately
+blackbox capsules                 # List all saved bug capsules
+blackbox inspect [id|latest]      # Print AI diagnostic packet for a capsule
+blackbox mcp                      # Run stdio MCP Server for AI coding agents
 ```
 
 ---
@@ -73,34 +72,34 @@ kala mcp                      # Run stdio MCP Server for AI coding agents
 ## 🔌 Browser Agent SDK & Chrome Extension
 
 ### Option A: Automatic Wiretap Injection
-When using `kala run "<cmd>" --proxy 4000:3000`, KALA automatically injects the browser agent into all HTML responses.
+When using `blackbox run "<cmd>" --proxy 4000:3000`, Blackbox automatically injects the browser agent into all HTML responses.
 
 ### Option B: Script Tag
 Add this single tag to your local HTML/template:
 ```html
-<script src="http://localhost:9876/sdk/browser-agent.js" data-kala-endpoint="http://localhost:9876"></script>
+<script src="http://localhost:9876/sdk/browser-agent.js" data-blackbox-endpoint="http://localhost:9876"></script>
 ```
 
 ### Option C: Chrome Extension (Manifest V3)
 1. Open Chrome/Edge and go to `chrome://extensions/`
 2. Enable **Developer mode** (top right)
-3. Click **Load unpacked** and select the `kala/extension` folder
+3. Click **Load unpacked** and select the `blackbox/extension` folder
 4. Press `Alt+Shift+B` on any localhost page to freeze a capsule anytime!
 
 ---
 
 ## 🤖 MCP Server Setup (for AI Coding Agents)
 
-Add KALA to your MCP config (`antigravity.json`, `claude_desktop_config.json`, or `.cursor/mcp.json`):
+Add Blackbox to your MCP config (`antigravity.json`, `claude_desktop_config.json`, or `.cursor/mcp.json`):
 
 ```json
 {
   "mcpServers": {
-    "kala": {
+    "blackbox": {
       "command": "node",
-      "args": ["C:/Users/Shourya Upadhyay/.gemini/antigravity/scratch/kala/bin/kala-mcp.js"],
+      "args": ["C:/Users/Shourya Upadhyay/OneDrive/Documents/ALL CODES/blackbox/bin/blackbox-mcp.js"],
       "env": {
-        "KALA_PROJECT_CWD": "C:/path/to/your/project"
+        "BLACKBOX_PROJECT_CWD": "C:/path/to/your/project"
       }
     }
   }

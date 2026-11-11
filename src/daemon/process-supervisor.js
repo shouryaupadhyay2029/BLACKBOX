@@ -1,15 +1,15 @@
 /**
- * KALA Daemon — Multi-Process Stream & PTY Supervisor
+ * BLACKBOX Daemon — Multi-Process Stream & PTY Supervisor
  * Spawns and supervises backend/frontend dev commands, passes ANSI output transparently
  * to the developer's terminal, coalesces multi-line stack trace bursts (15ms window),
- * parses stack frames + local source code snippets, and feeds the KALA Ring Buffer.
+ * parses stack frames + local source code snippets, and feeds the Blackbox Ring Buffer.
  */
 
 import { spawn } from 'node:child_process';
 import { parseStackAndCode, stripAnsi } from '../core/stack-parser.js';
 import { nowPreciseMs } from '../core/ring-buffer.js';
 
-const TRACE_TOKEN_REGEX = /(?:X-Kala-Trace-Id|traceId|trace_id)[=:\s]+([a-zA-Z0-9_-]{6,64})/i;
+const TRACE_TOKEN_REGEX = /(?:X-Blackbox-Trace-Id|X-Kala-Trace-Id|traceId|trace_id|trace:)[=:\s]+([a-zA-Z0-9_-]{6,64})/i;
 const CRASH_KEYWORDS_REGEX =
   /(unhandledrejection|uncaught exception|typeerror:|referenceerror:|syntaxerror:|rangeerror:|traceback \(most recent call last\)|panic:|fatal error:|segmentation fault|eaddrinuse|error:)/i;
 
@@ -48,6 +48,7 @@ export class ProcessSupervisor {
       env: {
         ...process.env,
         FORCE_COLOR: '1',
+        BLACKBOX_ACTIVE: '1',
         KALA_ACTIVE: '1',
         ...env,
       },
@@ -99,7 +100,7 @@ export class ProcessSupervisor {
           pid: child.pid,
           exitCode: code,
           signal,
-          text: `[KALA] Process "${name}" (PID ${child.pid}) exited with code ${code}${
+          text: `[BLACKBOX] Process "${name}" (PID ${child.pid}) exited with code ${code}${
             signal ? ` (signal ${signal})` : ''
           }`,
         },

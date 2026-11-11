@@ -1,7 +1,3 @@
 #!/usr/bin/env node
-import { KalaMcpServer } from '../src/mcp/mcp-server.js';
-
-const server = new KalaMcpServer({
-  projectCwd: process.env.KALA_PROJECT_CWD || process.cwd(),
-});
-server.startStdio();
+// Backward-compatibility wrapper pointing to blackbox-mcp.js
+import './blackbox-mcp.js';

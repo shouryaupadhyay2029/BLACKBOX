@@ -1,5 +1,5 @@
 /**
- * KALA Core — High-Precision Multi-Plane Lock-Free Rolling Ring Buffer
+ * BLACKBOX Core — High-Precision Multi-Plane Lock-Free Rolling Ring Buffer
  * Maintains a bounded, time-evicted (default 60s) and memory-capped (default 64MB)
  * circular telemetry window across Browser, Network, Terminal, and Git planes.
  */
@@ -23,7 +23,7 @@ export function nowPreciseMs() {
   return BOOT_WALL_MS + deltaNs / 1e6;
 }
 
-export class KalaRingBuffer {
+export class BlackboxRingBuffer {
   /**
    * @param {object} options
    * @param {number} [options.windowMs=60000] Rolling retention window in ms (default 60s)
@@ -278,3 +278,6 @@ export class KalaRingBuffer {
     }
   }
 }
+
+// Backward-compatibility alias
+export const KalaRingBuffer = BlackboxRingBuffer;

@@ -11,8 +11,8 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { KalaDaemonServer } from '../src/daemon/server.js';
-import { KalaMcpServer } from '../src/mcp/mcp-server.js';
+import { BlackboxDaemonServer } from '../src/daemon/server.js';
+import { BlackboxMcpServer } from '../src/mcp/mcp-server.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,11 +23,11 @@ async function sleep(ms) {
 }
 
 async function runVerification() {
-  console.log('=== KALA END-TO-END VERIFICATION SUITE ===\n');
+  console.log('=== BLACKBOX END-TO-END VERIFICATION SUITE ===\n');
 
   const testPort = 9888;
   const testDemoPort = 4488;
-  const daemon = new KalaDaemonServer({
+  const daemon = new BlackboxDaemonServer({
     port: testPort,
     projectCwd: ROOT_DIR,
     autoFreeze: true,
@@ -35,7 +35,7 @@ async function runVerification() {
   });
 
   await daemon.start();
-  console.log('✔ [1/6] KALA Daemon Server booted on port', testPort);
+  console.log('✔ [1/6] Blackbox Daemon Server booted on port', testPort);
 
   // Spawn the supervised Demo Backend Server
   const demoServerScript = path.join(ROOT_DIR, 'src/demo/demo-server.js');
@@ -232,7 +232,7 @@ async function runVerification() {
   console.log('✔ [5/6] Capsule Differential & Regression Engine verified');
 
   // Step D: Verify Model Context Protocol (MCP) JSON-RPC 2.0 Server
-  const mcp = new KalaMcpServer({
+  const mcp = new BlackboxMcpServer({
     projectCwd: ROOT_DIR,
     daemonUrl: `http://127.0.0.1:${testPort}`,
   });
@@ -243,7 +243,7 @@ async function runVerification() {
     method: 'initialize',
     params: {},
   });
-  assert.equal(initRpc.result.serverInfo.name, 'kala-flight-recorder-mcp');
+  assert.equal(initRpc.result.serverInfo.name, 'blackbox-flight-recorder-mcp');
 
   const callRpc = await mcp.handleJsonRpc({
     jsonrpc: '2.0',
@@ -255,12 +255,12 @@ async function runVerification() {
     },
   });
   const mcpText = callRpc.result.content[0].text;
-  assert.ok(mcpText.includes('KALA Flight Recorder — Full-Stack Bug Capsule'));
+  assert.ok(mcpText.includes('BLACKBOX Flight Recorder — Full-Stack Bug Capsule'));
   assert.ok(mcpText.includes('partnerShare'));
   console.log('✔ [6/6] MCP Server JSON-RPC 2.0 tools verified (`get_latest_crash_capsule`)');
 
   daemon.stop();
-  console.log('\n🎉 ALL KALA SYSTEMS PASSED VERIFICATION WITH 100% PRECISION!');
+  console.log('\n🎉 ALL BLACKBOX SYSTEMS PASSED VERIFICATION WITH 100% PRECISION!');
   process.exit(0);
 }
 

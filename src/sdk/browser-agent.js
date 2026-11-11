@@ -1,26 +1,28 @@
 /**
- * KALA Universal Browser Agent & Causal Interceptor
+ * BLACKBOX Universal Browser Agent & Causal Interceptor
  * Runs inside any localhost target application (via Chrome Extension MV3,
  * Wiretap Proxy auto-injection, or direct script tag).
  *
  * Captures:
  * 1. DOM Visual Snapshots & Form/Input states (for Time-Travel DOM Replay)
  * 2. User Clicks, Cursor Coordinates, Keystrokes & Form Submissions
- * 3. Fetch & XHR Network Calls with automatic `X-Kala-Trace-Id` header injection
+ * 3. Fetch & XHR Network Calls with automatic `X-Blackbox-Trace-Id` header injection
  * 4. Console logs/warnings/errors + Uncaught Exceptions & Unhandled Rejections
  * 5. LocalStorage & SessionStorage state
  * 6. Shadow-DOM HUD Pill + `Alt+Shift+B` Instant Capsule Freeze hotkey
  */
 
-(function initKalaBrowserAgent() {
-  if (window.__KALA_AGENT_ACTIVE__) return;
+(function initBlackboxBrowserAgent() {
+  if (window.__BLACKBOX_AGENT_ACTIVE__ || window.__KALA_AGENT_ACTIVE__) return;
+  window.__BLACKBOX_AGENT_ACTIVE__ = true;
   window.__KALA_AGENT_ACTIVE__ = true;
 
-  // Determine KALA Daemon endpoint
+  // Determine Blackbox Daemon endpoint
   const scriptEl = document.currentScript;
-  const endpointAttr = scriptEl && scriptEl.getAttribute('data-kala-endpoint');
-  const KALA_HTTP = endpointAttr || window.__KALA_ENDPOINT__ || 'http://localhost:9876';
-  const KALA_WS = KALA_HTTP.replace(/^http/, 'ws') + '/ws?role=agent';
+  const endpointAttr =
+    (scriptEl && (scriptEl.getAttribute('data-blackbox-endpoint') || scriptEl.getAttribute('data-kala-endpoint')));
+  const BLACKBOX_HTTP = endpointAttr || window.__BLACKBOX_ENDPOINT__ || window.__KALA_ENDPOINT__ || 'http://localhost:9876';
+  const BLACKBOX_WS = BLACKBOX_HTTP.replace(/^http/, 'ws') + '/ws?role=agent';
 
   let ws = null;
   let wsConnected = false;
@@ -51,7 +53,7 @@
   // --- 1. WebSocket + HTTP Fallback Transport ---
   function connectWebSocket() {
     try {
-      ws = new WebSocket(KALA_WS);
+      ws = new WebSocket(BLACKBOX_WS);
       ws.onopen = () => {
         wsConnected = true;
         updateHudStatus();
@@ -116,7 +118,7 @@
       if (outboundQueue.length > 200) outboundQueue.shift();
       // Fallback HTTP POST for critical events
       if (eventObj.severity === 'error' || eventObj.severity === 'fatal' || eventObj.type === 'HTTP_TRACE') {
-        origFetch(`${KALA_HTTP}/api/ingest`, {
+        origFetch(`${BLACKBOX_HTTP}/api/ingest`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ event: envelope.event }),
@@ -137,7 +139,7 @@
         })
       );
     } else {
-      origFetch(`${KALA_HTTP}/api/freeze`, {
+      origFetch(`${BLACKBOX_HTTP}/api/freeze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ triggerReason: reason }),
@@ -159,8 +161,8 @@
   function serializeDomWithState() {
     try {
       const clone = document.documentElement.cloneNode(true);
-      // Remove KALA HUD host & scripts so replay is safe and clean
-      const hudNodes = clone.querySelectorAll('#__kala_hud_host__, script');
+      // Remove Blackbox HUD host & scripts so replay is safe and clean
+      const hudNodes = clone.querySelectorAll('#__blackbox_hud_host__, #__kala_hud_host__, script');
       hudNodes.forEach((n) => n.remove());
 
       // Sync live input, textarea, and select values into the cloned attributes
@@ -330,11 +332,11 @@
 
   // --- 4. Fetch & XMLHttpRequest Causal Interceptor ---
   const origFetch = window.fetch.bind(window);
-  window.fetch = async function kalaInterceptedFetch(input, init = {}) {
+  window.fetch = async function blackboxInterceptedFetch(input, init = {}) {
     const urlStr = typeof input === 'string' ? input : input?.url || String(input);
 
-    // Do not intercept KALA's own telemetry calls
-    if (urlStr.includes(':9876') || urlStr.includes('/__kala__')) {
+    // Do not intercept Blackbox's own telemetry calls
+    if (urlStr.includes(':9876') || urlStr.includes('/__blackbox__') || urlStr.includes('/__kala__')) {
       return origFetch(input, init);
     }
 
@@ -343,8 +345,10 @@
     const method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
 
     const headers = new Headers(init.headers || (typeof input === 'object' ? input.headers : undefined) || {});
+    headers.set('X-Blackbox-Trace-Id', traceId);
     headers.set('X-Kala-Trace-Id', traceId);
     if (lastActionTrace && Date.now() - lastActionTrace.timestampMs < 2200) {
+      headers.set('X-Blackbox-Trigger-Action', encodeURIComponent(lastActionTrace.selector || 'click'));
       headers.set('X-Kala-Trigger-Action', encodeURIComponent(lastActionTrace.selector || 'click'));
     }
 
@@ -491,14 +495,14 @@
   let hudToastEl = null;
 
   function mountHudPill() {
-    if (!document.body || document.getElementById('__kala_hud_host__')) return;
+    if (!document.body || document.getElementById('__blackbox_hud_host__') || document.getElementById('__kala_hud_host__')) return;
     const host = document.createElement('div');
-    host.id = '__kala_hud_host__';
+    host.id = '__blackbox_hud_host__';
     const shadow = host.attachShadow({ mode: 'open' });
 
     shadow.innerHTML = `
       <style>
-        .kala-pill {
+        .blackbox-pill {
           position: fixed;
           bottom: 16px;
           right: 16px;
@@ -517,7 +521,7 @@
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
           user-select: none;
         }
-        .kala-dot {
+        .blackbox-dot {
           width: 9px;
           height: 9px;
           border-radius: 50%;
@@ -525,11 +529,11 @@
           box-shadow: 0 0 10px #10b981;
           animation: pulse 2s infinite;
         }
-        .kala-dot.offline {
+        .blackbox-dot.offline {
           background: #f59e0b;
           box-shadow: 0 0 8px #f59e0b;
         }
-        .kala-dot.error {
+        .blackbox-dot.error {
           background: #ef4444;
           box-shadow: 0 0 12px #ef4444;
         }
@@ -537,16 +541,16 @@
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.55; transform: scale(0.88); }
         }
-        .kala-brand {
+        .blackbox-brand {
           font-weight: 700;
           letter-spacing: 0.06em;
           color: #a5b4fc;
         }
-        .kala-stats {
+        .blackbox-stats {
           color: #94a3b8;
           font-size: 11px;
         }
-        .kala-btn {
+        .blackbox-btn {
           background: linear-gradient(135deg, #6366f1, #ec4899);
           border: none;
           color: #ffffff;
@@ -557,17 +561,17 @@
           cursor: pointer;
           transition: transform 0.15s ease, opacity 0.15s ease;
         }
-        .kala-btn:hover {
+        .blackbox-btn:hover {
           transform: translateY(-1px);
           opacity: 0.95;
         }
-        .kala-link {
+        .blackbox-link {
           color: #38bdf8;
           text-decoration: none;
           font-size: 11px;
           font-weight: 600;
         }
-        .kala-toast {
+        .blackbox-toast {
           position: fixed;
           bottom: 60px;
           right: 16px;
@@ -582,27 +586,27 @@
           display: none;
           box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .kala-toast a {
+        .blackbox-toast a {
           color: #34d399;
           font-weight: 700;
           margin-left: 8px;
         }
       </style>
-      <div class="kala-toast" id="kalaToast"></div>
-      <div class="kala-pill">
-        <span class="kala-dot" id="kalaDot"></span>
-        <span class="kala-brand">KALA</span>
-        <span class="kala-stats" id="kalaStats">60s Ring Buffer</span>
-        <button class="kala-btn" id="kalaFreezeBtn" title="Shortcut: Alt+Shift+B">Freeze Capsule</button>
-        <a class="kala-link" href="${KALA_HTTP}" target="_blank" title="Open KALA Blackbox Studio">Studio ↗</a>
+      <div class="blackbox-toast" id="blackboxToast"></div>
+      <div class="blackbox-pill">
+        <span class="blackbox-dot" id="blackboxDot"></span>
+        <span class="blackbox-brand">BLACKBOX</span>
+        <span class="blackbox-stats" id="blackboxStats">60s Ring Buffer</span>
+        <button class="blackbox-btn" id="blackboxFreezeBtn" title="Shortcut: Alt+Shift+B">Freeze Capsule</button>
+        <a class="blackbox-link" href="${BLACKBOX_HTTP}" target="_blank" title="Open Blackbox Studio">Studio ↗</a>
       </div>
     `;
 
     document.body.appendChild(host);
-    hudStatsEl = shadow.getElementById('kalaStats');
-    hudDotEl = shadow.getElementById('kalaDot');
-    hudToastEl = shadow.getElementById('kalaToast');
-    const freezeBtn = shadow.getElementById('kalaFreezeBtn');
+    hudStatsEl = shadow.getElementById('blackboxStats');
+    hudDotEl = shadow.getElementById('blackboxDot');
+    hudToastEl = shadow.getElementById('blackboxToast');
+    const freezeBtn = shadow.getElementById('blackboxFreezeBtn');
     freezeBtn.addEventListener('click', () => triggerFreezeNow('HUD_BUTTON_CLICK'));
     updateHudStatus();
   }
@@ -611,7 +615,7 @@
     if (!hudStatsEl || !hudDotEl) return;
     hudStatsEl.textContent = `${eventCount} evts${errorCount > 0 ? ` · ${errorCount} err` : ''}`;
     hudDotEl.className =
-      'kala-dot' + (!wsConnected ? ' offline' : errorCount > 0 ? ' error' : '');
+      'blackbox-dot' + (!wsConnected ? ' offline' : errorCount > 0 ? ' error' : '');
   }
 
   function showHudToast(text, url) {
