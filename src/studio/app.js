@@ -572,9 +572,33 @@ function syncTimeScrubber(relMs) {
   if (activeDomEvt && activeDomEvt.id !== lastRenderedDomEventId) {
     lastRenderedDomEventId = activeDomEvt.id;
     domUrlPill.textContent = activeDomEvt.payload?.url || 'http://localhost/...';
-    domReplayFrame.srcdoc =
+    
+    let rawHtml =
       activeDomEvt.payload?.html ||
-      '<html><body style="font-family:sans-serif;padding:20px;">No DOM Snapshot</body></html>';
+      '<html><body style="font-family:sans-serif;padding:20px;color:#C2C1B4;">No DOM Snapshot</body></html>';
+    
+    // Inject transparent styling so the snapshot page doesn't blast an opaque white card over the background
+    const darkTransparentReset = `
+      <style id="__blackbox_canvas_transparent_reset__">
+        html, body {
+          background: transparent !important;
+          color: #E4E3DB !important;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        }
+        .card, .container, .top-banner, .output-box, form, input, button, div[class*="card"] {
+          background: rgba(14, 18, 42, 0.5) !important;
+          backdrop-filter: blur(8px) !important;
+          color: #E4E3DB !important;
+          border-color: rgba(175, 174, 162, 0.25) !important;
+        }
+      </style>
+    `;
+    if (rawHtml.includes('</head>')) {
+      rawHtml = rawHtml.replace('</head>', `${darkTransparentReset}</head>`);
+    } else {
+      rawHtml = darkTransparentReset + rawHtml;
+    }
+    domReplayFrame.srcdoc = rawHtml;
   }
 
   // 2. Update Click Laser Overlay
