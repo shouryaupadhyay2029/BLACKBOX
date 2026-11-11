@@ -9,12 +9,43 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execSync } from 'node:child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEMO_HTML_PATH = path.join(__dirname, 'demo-app.html');
 const PORT = Number(process.env.DEMO_PORT) || 4400;
 const BLACKBOX_PORT = Number(process.env.BLACKBOX_PORT || process.env.KALA_PORT) || 9876;
+
+function freePortIfOccupied(port) {
+  if (process.platform === 'win32') {
+    try {
+      const out = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      const lines = out.trim().split('\n');
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 5 && parts[1].endsWith(`:${port}`) && (parts[3] === 'LISTENING' || parts[3] === 'ESTABLISHED')) {
+          const pid = parts[parts.length - 1];
+          if (pid && pid !== '0' && pid !== String(process.pid)) {
+            try {
+              execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore' });
+            } catch {
+              // ignore
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  } else {
+    try {
+      execSync(`lsof -ti :${port} | xargs kill -9`, { stdio: 'ignore' });
+    } catch {
+      // ignore
+    }
+  }
+}
 
 const inventory = [
   { sku: 'VJ-CORE-01', name: 'Vajra Quantum Processor Node', price: 1490, stock: 8 },
@@ -174,13 +205,24 @@ function readBody(req) {
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`\n[DemoBackend] ⚠️ Port ${PORT} is already in use by another process.`);
-    console.error(`[DemoBackend] Run: npx kill-port ${PORT} (or stop the previous instance) and retry.\n`);
-    process.exit(1);
+    console.log(`[DemoBackend] ⚠️ Port ${PORT} busy, reclaiming...`);
+    freePortIfOccupied(PORT);
+    setTimeout(() => {
+      try {
+        server.listen(PORT, '127.0.0.1', () => {
+          console.log(`[DemoBackend] Target service listening at http://localhost:${PORT}`);
+        });
+      } catch (e) {
+        console.error(`[DemoBackend] Could not reclaim port ${PORT}:`, e.message);
+        process.exit(1);
+      }
+    }, 500);
+    return;
   }
-  throw err;
+  console.error('[DemoBackend] Server error:', err);
 });
 
+freePortIfOccupied(PORT);
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`[DemoBackend] Target service listening at http://localhost:${PORT}`);
 });

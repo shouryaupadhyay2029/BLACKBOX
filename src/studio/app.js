@@ -95,6 +95,7 @@ async function initStudio() {
   setupViewSwitcher();
   setupVaultToggle();
   setupActions();
+  setupWorkflowInteractivity();
 
   await fetchDaemonStatus();
   await loadCapsulesList();
@@ -636,9 +637,10 @@ function syncTimeScrubber(relMs) {
     // Inject clean high-contrast dark theme & button fallbacks without destroying existing styling
     const darkThemeInjection = `
       <style id="__blackbox_monitor_theme__">
+        * { box-sizing: border-box; }
         html {
-          background: #0B0E20;
-          color-scheme: dark;
+          background: #0B0E20 !important;
+          color-scheme: dark !important;
         }
         body {
           background: #0B0E20 !important;
@@ -646,7 +648,6 @@ function syncTimeScrubber(relMs) {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
           margin: 0;
           padding: 24px !important;
-          box-sizing: border-box;
           min-height: 100vh;
         }
         h1, h2, h3, h4 {
@@ -661,7 +662,7 @@ function syncTimeScrubber(relMs) {
         }
         /* Fallback for bare unstyled buttons */
         button:not([class]), button.btn-stub, #btnInstantCrash:not([class*="btn-"]) {
-          font-family: inherit !important;
+          font-family: monospace !important;
           font-size: 13px !important;
           font-weight: 700 !important;
           padding: 10px 18px !important;
@@ -682,10 +683,125 @@ function syncTimeScrubber(relMs) {
         ::-webkit-scrollbar-thumb:hover { background: #D21319; }
       </style>
     `;
-    if (rawHtml.includes('</head>')) {
-      rawHtml = rawHtml.replace('</head>', `${darkThemeInjection}</head>`);
+
+    // Upgrade any unstyled or legacy test HTML to full dark aerospace sandbox
+    if (
+      rawHtml.includes('Instant Settlement') ||
+      (rawHtml.includes('NexusPay') && rawHtml.length < 800)
+    ) {
+      rawHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusPay Checkout Sandbox — Monitored by Blackbox</title>
+  ${darkThemeInjection}
+  <style>
+    .banner {
+      background: linear-gradient(135deg, #1B1E4A 0%, #121533 100%);
+      border: 1px solid rgba(175, 174, 162, 0.35);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    .banner-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #F4F3EE;
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .banner-sub {
+      font-size: 11px;
+      color: #AFAEA2;
+      font-family: monospace;
+      margin: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .panel {
+      background: rgba(14, 17, 36, 0.85);
+      border: 1px solid rgba(175, 174, 162, 0.25);
+      border-radius: 6px;
+      padding: 16px;
+    }
+    .panel-hdr {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #AFAEA2;
+      margin: 0 0 12px;
+    }
+    .btn {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: monospace;
+      cursor: pointer;
+      margin-bottom: 10px;
+      border: none;
+      transition: filter 0.15s ease, transform 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .btn-green { background: #10B981; color: #042413; }
+    .btn-red { background: #D21319; color: #FFFFFF; box-shadow: 0 0 12px rgba(210, 19, 25, 0.5); }
+    .btn-amber { background: #F59E0B; color: #1C1917; }
+    .terminal-out {
+      background: #04050C;
+      border: 1px solid rgba(175, 174, 162, 0.2);
+      border-radius: 4px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #AFAEA2;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <div class="banner-title">⚡ NexusPay Checkout Sandbox</div>
+    <div class="banner-sub">SUPERVISED BY BLACKBOX FLIGHT RECORDER · PORT 4400 · TARGET NODE</div>
+  </div>
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-hdr">✅ Healthy Production Flows</div>
+      <button class="btn btn-green" id="btnFetchInventory">📦 GET /api/inventory (200 OK)</button>
+      <button class="btn btn-green" id="btnStandardCheckout">💳 Standard Settlement (200 OK)</button>
+    </div>
+    <div class="panel">
+      <div class="panel-hdr" style="color: #D21319;">💥 Trigger Anomaly & Crash</div>
+      <button class="btn btn-red" id="btnInstantCrash">🔥 Trigger Null-Ref Crash (POST /api/checkout [500])</button>
+      <button class="btn btn-amber" id="btnLedgerCrash">⚡ Trigger Ledger Mismatch (503)</button>
+    </div>
+  </div>
+  <div class="terminal-out">
+    [Telemetry Hook Active] Clicked button #btnInstantCrash at +1.24s. Awaiting Blackbox causal correlation...
+  </div>
+</body>
+</html>`;
     } else {
-      rawHtml = darkThemeInjection + rawHtml;
+      if (rawHtml.includes('</head>')) {
+        rawHtml = rawHtml.replace('</head>', `${darkThemeInjection}</head>`);
+      } else if (rawHtml.includes('<body')) {
+        rawHtml = rawHtml.replace(/<body/i, `<head>${darkThemeInjection}</head><body`);
+      } else {
+        rawHtml = `<!DOCTYPE html><html><head>${darkThemeInjection}</head><body>${rawHtml}</body></html>`;
+      }
     }
     domReplayFrame.srcdoc = rawHtml;
     updateDomReplayScaling();
@@ -801,6 +917,7 @@ function setupModeSwitcher() {
     inspector: document.getElementById('inspectorStage'),
     live: document.getElementById('liveStage'),
     diff: document.getElementById('diffStage'),
+    workflow: document.getElementById('workflowStage'),
   };
 
   document.querySelectorAll('.mode-btn').forEach((btn) => {
@@ -809,8 +926,38 @@ function setupModeSwitcher() {
       document.querySelectorAll('.mode-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       Object.entries(stages).forEach(([k, el]) => {
-        el.style.display = k === mode ? 'flex' : 'none';
+        if (el) el.style.display = k === mode ? 'flex' : 'none';
       });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
+function setupWorkflowInteractivity() {
+  const markers = document.querySelectorAll('.node-marker');
+  const cards = document.querySelectorAll('.workflow-card, .spec-panel');
+
+  markers.forEach((marker) => {
+    marker.addEventListener('click', () => {
+      const step = marker.getAttribute('data-step');
+      markers.forEach((m) => m.classList.remove('active'));
+      marker.classList.add('active');
+
+      const targetCard = document.getElementById(`wfCard${step}`);
+      if (targetCard) {
+        cards.forEach((c) => c.classList.remove('card-highlight'));
+        targetCard.classList.add('card-highlight');
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+
+    marker.addEventListener('mouseenter', () => {
+      const step = marker.getAttribute('data-step');
+      const targetCard = document.getElementById(`wfCard${step}`);
+      if (targetCard) {
+        cards.forEach((c) => c.classList.remove('card-highlight'));
+        targetCard.classList.add('card-highlight');
+      }
     });
   });
 }

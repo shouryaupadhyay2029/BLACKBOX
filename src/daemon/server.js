@@ -8,11 +8,42 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execSync } from 'node:child_process';
 import { WebSocketServer } from 'ws';
 import { BlackboxRingBuffer } from '../core/ring-buffer.js';
 import { CapsuleVault } from '../core/capsule-vault.js';
 import { captureGitState } from '../core/git-inspector.js';
 import { ProcessSupervisor } from './process-supervisor.js';
+
+function freePortIfOccupied(port) {
+  if (process.platform === 'win32') {
+    try {
+      const out = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      const lines = out.trim().split('\n');
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 5 && parts[1].endsWith(`:${port}`) && (parts[3] === 'LISTENING' || parts[3] === 'ESTABLISHED')) {
+          const pid = parts[parts.length - 1];
+          if (pid && pid !== '0' && pid !== String(process.pid)) {
+            try {
+              execSync(`taskkill /pid ${pid} /T /F`, { stdio: 'ignore' });
+            } catch {
+              // ignore
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  } else {
+    try {
+      execSync(`lsof -ti :${port} | xargs kill -9`, { stdio: 'ignore' });
+    } catch {
+      // ignore
+    }
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -124,6 +155,7 @@ export class BlackboxDaemonServer {
     });
 
     return new Promise((resolve, reject) => {
+      freePortIfOccupied(this.port);
       this.httpServer.on('error', reject);
       this.httpServer.listen(this.port, '127.0.0.1', () => {
         resolve(this.port);

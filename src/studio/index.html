@@ -22,6 +22,7 @@
       <button class="mode-btn active" id="modeInspectorBtn" data-mode="inspector">✦ TIME-TRAVEL</button>
       <button class="mode-btn" id="modeLiveBtn" data-mode="live">LIVE DECK</button>
       <button class="mode-btn" id="modeDiffBtn" data-mode="diff">REGRESSION DIFFER</button>
+      <button class="mode-btn" id="modeWorkflowBtn" data-mode="workflow">✦ SYSTEM ARCHITECTURE</button>
     </nav>
 
     <!-- Telemetry & Action Suite -->
@@ -257,6 +258,165 @@
         </div>
       </section>
 
+      <!-- System Architecture & Workflow Showcase (Spacious, Interactive Technical Section) -->
+      <section class="workflow-showcase-section" id="workflowShowcase">
+        <div class="workflow-showcase-header">
+          <div class="wf-badge-row">
+            <span class="workflow-header-badge">✦ CAUSAL PIPELINE ARCHITECTURE</span>
+            <span class="wf-tech-spec">SPEC: V8-HOROLOGICAL-60S</span>
+          </div>
+          <h2 class="workflow-showcase-title">End-to-End Flight Recording & Time-Travel Pipeline</h2>
+          <p class="workflow-showcase-desc">
+            How Blackbox captures millisecond-precise browser gestures, intercepts backend process streams,
+            correlates multi-plane causality in a zero-disk ring buffer, and feeds self-contained diagnostic packets to AI coding agents.
+          </p>
+        </div>
+
+        <div class="workflow-visual-stage">
+          <div class="workflow-diagram-wrap">
+            <img src="/workflow-diagram.jpg" alt="Blackbox Causal Architecture Diagram" class="workflow-diagram-img" id="wfDiagramImg" />
+            <div class="workflow-diagram-overlay">
+              <!-- Interactive Hotspot Node Markers matching diagram nodes -->
+              <button class="node-marker pin-1" data-step="1" title="01 · Client Ingestion & Browser Agent">
+                <span class="pin-pulse"></span>
+                <span class="pin-dot">01</span>
+                <span class="pin-label">Client Ingestion</span>
+              </button>
+              <button class="node-marker pin-2" data-step="2" title="02 · Wiretap Proxy & PTY Supervisor">
+                <span class="pin-pulse"></span>
+                <span class="pin-dot">02</span>
+                <span class="pin-label">Wiretap & PTY</span>
+              </button>
+              <button class="node-marker pin-3" data-step="3" title="03 · 60s Horological Ring Buffer">
+                <span class="pin-pulse"></span>
+                <span class="pin-dot">03</span>
+                <span class="pin-label">60s Ring Buffer</span>
+              </button>
+              <button class="node-marker pin-4" data-step="4" title="04 · Causal Correlation Engine">
+                <span class="pin-pulse"></span>
+                <span class="pin-dot">04</span>
+                <span class="pin-label">Causal Correlation</span>
+              </button>
+              <button class="node-marker pin-5" data-step="5" title="05 · 4 Flight Telemetry Planes">
+                <span class="pin-pulse"></span>
+                <span class="pin-dot">05</span>
+                <span class="pin-label">4 Flight Planes</span>
+              </button>
+              <button class="node-marker pin-6" data-step="6" title="06 · AI Diagnostic Packet & MCP">
+                <span class="pin-pulse"></span>
+                <span class="pin-dot">06</span>
+                <span class="pin-label">AI Agent & MCP</span>
+              </button>
+            </div>
+          </div>
+          <div class="workflow-reticle-strip">
+            <span>✦ RETICLE: 1280×800 MULTI-PLANE HARNESS</span>
+            <span>TRANSPARENT REVERSE PROXY: ACTIVE</span>
+            <span>BUFFER LATENCY: &lt; 0.4ms</span>
+          </div>
+        </div>
+
+        <!-- 6 Technical Workflow Cards -->
+        <div class="workflow-cards-grid">
+          <div class="workflow-card" id="wfCard1" data-step="1">
+            <div class="wf-card-top">
+              <span class="wf-card-num">01</span>
+              <span class="wf-card-meta">CLIENT-SIDE SENSORS</span>
+            </div>
+            <h3 class="wf-card-title">Browser Agent & Gesture Tap</h3>
+            <p class="wf-card-text">
+              Zero-configuration script (<code>blackbox-agent.js</code>) intercepts user click gestures, form mutations, navigation, and console errors. Takes lightweight DOM snapshots and storage dumps on key interactions without altering application state.
+            </p>
+            <div class="wf-card-tags">
+              <span class="wf-tag">DOM Snapshots</span>
+              <span class="wf-tag">Click Lasers</span>
+              <span class="wf-tag">Storage Delta</span>
+            </div>
+          </div>
+
+          <div class="workflow-card" id="wfCard2" data-step="2">
+            <div class="wf-card-top">
+              <span class="wf-card-num">02</span>
+              <span class="wf-card-meta">PROCESS & NETWORK WIRETAP</span>
+            </div>
+            <h3 class="wf-card-title">PTY Supervisor & HTTP Proxy</h3>
+            <p class="wf-card-text">
+              Subprocesses (<code>node</code>, <code>vite</code>, <code>next</code>) run inside a pseudo-terminal that stream-parses stdout/stderr bursts. Transparent reverse proxy intercepts HTTP traffic and stamps correlation headers (<code>x-blackbox-trace</code>) to bind requests to UI gestures.
+            </p>
+            <div class="wf-card-tags">
+              <span class="wf-tag">PTY Wiretap</span>
+              <span class="wf-tag">x-blackbox-trace</span>
+              <span class="wf-tag">Stdout Coalescing</span>
+            </div>
+          </div>
+
+          <div class="workflow-card" id="wfCard3" data-step="3">
+            <div class="wf-card-top">
+              <span class="wf-card-num">03</span>
+              <span class="wf-card-meta">CIRCULAR IN-MEMORY TELEMETRY</span>
+            </div>
+            <h3 class="wf-card-title">60s Horological Ring Buffer</h3>
+            <p class="wf-card-text">
+              Ultra-lightweight circular memory structure (<code>KalaRingBuffer</code>) keeps thousands of high-velocity events in volatile RAM. Events older than 60 seconds are purged on the fly, eliminating disk overhead and protecting SSD endurance.
+            </p>
+            <div class="wf-card-tags">
+              <span class="wf-tag">Zero-Disk RAM</span>
+              <span class="wf-tag">Rolling 60s Window</span>
+              <span class="wf-tag">Sub-ms Timing</span>
+            </div>
+          </div>
+
+          <div class="workflow-card" id="wfCard4" data-step="4">
+            <div class="wf-card-top">
+              <span class="wf-card-num">04</span>
+              <span class="wf-card-meta">TEMPORAL HEURISTICS ENGINE</span>
+            </div>
+            <h3 class="wf-card-title">Causal Anomaly & Crash Freeze</h3>
+            <p class="wf-card-text">
+              Monitors for HTTP 5xx responses, Node V8 unhandled rejections, and fatal stderr patterns. Automatically freezes the last 60 seconds after a configurable grace window (800ms) to ensure trailing stack traces and network frames are captured into an immutable capsule.
+            </p>
+            <div class="wf-card-tags">
+              <span class="wf-tag">Auto-Freeze</span>
+              <span class="wf-tag">Grace Delay</span>
+              <span class="wf-tag">Immutable Capsule</span>
+            </div>
+          </div>
+
+          <div class="workflow-card" id="wfCard5" data-step="5">
+            <div class="wf-card-top">
+              <span class="wf-card-num">05</span>
+              <span class="wf-card-meta">SYNCHRONIZED MULTI-PLANE REPLAY</span>
+            </div>
+            <h3 class="wf-card-title">4-Plane Time-Travel Cockpit</h3>
+            <p class="wf-card-text">
+              Scrub backwards in time across 4 aligned planes: Sandboxed DOM Viewport, Network Waterfall, Source Code X-Ray with V8 stack trace line highlighting, and Git Working Tree Diff. Jump directly to culprit moments with one click.
+            </p>
+            <div class="wf-card-tags">
+              <span class="wf-tag">I. DOM Replay</span>
+              <span class="wf-tag">II. Waterfall</span>
+              <span class="wf-tag">III. Code X-Ray</span>
+              <span class="wf-tag">IV. Git Diff</span>
+            </div>
+          </div>
+
+          <div class="workflow-card" id="wfCard6" data-step="6">
+            <div class="wf-card-top">
+              <span class="wf-card-num">06</span>
+              <span class="wf-card-meta">AGENTIC INTEGRATION</span>
+            </div>
+            <h3 class="wf-card-title">Autonomous AI Diagnostic & MCP</h3>
+            <p class="wf-card-text">
+              Compiles an executive Root-Cause Markdown packet containing exact culprit code lines, temporal triggers, and reproduction steps. Connects directly to Claude Code, Gemini CLI, Cursor, and Windsurf via standard Model Context Protocol (MCP).
+            </p>
+            <div class="wf-card-tags">
+              <span class="wf-tag">AI Root-Cause Packet</span>
+              <span class="wf-tag">Model Context Protocol</span>
+              <span class="wf-tag">Zero-Hallucination</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Bottom Master Horological Time-Travel Scrubber -->
       <footer class="scrubber-bar">
         <div class="scrubber-controls">
@@ -321,6 +481,129 @@
       </div>
       <div class="diff-results" id="diffResultsContainer">
         <div class="empty-hint">Select two capsules above and click "Compare Capsules" to inspect regressions.</div>
+      </div>
+    </main>
+
+    <!-- Mode 4: Dedicated System Architecture Stage -->
+    <main class="main-stage" id="workflowStage" style="display:none;">
+      <div class="diff-deck-header">
+        <div>
+          <h2>✦ BLACKBOX SYSTEM ARCHITECTURE & CAUSAL FLOW</h2>
+          <p>End-to-end multi-plane flight recording pipeline from client gestures to in-memory circular telemetry, causal fault analysis, and agentic MCP synthesis.</p>
+        </div>
+        <div class="live-legend">
+          <span class="plane-badge plane-browser">CLIENT SENSORS</span>
+          <span class="plane-badge plane-network">HTTP WIRETAP</span>
+          <span class="plane-badge plane-terminal">RING BUFFER</span>
+          <span class="plane-badge plane-git">AI AGENT MCP</span>
+        </div>
+      </div>
+
+      <div class="workflow-stage-inner">
+        <div class="workflow-diagram-wrap standalone-diagram">
+          <img src="/workflow-diagram.jpg" alt="Blackbox Causal Architecture Diagram" class="workflow-diagram-img" />
+          <div class="workflow-diagram-overlay">
+            <button class="node-marker pin-1" data-step="1" title="01 · Client Ingestion & Browser Agent">
+              <span class="pin-pulse"></span>
+              <span class="pin-dot">01</span>
+              <span class="pin-label">Client Ingestion</span>
+            </button>
+            <button class="node-marker pin-2" data-step="2" title="02 · Wiretap Proxy & PTY Supervisor">
+              <span class="pin-pulse"></span>
+              <span class="pin-dot">02</span>
+              <span class="pin-label">Wiretap & PTY</span>
+            </button>
+            <button class="node-marker pin-3" data-step="3" title="03 · 60s Horological Ring Buffer">
+              <span class="pin-pulse"></span>
+              <span class="pin-dot">03</span>
+              <span class="pin-label">60s Ring Buffer</span>
+            </button>
+            <button class="node-marker pin-4" data-step="4" title="04 · Causal Correlation Engine">
+              <span class="pin-pulse"></span>
+              <span class="pin-dot">04</span>
+              <span class="pin-label">Causal Correlation</span>
+            </button>
+            <button class="node-marker pin-5" data-step="5" title="05 · 4 Flight Telemetry Planes">
+              <span class="pin-pulse"></span>
+              <span class="pin-dot">05</span>
+              <span class="pin-label">4 Flight Planes</span>
+            </button>
+            <button class="node-marker pin-6" data-step="6" title="06 · AI Diagnostic Packet & MCP">
+              <span class="pin-pulse"></span>
+              <span class="pin-dot">06</span>
+              <span class="pin-label">AI Agent & MCP</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="workflow-spec-grid">
+          <div class="spec-panel">
+            <div class="spec-num">STAGE 01 — INGESTION</div>
+            <div class="spec-title">Browser Agent & Gesture Tap</div>
+            <p class="spec-desc">The lightweight browser client SDK captures user DOM clicks, input field mutations, page navigation, <code>window.onerror</code>, and unhandled promise rejections. Full DOM snapshots and Local/Session Storage states are recorded at sub-millisecond precision.</p>
+            <ul class="spec-list">
+              <li>Automatic click laser coordinate calculation (X/Y relative positioning)</li>
+              <li>Lightweight snapshot sanitization of sensitive form passwords</li>
+              <li>Zero network interference via non-blocking WebSocket pipeline</li>
+            </ul>
+          </div>
+
+          <div class="spec-panel">
+            <div class="spec-num">STAGE 02 — WIRETAP</div>
+            <div class="spec-title">PTY Process & Reverse Proxy</div>
+            <p class="spec-desc">Subprocesses (Node, Vite, Next.js, Python, Go) are executed inside an OS-level pseudo-terminal (PTY) capturing raw stdout/stderr streams. An inline transparent reverse proxy intercepts HTTP/WS traffic and stamps <code>x-blackbox-trace</code> correlation tokens.</p>
+            <ul class="spec-list">
+              <li>Coalesces micro-burst stdout/stderr chunks into discrete lines</li>
+              <li>Correlates frontend fetch/XHR with exact backend controller endpoints</li>
+              <li>Preserves ANSI color escapes and process exit codes</li>
+            </ul>
+          </div>
+
+          <div class="spec-panel">
+            <div class="spec-num">STAGE 03 — TELEMETRY</div>
+            <div class="spec-title">60-Second In-Memory Ring Buffer</div>
+            <p class="spec-desc">High-frequency multi-plane telemetry is ingested into a circular in-memory buffer (<code>KalaRingBuffer</code>). Stale events past the 60-second horizon are continuously evicted in O(1) time without triggering garbage collection spikes.</p>
+            <ul class="spec-list">
+              <li>Zero SSD disk writes during standard operation</li>
+              <li>Fixed memory footprint (&lt; 25MB under heavy load)</li>
+              <li>High-resolution monotonic timestamps (process.hrtime.bigint)</li>
+            </ul>
+          </div>
+
+          <div class="spec-panel">
+            <div class="spec-num">STAGE 04 — HEURISTICS</div>
+            <div class="spec-title">Causal Anomaly & Crash Detection</div>
+            <p class="spec-desc">The anomaly engine monitors the rolling buffer for HTTP 5xx codes, Node V8 unhandled errors, fatal process exits, or manual triggers (<code>Alt+Shift+B</code>). Applies a grace-window delay to capture the complete cascade before freezing an immutable capsule.</p>
+            <ul class="spec-list">
+              <li>Bi-directional temporal causality matching algorithm</li>
+              <li>800ms post-crash grace period catches lingering async callbacks</li>
+              <li>Bakes standalone <code>.blackbox.json</code> bundle with full Git diff</li>
+            </ul>
+          </div>
+
+          <div class="spec-panel">
+            <div class="spec-num">STAGE 05 — REPLAY</div>
+            <div class="spec-title">4-Plane Synchronized Time-Travel</div>
+            <p class="spec-desc">The Blackbox Studio provides millisecond-synchronized horological time-travel across 4 aligned planes: Sandboxed DOM Replay with laser reticles, HTTP/WS Waterfall, Source Code X-Ray stack locator, and Git Working Tree Differ.</p>
+            <ul class="spec-list">
+              <li>Plane I: DOM Viewport with auto-fit viewport scaling</li>
+              <li>Plane II: Waterfall with request/response payload inspector</li>
+              <li>Plane III: Source code line highlighter and V8 stack trace jump</li>
+              <li>Plane IV: Git working tree inspector and AI diagnostic preview</li>
+            </ul>
+          </div>
+
+          <div class="spec-panel">
+            <div class="spec-num">STAGE 06 — AGENTIC</div>
+            <div class="spec-title">Autonomous AI Diagnostic & MCP Server</div>
+            <p class="spec-desc">Synthesizes an executive Markdown Root-Cause Dossier with culprit code lines, error causality, and reproduction steps. Connects directly to Claude Code, Gemini CLI, Cursor, and Windsurf via standard Model Context Protocol (MCP).</p>
+            <ul class="spec-list">
+              <li>Structured Markdown packet ready for direct LLM context ingestion</li>
+              <li>Native stdio Model Context Protocol (MCP) server integration</li>
+              <li>Eliminates debugging hallucinations with ground-truth localhost telemetry</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </main>
   </div>
