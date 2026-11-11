@@ -524,30 +524,6 @@ function renderSourceXrayPane(capsule) {
       })
       .join('');
   }
-
-  // Also update the Hex Intelligent Agent Workspace in Plane III
-  const sessionEl = document.getElementById('agentCanvasSession');
-  const inquiryEl = document.getElementById('userInquiryText');
-  const codeBodyEl = document.getElementById('agentCodeSnippetBody');
-
-  if (sessionEl) {
-    sessionEl.textContent = `${capsule.id} · 60s Ring Buffer`;
-  }
-  if (inquiryEl && capsule.title) {
-    inquiryEl.textContent = `Why did "${capsule.title}" fail? Pinpoint the culprit source line and propose a safe patch.`;
-  }
-
-  if (snippets.length > 0 && codeBodyEl) {
-    const { frame, snippet } = snippets[0];
-    codeBodyEl.innerHTML = snippet.lines
-      .map((ln) => `
-        <div class="code-line ${ln.isTarget ? 'cul-target active' : ''}">
-          <span class="c-num">${ln.lineNumber}</span>
-          <span class="c-txt">${escapeHtml(ln.code)}</span>
-        </div>
-      `)
-      .join('');
-  }
 }
 
 function renderGitAndAiPane(capsule) {
@@ -1172,79 +1148,6 @@ function setupActions() {
   document.getElementById('importCapsuleBtn').addEventListener('click', () => {
     document.getElementById('importFileInput').click();
   });
-
-  // Hex Workspace Interactive Controls
-  const thoughtToggleBtn = document.getElementById('thoughtToggleBtn');
-  const thoughtContent = document.getElementById('thoughtContent');
-  const thoughtArrow = document.getElementById('thoughtArrow');
-  if (thoughtToggleBtn && thoughtContent) {
-    thoughtToggleBtn.addEventListener('click', () => {
-      const isHidden = thoughtContent.style.display === 'none';
-      thoughtContent.style.display = isHidden ? 'flex' : 'none';
-      if (thoughtArrow) thoughtArrow.textContent = isHidden ? '▼' : '▶';
-    });
-  }
-
-  const btnCopyDiagDossier = document.getElementById('btnCopyDiagDossier');
-  if (btnCopyDiagDossier) {
-    btnCopyDiagDossier.addEventListener('click', async () => {
-      if (!activeCapsule || !activeCapsule.aiDiagnosticMarkdown) {
-        showToast('Select a capsule first.');
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(activeCapsule.aiDiagnosticMarkdown);
-        showToast('🤖 Copied AI Root-Cause Diagnostic Packet to clipboard!');
-      } catch {
-        showToast('Viewing AI packet in Pane 4.');
-      }
-    });
-  }
-
-  const btnApplyPatchDemo = document.getElementById('btnApplyPatchDemo');
-  if (btnApplyPatchDemo) {
-    btnApplyPatchDemo.addEventListener('click', () => {
-      btnApplyPatchDemo.textContent = '✓ Patch Applied in Sandbox';
-      btnApplyPatchDemo.style.background = '#10B981';
-      showToast('⚡ Applied null-coalescing guard to demo-server.js:46! Retrying checkout...');
-      setTimeout(() => {
-        btnApplyPatchDemo.textContent = '✦ Apply Patch to demo-server.js';
-        btnApplyPatchDemo.style.background = '';
-      }, 4000);
-    });
-  }
-
-  const btnSendAgentPrompt = document.getElementById('btnSendAgentPrompt');
-  const agentPromptInput = document.getElementById('agentPromptInput');
-  const agentCanvasThread = document.getElementById('agentCanvasThread');
-  if (btnSendAgentPrompt && agentPromptInput && agentCanvasThread) {
-    const handleSend = () => {
-      const text = agentPromptInput.value.trim();
-      if (!text) return;
-      agentPromptInput.value = '';
-
-      const userBubble = document.createElement('div');
-      userBubble.className = 'user-inquiry-bubble';
-      userBubble.innerHTML = `<div class="inquiry-text">${escapeHtml(text)}</div>`;
-      agentCanvasThread.appendChild(userBubble);
-
-      const agentCard = document.createElement('div');
-      agentCard.className = 'agent-response-card';
-      agentCard.innerHTML = `
-        <div class="agent-msg-lead">
-          <span class="lead-hl">Blackbox Flight Agent:</span> Correlating query with active flight capsule... To avoid null reference exceptions in <code>calculateAndChargeOrder()</code>, add optional chaining <code>selectedGateway?.merchantSplitRule?.partnerShare ?? 0</code> or ensure default configuration is present in <code>gatewayRegistry</code>.
-        </div>
-      `;
-      agentCanvasThread.appendChild(agentCard);
-      agentCanvasThread.scrollTop = agentCanvasThread.scrollHeight;
-      showToast('✦ Blackbox Agent synthesized causal answer');
-    };
-
-    btnSendAgentPrompt.addEventListener('click', handleSend);
-    agentPromptInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleSend();
-    });
-  }
 
   document.getElementById('importFileInput').addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
