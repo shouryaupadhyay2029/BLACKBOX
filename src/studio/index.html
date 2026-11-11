@@ -593,41 +593,121 @@
     </main>
 
     <!-- Mode 2: Live Flight Deck Stage -->
-    <main class="main-stage" id="liveStage" style="display:none;">
+    <main class="main-stage live-stage-deck" id="liveStage" style="display:none;">
       <div class="live-deck-header">
-        <div>
-          <h2>LIVE 60-SECOND ROLLING FLIGHT DECK</h2>
-          <p>Real-time telemetry streaming from Browser DOM, Localhost Network, Backend Terminal Processes, and Git.</p>
+        <div class="live-header-meta">
+          <div class="live-eyebrow-row">
+            <span class="live-badge-eyebrow">✦ REAL-TIME MULTI-PLANE HARNESS</span>
+            <span class="live-status-beacon"><span class="beacon-pulse green"></span> TELEMETRY STREAM ACTIVE</span>
+            <span class="live-spec-tag">60s ROLLING MEMORY BUFFER</span>
+          </div>
+          <h2 class="live-hero-title">Live 60-Second Rolling Flight Deck</h2>
+          <p class="live-hero-desc">
+            Continuous real-time telemetry streaming from Browser DOM, Transparent HTTP Proxy Wiretap, Subprocess PTY streams, and Git.
+          </p>
         </div>
-        <div class="live-legend">
-          <span class="plane-badge plane-browser">BROWSER</span>
-          <span class="plane-badge plane-network">NETWORK</span>
-          <span class="plane-badge plane-terminal">TERMINAL</span>
-          <span class="plane-badge plane-git">GIT</span>
+        <div class="live-filter-legend">
+          <button class="live-filter-btn active" data-filter="ALL">ALL PLANES</button>
+          <button class="live-filter-btn" data-filter="BROWSER"><span class="pill-dot blue"></span> BROWSER</button>
+          <button class="live-filter-btn" data-filter="NETWORK"><span class="pill-dot yellow"></span> NETWORK</button>
+          <button class="live-filter-btn" data-filter="TERMINAL"><span class="pill-dot green"></span> TERMINAL</button>
+          <button class="live-filter-btn" data-filter="GIT"><span class="pill-dot purple"></span> GIT</button>
         </div>
       </div>
-      <div class="live-stream-feed" id="liveStreamFeed"></div>
+      <div class="live-feed-hud">
+        <div class="live-feed-toolbar">
+          <div class="feed-col-header">PLANE &amp; MONOTONIC TIMESTAMP</div>
+          <div class="feed-col-header">CAUSAL PAYLOAD TELEMETRY</div>
+          <div class="feed-col-actions">
+            <span class="feed-stream-rate" id="liveStreamRateBadge">120 events in ring buffer</span>
+          </div>
+        </div>
+        <div class="live-stream-feed" id="liveStreamFeed"></div>
+      </div>
     </main>
 
     <!-- Mode 3: Capsule Regression Differ Stage -->
-    <main class="main-stage" id="diffStage" style="display:none;">
+    <main class="main-stage diff-stage-deck" id="diffStage" style="display:none;">
+      
+      <!-- Top Aerospace HUD Header -->
       <div class="diff-deck-header">
-        <div>
-          <h2>CAPSULE DIFFERENTIAL & REGRESSION ANALYZER</h2>
-          <p>Inspect HTTP status regressions, latency shifts, new backend exceptions, and uncommitted Git drift between two snapshots.</p>
+        <div class="diff-header-meta">
+          <div class="diff-eyebrow-row">
+            <span class="diff-badge-eyebrow">✦ BIPARTITE REGRESSION AUDITOR</span>
+            <span class="diff-spec-tag">SPEC: 1.0ms HOROLOGICAL ACCURACY</span>
+            <span class="diff-status-beacon"><span class="beacon-pulse"></span> COMPARATOR ARMED</span>
+          </div>
+          <h2 class="diff-hero-title">Capsule Differential &amp; Regression Analyzer</h2>
+          <p class="diff-hero-desc">
+            Compare golden baseline capsules against crash snapshots to isolate network status regressions, latency shifts, V8 stack divergences, and uncommitted Git drift.
+          </p>
         </div>
-        <div class="diff-selectors">
-          <label>Baseline (A): <select id="diffSelectA"></select></label>
-          <label>Comparison (B): <select id="diffSelectB"></select></label>
-          <button class="action-btn btn-freeze" id="runDiffBtn">COMPARE CAPSULES</button>
-        </div>
-      </div>
-      <div class="diff-results" id="diffResultsContainer">
-        <div class="empty-hint">Select two capsules above and click "Compare Capsules" to inspect regressions.</div>
-      </div>
-    </main>
 
-    </div>
+        <div class="diff-header-actions">
+          <button class="diff-quick-btn" id="btnQuickCompareLatest" title="Auto-select Baseline vs Latest Crash">
+            <span class="quick-icon">⚡</span> Auto-Compare Latest Crash vs Baseline
+          </button>
+        </div>
+      </div>
+
+      <!-- High-Tech Comparator Deck (Snapshot A vs Snapshot B Pods) -->
+      <div class="diff-comparator-console">
+        <!-- POD A: Golden Baseline -->
+        <div class="comparator-pod pod-baseline">
+          <div class="pod-header">
+            <div class="pod-tag-wrap">
+              <span class="pod-pill baseline">SNAPSHOT A</span>
+              <span class="pod-role">GOLDEN BASELINE</span>
+            </div>
+            <span class="pod-indicator"><span class="ind-dot green"></span> NOMINAL</span>
+          </div>
+          <div class="pod-body">
+            <label for="diffSelectA" class="pod-label">Reference Capsule:</label>
+            <div class="select-styled-wrap">
+              <select id="diffSelectA" class="styled-diff-select"></select>
+              <span class="select-chevron">▾</span>
+            </div>
+            <div class="pod-hint">Known-healthy or pre-release baseline run</div>
+          </div>
+        </div>
+
+        <!-- CENTER ACTION HUB: Swap & Compare CTA -->
+        <div class="comparator-hub">
+          <button class="hub-swap-btn" id="btnSwapDiffPods" title="Swap Baseline and Comparison capsules">
+            <span class="swap-icon">⇄</span>
+            <span class="swap-label">SWAP</span>
+          </button>
+          <button class="hub-run-btn" id="runDiffBtn">
+            <span class="run-spark">✦</span>
+            <span class="run-label">RUN REGRESSION AUDIT</span>
+          </button>
+          <div class="hub-subtext">Zero-Disk In-Memory Telemetry Diff</div>
+        </div>
+
+        <!-- POD B: Target Capsule -->
+        <div class="comparator-pod pod-target">
+          <div class="pod-header">
+            <div class="pod-tag-wrap">
+              <span class="pod-pill target">SNAPSHOT B</span>
+              <span class="pod-role">REGRESSION TARGET</span>
+            </div>
+            <span class="pod-indicator fault"><span class="ind-dot red"></span> FAULT / CRASH</span>
+          </div>
+          <div class="pod-body">
+            <label for="diffSelectB" class="pod-label">Comparison Capsule:</label>
+            <div class="select-styled-wrap">
+              <select id="diffSelectB" class="styled-diff-select"></select>
+              <span class="select-chevron">▾</span>
+            </div>
+            <div class="pod-hint">Crash capsule or candidate build to evaluate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diff Output Container: Defaults to Pre-Flight Briefing, gets populated by runCapsuleDiff() -->
+      <div class="diff-results" id="diffResultsContainer"></div>
+    </main>
+</div>
 
   <div class="toast-banner" id="studioToast"></div>
   <script src="/app.js"></script>
