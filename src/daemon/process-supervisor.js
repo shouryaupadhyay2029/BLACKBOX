@@ -5,7 +5,7 @@
  * parses stack frames + local source code snippets, and feeds the Blackbox Ring Buffer.
  */
 
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { parseStackAndCode, stripAnsi } from '../core/stack-parser.js';
 import { nowPreciseMs } from '../core/ring-buffer.js';
 
@@ -211,8 +211,17 @@ export class ProcessSupervisor {
   stopAll() {
     for (const entry of this.processes.values()) {
       try {
-        if (entry.child && entry.status === 'running') {
-          entry.child.kill('SIGTERM');
+        if (entry.child && (entry.status === 'running' || !entry.child.killed)) {
+          if (process.platform === 'win32' && entry.child.pid) {
+            try {
+              execSync(`taskkill /pid ${entry.child.pid} /T /F`, { stdio: 'ignore' });
+            } catch {
+              entry.child.kill('SIGKILL');
+            }
+          } else {
+            entry.child.kill('SIGTERM');
+          }
+          entry.status = 'stopped';
         }
       } catch {
         // ignore

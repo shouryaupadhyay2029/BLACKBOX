@@ -172,6 +172,15 @@ function readBody(req) {
   });
 }
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n[DemoBackend] ⚠️ Port ${PORT} is already in use by another process.`);
+    console.error(`[DemoBackend] Run: npx kill-port ${PORT} (or stop the previous instance) and retry.\n`);
+    process.exit(1);
+  }
+  throw err;
+});
+
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`[DemoBackend] Target service listening at http://localhost:${PORT}`);
 });

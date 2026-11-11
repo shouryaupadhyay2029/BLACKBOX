@@ -47,6 +47,29 @@ function printBanner(daemonPort, extraLines = []) {
 }
 
 function attachTerminalHotkey(daemon) {
+  const cleanup = () => {
+    try {
+      daemon.stop();
+    } catch {
+      // ignore
+    }
+  };
+
+  process.once('SIGINT', () => {
+    console.log('\n[BLACKBOX] Received SIGINT. Terminating Flight Recorder...');
+    cleanup();
+    process.exit(0);
+  });
+
+  process.once('SIGTERM', () => {
+    cleanup();
+    process.exit(0);
+  });
+
+  process.once('exit', () => {
+    cleanup();
+  });
+
   if (!process.stdin.isTTY) return;
   try {
     process.stdin.setRawMode(true);
@@ -55,7 +78,7 @@ function attachTerminalHotkey(daemon) {
       // Ctrl+C -> exit cleanly
       if (key[0] === 3) {
         console.log('\n[BLACKBOX] Shutting down Flight Recorder Daemon...');
-        daemon.stop();
+        cleanup();
         process.exit(0);
       }
       // Ctrl+B (ASCII 2) -> Freeze Capsule immediately
