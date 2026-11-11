@@ -95,7 +95,6 @@ async function initStudio() {
   setupViewSwitcher();
   setupVaultToggle();
   setupActions();
-  setupWorkflowInteractivity();
   setupHexCliSection();
 
   await fetchDaemonStatus();
@@ -917,7 +916,6 @@ function setupModeSwitcher() {
     inspector: document.getElementById('inspectorStage'),
     live: document.getElementById('liveStage'),
     diff: document.getElementById('diffStage'),
-    workflow: document.getElementById('workflowStage'),
   };
 
   document.querySelectorAll('.mode-btn').forEach((btn) => {
@@ -979,35 +977,6 @@ function setupHexCliSection() {
       showToast('⚡ Opening NexusPay Sandbox at http://localhost:4400/');
     });
   }
-}
-
-function setupWorkflowInteractivity() {
-  const markers = document.querySelectorAll('.node-marker');
-  const cards = document.querySelectorAll('.workflow-card, .spec-panel');
-
-  markers.forEach((marker) => {
-    marker.addEventListener('click', () => {
-      const step = marker.getAttribute('data-step');
-      markers.forEach((m) => m.classList.remove('active'));
-      marker.classList.add('active');
-
-      const targetCard = document.getElementById(`wfCard${step}`);
-      if (targetCard) {
-        cards.forEach((c) => c.classList.remove('card-highlight'));
-        targetCard.classList.add('card-highlight');
-        targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    });
-
-    marker.addEventListener('mouseenter', () => {
-      const step = marker.getAttribute('data-step');
-      const targetCard = document.getElementById(`wfCard${step}`);
-      if (targetCard) {
-        cards.forEach((c) => c.classList.remove('card-highlight'));
-        targetCard.classList.add('card-highlight');
-      }
-    });
-  });
 }
 
 function setupVaultToggle() {
