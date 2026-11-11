@@ -262,6 +262,37 @@
         </div>
       </section>
 
+      <!-- Bottom Master Horological Time-Travel Scrubber -->
+      <footer class="scrubber-bar">
+        <div class="scrubber-controls">
+          <button class="ctrl-btn" id="playPauseBtn" title="Play / Pause Time-Travel Replay">▶ PLAY</button>
+          <button class="ctrl-btn" id="stepPrevBtn" title="Previous Event">⏮</button>
+          <button class="ctrl-btn" id="stepNextBtn" title="Next Event">⏭</button>
+          <select id="playbackSpeedSelect" class="speed-select" title="Playback Speed">
+            <option value="1">1.0×</option>
+            <option value="0.5">0.5× SLOW</option>
+            <option value="0.2">0.2× MICRO</option>
+          </select>
+        </div>
+
+        <div class="scrubber-track-area">
+          <div class="scrubber-markers" id="scrubberMarkers"></div>
+          <input
+            type="range"
+            id="timeScrubber"
+            class="time-slider"
+            min="0"
+            max="1000"
+            value="1000"
+          />
+        </div>
+
+        <div class="scrubber-readout">
+          <div class="time-primary" id="scrubberTimeReadout">+0.00s / 0.00s</div>
+          <div class="time-sub" id="scrubberEventReadout">0 / 0 events</div>
+        </div>
+      </footer>
+
       <!-- Hex-Style CLI & Developer Experience Showcase Section -->
       <section class="hex-cli-section" id="hexCliSection">
         
@@ -380,12 +411,12 @@
           </div>
 
           <div class="hex-cards-grid">
-            <!-- Card 1: Works in any terminal -->
+            <!-- Card 1: Works in any terminal (Real CLI Commands) -->
             <div class="hex-card">
               <div class="hex-card-content">
                 <h3 class="hex-card-title">Works in any terminal</h3>
                 <p class="hex-card-text">
-                  Interact directly with Blackbox from your terminal. Supervise dev servers, freeze runtime anomalies, and manage archival capsules from the command line.
+                  Interact directly with Blackbox from your terminal. Inspect stored capsules, auto-freeze on hotkey (<code>Ctrl+B</code>), and print causal fault chains directly to stdout.
                 </p>
               </div>
               <div class="hex-mini-window">
@@ -395,34 +426,34 @@
                     <span class="dot-yellow"></span>
                     <span class="dot-green"></span>
                   </div>
-                  <span class="hex-term-title">Blackbox CLI</span>
+                  <span class="hex-term-title">blackbox capsules</span>
                 </div>
                 <div class="hex-mini-body">
                   <div class="hex-term-line mini">
-                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox capsules list</span>
+                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox capsules</span>
                   </div>
                   <div class="hex-term-res mini">
-                    <span class="term-ok">✓</span> Vault: 21 capsules found<br />
-                    • <span class="term-red">[FAULT]</span> cap_4u2j (HTTP 500)<br />
-                    • <span class="term-ok">[SNAPSHOT]</span> cap_aspp (Baseline)
+                    Found 21 Blackbox Bug Capsule(s):<br />
+                    • <span class="term-red">[FAULT]</span> cap_2026-11-11_4u2j (20:30:12) :: HTTP 500 on /api/checkout<br />
+                    • <span class="term-ok">[OK]</span>    cap_2026-11-11_6d65 (20:28:45) :: Healthy Inventory Baseline
                   </div>
                   <div class="hex-term-line mini">
-                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox inspect cap_4u2j</span>
+                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox inspect latest</span>
                   </div>
                   <div class="hex-term-res mini">
-                    <span class="term-cyan">Causal Chain:</span> Click → HTTP 500 → V8 TypeError<br />
-                    <span class="term-dim">demo-server.js:46 (calculateAndChargeOrder)</span>
+                    <span class="term-cyan">Causal Diagnosis:</span> <span class="term-red">FAULT_DETECTED</span><br />
+                    <span class="term-dim">Culprit: demo-server.js:46 · Confidence: 96%</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Card 2: Plays nicely with coding agents -->
+            <!-- Card 2: Plays nicely with coding agents (Real stdio MCP Server) -->
             <div class="hex-card">
               <div class="hex-card-content">
                 <h3 class="hex-card-title">Plays nicely with coding agents</h3>
                 <p class="hex-card-text">
-                  Use Claude Code, Cursor, or Gemini CLI to analyze crashes and patch bugs. Connect your agent to the live runtime with our stdio MCP server: <code>blackbox mcp</code>
+                  Use Claude Code, Cursor, Windsurf, or Gemini CLI to analyze crashes and patch bugs. Connect your agent with our stdio MCP server: <code>blackbox mcp</code>
                 </p>
               </div>
               <div class="hex-mini-window">
@@ -432,7 +463,7 @@
                     <span class="dot-yellow"></span>
                     <span class="dot-green"></span>
                   </div>
-                  <span class="hex-term-title">Claude Code v2.1.87</span>
+                  <span class="hex-term-title">Claude Code with Blackbox MCP</span>
                 </div>
                 <div class="hex-mini-body agent-theme">
                   <div class="agent-banner">
@@ -445,20 +476,20 @@
                     <span class="term-prompt">&gt;</span> <span class="term-cmd">Inspect latest crash with Blackbox MCP</span>
                   </div>
                   <div class="hex-term-res mini">
-                    <span class="term-ok">✓</span> Tool call: <span class="term-dim">blackbox_get_latest_crash_capsule()</span><br />
-                    <span class="term-ok">✓</span> Root cause identified: <span class="term-red">merchantSplitRule null-ref</span><br />
-                    <span class="term-cyan">&gt; Applying patch to demo-server.js:46...</span> <span class="term-cursor">█</span>
+                    <span class="term-ok">✓</span> Tool call: <span class="term-dim">get_latest_crash_capsule()</span><br />
+                    <span class="term-ok">✓</span> Root cause identified: <span class="term-red">demo-server.js:46 (partnerShare)</span><br />
+                    <span class="term-cyan">&gt; Applying null-coalescing patch to demo-server.js:46...</span> <span class="term-cursor">█</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Card 3: Orchestrate and automate -->
+            <!-- Card 3: Zero-config runtime supervisor (Real blackbox run & auto-freeze) -->
             <div class="hex-card">
               <div class="hex-card-content">
-                <h3 class="hex-card-title">Orchestrate and automate</h3>
+                <h3 class="hex-card-title">Zero-config runtime supervisor</h3>
                 <p class="hex-card-text">
-                  The Blackbox CLI is a standard UNIX tool — trigger automations from GitHub Actions, or your own orchestration layer to capture multi-plane artifacts on CI failure.
+                  Wrap any dev server with <code>blackbox run</code>. A transparent reverse proxy captures HTTP traffic, stream-parses terminal PTY output, and auto-freezes an immutable 60s capsule on unhandled errors.
                 </p>
               </div>
               <div class="hex-mini-window">
@@ -468,25 +499,23 @@
                     <span class="dot-yellow"></span>
                     <span class="dot-green"></span>
                   </div>
-                  <span class="hex-term-title">github.com / nexacorp / checkout</span>
+                  <span class="hex-term-title">blackbox run "npm run dev"</span>
                 </div>
-                <div class="hex-mini-body ci-theme">
-                  <div class="ci-header">
-                    <div class="ci-status-icon">✓</div>
-                    <div class="ci-title-group">
-                      <div class="ci-pr-title">Update Settlement Gateway #133</div>
-                      <div class="ci-pr-meta">alexchen opened #133 · 2 min ago</div>
-                    </div>
+                <div class="hex-mini-body">
+                  <div class="hex-term-line mini">
+                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox run "npm run dev"</span>
                   </div>
-                  <div class="ci-job-box">
-                    <div class="ci-job-row">
-                      <span class="ci-job-status-dot"></span>
-                      <span class="ci-job-name">e2e-blackbox-flight.yml</span>
-                      <span class="ci-job-time">38s</span>
-                    </div>
-                    <div class="ci-job-sub">
-                      ✓ Auto-frozen capsule artifact uploaded: <code>cap_4u2j.blackbox.json</code>
-                    </div>
+                  <div class="hex-term-res mini">
+                    <span class="term-ok">✓</span> Supervised PID 4821 (vite v5.4.10)<br />
+                    <span class="term-ok">✓</span> Wiretap Proxy active on <span class="term-cyan">:4000</span> (60s ring buffer)<br />
+                    <span class="term-ok">✓</span> Studio Flight Deck open at <span class="term-cyan">http://localhost:9876</span>
+                  </div>
+                  <div class="hex-term-line mini">
+                    <span class="term-prompt">💥</span> <span class="term-red">HTTP 500 on POST /api/checkout</span>
+                  </div>
+                  <div class="hex-term-res mini">
+                    <span class="term-ok">❄️</span> Auto-frozen capsule: <span class="term-cyan">cap_2026-11-11_4u2j</span><br />
+                    <span class="term-dim">Culprit: demo-server.js:46 (96% confidence)</span>
                   </div>
                 </div>
               </div>
@@ -560,37 +589,7 @@
 
       </section>
 
-      <!-- Bottom Master Horological Time-Travel Scrubber -->
-      <footer class="scrubber-bar">
-        <div class="scrubber-controls">
-          <button class="ctrl-btn" id="playPauseBtn" title="Play / Pause Time-Travel Replay">▶ PLAY</button>
-          <button class="ctrl-btn" id="stepPrevBtn" title="Previous Event">⏮</button>
-          <button class="ctrl-btn" id="stepNextBtn" title="Next Event">⏭</button>
-          <select id="playbackSpeedSelect" class="speed-select" title="Playback Speed">
-            <option value="1">1.0×</option>
-            <option value="0.5">0.5× SLOW</option>
-            <option value="0.2">0.2× MICRO</option>
-          </select>
-        </div>
-
-        <div class="scrubber-track-area">
-          <div class="scrubber-markers" id="scrubberMarkers"></div>
-          <input
-            type="range"
-            id="timeScrubber"
-            class="time-slider"
-            min="0"
-            max="1000"
-            value="1000"
-          />
-        </div>
-
-        <div class="scrubber-readout">
-          <div class="time-primary" id="scrubberTimeReadout">+0.00s / 0.00s</div>
-          <div class="time-sub" id="scrubberEventReadout">0 / 0 events</div>
-        </div>
-      </footer>
-    </main>
+      </main>
 
     <!-- Mode 2: Live Flight Deck Stage -->
     <main class="main-stage live-stage-deck" id="liveStage" style="display:none;">

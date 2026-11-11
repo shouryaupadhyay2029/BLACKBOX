@@ -57,11 +57,6 @@ body {
   min-height: 100vh;
   height: auto;
   background-color: #060812;
-  background-image: url('/velora-bg.jpg');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   color: var(--stone-bone);
   font-family: var(--font-sans);
   overflow-x: hidden;
@@ -70,6 +65,22 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
+}
+
+/* Dedicated hardware-accelerated background layer for silky smooth 60fps scrolling */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-color: #060812;
+  background-image: url('/velora-bg.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  z-index: -2;
+  pointer-events: none;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 /* ==========================================================================
@@ -597,7 +608,7 @@ body {
 
 .culprit-box {
   background: rgba(27, 30, 74, 0.4);
-  backdrop-filter: blur(8px);
+  /* blur eliminated for 60fps */
   border: 1px solid rgba(210, 19, 25, 0.4);
   border-radius: 4px;
   padding: 12px 20px;
@@ -1294,18 +1305,16 @@ body {
    ========================================================================== */
 .scrubber-bar {
   height: 64px;
-  background: rgba(6, 8, 18, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #090B18;
   border-top: 1px solid var(--stone-border);
+  border-bottom: 1px solid var(--stone-border);
   display: flex;
   align-items: center;
   padding: 0 24px;
   gap: 18px;
   flex-shrink: 0;
-  z-index: 95;
-  position: sticky;
-  bottom: 0;
+  z-index: 90;
+  position: relative;
 }
 
 .scrubber-controls {
@@ -1586,7 +1595,7 @@ body {
   padding: 20px 36px;
   background: rgba(12, 16, 36, 0.65);
   border-bottom: 1px solid var(--stone-border);
-  backdrop-filter: blur(10px);
+  /* blur eliminated for 60fps */
 }
 
 .comparator-pod {
@@ -2702,6 +2711,8 @@ body {
   gap: 100px;
   position: relative;
   overflow: hidden;
+  transform: translateZ(0); /* Hardware accelerated */
+  contain: content; /* Isolates rendering & layout tree */
 }
 
 /* Subtle architectural dot grid */
@@ -2713,6 +2724,7 @@ body {
   background-size: 24px 24px;
   pointer-events: none;
   opacity: 0.65;
+  transform: translateZ(0);
 }
 
 .hex-serif-italic {
