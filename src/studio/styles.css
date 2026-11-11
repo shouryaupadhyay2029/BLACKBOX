@@ -870,11 +870,12 @@ html, body {
 .dom-stage-wrapper {
   flex: 1;
   position: relative;
-  background: transparent !important;
+  background: #070914 url('/telemetry-grid.jpg') center / cover no-repeat !important;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(210, 19, 25, 0.35);
 }
 
 /* TRANSPARENT IFRAME — NEVER A SOLID WHITE BILLBOARD */
@@ -1041,8 +1042,8 @@ html, body {
 }
 
 .xray-card {
-  background: transparent;
-  border: 1px solid var(--stone-border);
+  background: rgba(7, 9, 20, 0.6) url('/telemetry-grid.jpg') center / cover no-repeat;
+  border: 1px solid rgba(210, 19, 25, 0.35);
   border-radius: 2px;
   overflow: hidden;
   margin-bottom: 14px;
@@ -1237,6 +1238,11 @@ html, body {
 /* ==========================================================================
    7. LIVE DECK & REGRESSION DIFFER
    ========================================================================== */
+#liveStage,
+#diffStage {
+  background: #060812 url('/telemetry-grid.jpg') center / cover no-repeat !important;
+}
+
 .live-deck-header,
 .diff-deck-header {
   padding: 18px 28px;
