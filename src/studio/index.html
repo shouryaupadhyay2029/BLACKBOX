@@ -63,6 +63,10 @@
         <input type="file" id="importFileInput" accept=".json" style="display:none" />
         <button class="mini-btn" id="importCapsuleBtn">📂 IMPORT</button>
         <button class="mini-btn" id="refreshCapsulesBtn">↻ REFRESH</button>
+        <button class="mini-btn btn-danger-ghost" id="clearVaultBtn" title="Clear all capsules from vault">🗑 CLEAR</button>
+      </div>
+      <div class="vault-search-wrap">
+        <input type="text" id="capsuleSearchInput" class="vault-search-input" placeholder="🔍 Search capsules..." />
       </div>
       <div class="capsule-list" id="capsuleList">
         <div class="empty-hint">No capsules frozen yet. Trigger a failure or freeze a state to begin inspection.</div>
@@ -254,6 +258,10 @@
               <div class="git-inspector" id="gitInspectorContainer"></div>
             </div>
             <div class="tab-panel" id="p4-aiprompt">
+              <div class="ai-packet-header-bar">
+                <span>Autonomous AI Prompt Packet</span>
+                <button class="mini-btn" id="btnCopyRawMarkdown">✦ Copy Full Prompt</button>
+              </div>
               <pre class="code-block" id="aiMarkdownPreview">Select a capsule to view its compiled AI Root-Cause Diagnostic Packet.</pre>
             </div>
           </div>
@@ -620,6 +628,7 @@
           <div class="feed-col-header">PLANE &amp; MONOTONIC TIMESTAMP</div>
           <div class="feed-col-header">CAUSAL PAYLOAD TELEMETRY</div>
           <div class="feed-col-actions">
+            <button class="action-btn btn-freeze btn-live-freeze" id="liveDeckFreezeBtn" title="Instant Freeze Active Ring Buffer">⚡ Freeze 60s Buffer</button>
             <span class="feed-stream-rate" id="liveStreamRateBadge">120 events in ring buffer</span>
           </div>
         </div>

@@ -100,12 +100,19 @@ async function initStudio() {
   await fetchDaemonStatus();
   await loadCapsulesList();
 
+  setupKeyboardShortcuts();
+
   const urlParams = new URLSearchParams(window.location.search);
   const requestedCap = urlParams.get('capsule');
   if (requestedCap) {
     await selectCapsule(requestedCap);
   } else if (capsulesList.length > 0) {
     await selectCapsule(capsulesList[0].id);
+  }
+
+  const requestedMode = urlParams.get('mode');
+  if (requestedMode && ['inspector', 'live', 'diff', 'cli'].includes(requestedMode)) {
+    switchMode(requestedMode);
   }
 
   connectStudioWebSocket();
@@ -169,13 +176,28 @@ async function loadCapsulesList() {
 }
 
 function renderCapsuleSidebar() {
-  if (capsulesList.length === 0) {
-    capsuleListEl.innerHTML =
-      '<div class="empty-hint">No capsules frozen yet. Trigger a bug or click "Freeze Capsule Now".</div>';
+  const searchInput = document.getElementById('capsuleSearchInput');
+  const query = (searchInput?.value || '').trim().toLowerCase();
+
+  let filtered = capsulesList;
+  if (query) {
+    filtered = capsulesList.filter(
+      (c) =>
+        (c.title && c.title.toLowerCase().includes(query)) ||
+        (c.id && c.id.toLowerCase().includes(query)) ||
+        (c.culpritFile && c.culpritFile.toLowerCase().includes(query)) ||
+        (c.status && c.status.toLowerCase().includes(query))
+    );
+  }
+
+  if (filtered.length === 0) {
+    capsuleListEl.innerHTML = query
+      ? '<div class="empty-hint">No capsules match your search filter.</div>'
+      : '<div class="empty-hint">No capsules frozen yet. Trigger a bug or click "Freeze Capsule Now".</div>';
     return;
   }
 
-  capsuleListEl.innerHTML = capsulesList
+  capsuleListEl.innerHTML = filtered
     .map((c) => {
       const isFault = c.status === 'FAULT_DETECTED';
       const isActive = activeCapsule && activeCapsule.id === c.id;
@@ -186,7 +208,10 @@ function renderCapsuleSidebar() {
             <span class="cap-badge ${isFault ? 'fault' : 'ok'}">${
         isFault ? '✦ FAULT' : '✦ SNAPSHOT'
       }</span>
-            <span class="cap-time">${escapeHtml(timeStr)}</span>
+            <div class="cap-actions">
+              <span class="cap-time">${escapeHtml(timeStr)}</span>
+              <button class="cap-del-btn" data-del-id="${escapeHtml(c.id)}" title="Delete Capsule">✕</button>
+            </div>
           </div>
           <div class="cap-title">${escapeHtml(c.title)}</div>
           <div class="cap-meta">
@@ -199,9 +224,39 @@ function renderCapsuleSidebar() {
     .join('');
 
   capsuleListEl.querySelectorAll('.capsule-card').forEach((card) => {
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.cap-del-btn')) return;
       const id = card.getAttribute('data-cap-id');
       selectCapsule(id);
+    });
+  });
+
+  capsuleListEl.querySelectorAll('.cap-del-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-del-id');
+      if (!confirm(`Delete capsule ${id}?`)) return;
+      try {
+        const res = await fetch(`/api/capsules/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`🗑 Deleted capsule: ${id}`);
+          await loadCapsulesList();
+          if (activeCapsule?.id === id) {
+            if (capsulesList.length > 0) {
+              await selectCapsule(capsulesList[0].id);
+            } else {
+              activeCapsule = null;
+              capsuleHeadline.textContent = 'Select or freeze a capsule to inspect causal time-travel state';
+              capsuleStatusTag.textContent = 'STANDBY';
+              capsuleStatusTag.className = 'status-tag';
+              causalChainFlow.innerHTML = '';
+            }
+          }
+        }
+      } catch (err) {
+        showToast(`Delete failed: ${err.message}`);
+      }
     });
   });
 }
@@ -255,9 +310,13 @@ function renderCausalBanner(capsule) {
 
   if (rawCulprit) {
     capsuleMetaText.textContent = `${shortCulprit || rawCulprit}${lineSuffix}${confidence}`;
-    capsuleMetaText.title = rawCulprit;
+    capsuleMetaText.title = `Click to inspect ${rawCulprit}:${summary.culpritLine || 1} in Source Code X-Ray`;
+    capsuleMetaText.style.cursor = 'pointer';
+    capsuleMetaText.onclick = () => inspectSourceFile(rawCulprit, summary.culpritLine || 1);
   } else {
     capsuleMetaText.textContent = `Trigger Reason: ${capsule.triggerReason || 'MANUAL_FREEZE'}`;
+    capsuleMetaText.style.cursor = 'default';
+    capsuleMetaText.onclick = null;
   }
 
   const chains = capsule.causal?.causalChains || [];
@@ -274,7 +333,7 @@ function renderCausalBanner(capsule) {
         step.relTimeMs !== null ? `+${(step.relTimeMs / 1000).toFixed(2)}s` : 'WORKING TREE';
       return `
         ${idx > 0 ? '<span class="chain-arrow">—✦→</span>' : ''}
-        <div class="chain-node">
+        <div class="chain-node" data-chain-plane="${escapeHtml(step.plane)}" data-chain-time="${step.relTimeMs ?? ''}" title="Click to jump to ${escapeHtml(step.plane)} at ${escapeHtml(timeBadge)}">
           <div class="chain-node-top">
             <span class="plane-badge plane-${step.plane.toLowerCase()}">${escapeHtml(
         step.plane
@@ -291,6 +350,32 @@ function renderCausalBanner(capsule) {
       `;
     })
     .join('');
+
+  causalChainFlow.querySelectorAll('.chain-node').forEach((node) => {
+    node.addEventListener('click', () => {
+      const plane = node.getAttribute('data-chain-plane');
+      const relTime = node.getAttribute('data-chain-time');
+      if (relTime && relTime !== '') {
+        const timeMs = Number(relTime);
+        timeScrubber.value = String(Math.round(timeMs));
+        syncTimeScrubber(timeMs);
+      }
+      if (plane === 'BROWSER') {
+        activatePaneTab('p1', 'dom');
+        document.getElementById('paneBrowser')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else if (plane === 'NETWORK') {
+        activatePaneTab('p2', 'waterfall');
+        document.getElementById('paneNetwork')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else if (plane === 'TERMINAL') {
+        activatePaneTab('p3', 'xray');
+        document.getElementById('paneTerminal')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else if (plane === 'GIT') {
+        activatePaneTab('p4', 'git');
+        document.getElementById('paneGitAi')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      showToast(`⌖ Focused Plane: ${plane}`);
+    });
+  });
 }
 
 function renderScrubberMarkers(capsule) {
@@ -455,6 +540,45 @@ function renderNetworkPayloadDetail(netEvt) {
       </div>
     </div>
   `;
+}
+
+
+async function inspectSourceFile(filePath, line = 1) {
+  if (!filePath) return;
+  try {
+    const res = await fetch(`/api/source?file=${encodeURIComponent(filePath)}&line=${line}&radius=8`);
+    const data = await res.json();
+    if (!data.ok || !data.snippet) {
+      showToast(`Source file not accessible: ${filePath}`);
+      return;
+    }
+    const snippet = data.snippet;
+    const codeLines = snippet.lines
+      .map(
+        (ln) => `
+        <div class="xray-line ${ln.isTarget ? 'target-line' : ''}">
+          <span class="ln-num">${ln.isTarget ? '▶ ' : ''}${ln.lineNumber}</span>
+          <span>${escapeHtml(ln.code)}</span>
+        </div>
+      `
+      )
+      .join('');
+
+    sourceXrayContainer.innerHTML = `
+      <div class="xray-card">
+        <div class="xray-header">
+          <span>📄 ${escapeHtml(snippet.fileName)}:${snippet.targetLine}</span>
+          <span style="font-size:10px;color:#94a3b8">${escapeHtml(snippet.filePath)}</span>
+        </div>
+        <div>${codeLines}</div>
+      </div>
+    `;
+    activatePaneTab('p3', 'xray');
+    document.getElementById('paneTerminal')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    showToast(`📄 Inspected ${snippet.fileName}:${snippet.targetLine}`);
+  } catch (err) {
+    showToast(`Source inspect error: ${err.message}`);
+  }
 }
 
 function renderSourceXrayPane(capsule) {
@@ -911,40 +1035,68 @@ function activatePaneTab(pane, tab) {
   }
 }
 
-function setupModeSwitcher() {
+function switchMode(mode) {
   const stages = {
     inspector: document.getElementById('inspectorStage'),
     live: document.getElementById('liveStage'),
     diff: document.getElementById('diffStage'),
   };
 
+  document.querySelectorAll('.mode-btn').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+  });
+
+  if (mode === 'cli') {
+    Object.entries(stages).forEach(([k, el]) => {
+      if (el) el.style.display = k === 'inspector' ? 'flex' : 'none';
+    });
+    const cliSec = document.getElementById('hexCliSection');
+    if (cliSec) {
+      cliSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    return;
+  }
+
+  Object.entries(stages).forEach(([k, el]) => {
+    if (el) el.style.display = k === mode ? 'flex' : 'none';
+  });
+
+  if (mode === 'live') {
+    loadLiveBufferIfEmpty();
+  } else if (mode === 'diff') {
+    const container = document.getElementById('diffResultsContainer');
+    if (container && (!container.children || container.children.length === 0)) {
+      renderDiffInitialBriefing();
+    }
+  }
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('mode', mode);
+    window.history.replaceState({}, '', url.toString());
+  } catch {
+    // ignore
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setupModeSwitcher() {
   document.querySelectorAll('.mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = btn.getAttribute('data-mode');
-      document.querySelectorAll('.mode-btn').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
+      if (mode) switchMode(mode);
+    });
+  });
 
-      if (mode === 'cli') {
-        Object.entries(stages).forEach(([k, el]) => {
-          if (el) el.style.display = k === 'inspector' ? 'flex' : 'none';
-        });
-        const cliSec = document.getElementById('hexCliSection');
-        if (cliSec) {
-          cliSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        return;
+  document.querySelectorAll('a[href*="mode="]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      const match = href.match(/mode=([a-z]+)/);
+      if (match && match[1]) {
+        e.preventDefault();
+        switchMode(match[1]);
       }
-
-      Object.entries(stages).forEach(([k, el]) => {
-        if (el) el.style.display = k === mode ? 'flex' : 'none';
-      });
-      if (mode === 'diff') {
-        const container = document.getElementById('diffResultsContainer');
-        if (container && (!container.children || container.children.length === 0)) {
-          renderDiffInitialBriefing();
-        }
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
 }
@@ -1001,6 +1153,35 @@ function setupVaultToggle() {
 
   if (toggleBtn) toggleBtn.addEventListener('click', toggle);
   if (collapseBtn) collapseBtn.addEventListener('click', toggle);
+
+  const searchInput = document.getElementById('capsuleSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', renderCapsuleSidebar);
+  }
+
+  const clearBtn = document.getElementById('clearVaultBtn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to delete ALL capsules from the vault? This cannot be undone.')) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/capsules', { method: 'DELETE' });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`🗑 Cleared ${data.deletedCount} capsules from vault`);
+          activeCapsule = null;
+          await loadCapsulesList();
+          capsuleHeadline.textContent = 'Select or freeze a capsule to inspect causal time-travel state';
+          capsuleStatusTag.textContent = 'STANDBY';
+          capsuleStatusTag.className = 'status-tag';
+          causalChainFlow.innerHTML = '';
+        }
+      } catch (err) {
+        showToast(`Clear vault failed: ${err.message}`);
+      }
+    });
+  }
 }
 
 function setupViewSwitcher() {
@@ -1218,9 +1399,113 @@ function setupActions() {
   window.addEventListener('resize', () => {
     updateDomReplayScaling();
   });
+
+  document.getElementById('btnCopyRawMarkdown')?.addEventListener('click', async () => {
+    if (!activeCapsule || !activeCapsule.aiDiagnosticMarkdown) {
+      showToast('Select a capsule first.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(activeCapsule.aiDiagnosticMarkdown);
+      showToast('🤖 Copied AI Prompt Packet to clipboard!');
+    } catch {
+      showToast('Clipboard copy failed.');
+    }
+  });
+
+  document.getElementById('liveDeckFreezeBtn')?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/freeze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ triggerReason: 'LIVE_DECK_INSTANT_FREEZE' }),
+      });
+      const data = await res.json();
+      if (data.ok && data.capsule) {
+        showToast(`❄️ Live Buffer Frozen: ${data.capsule.id}`);
+        await loadCapsulesList();
+        switchMode('inspector');
+        await selectCapsule(data.capsule.id);
+      }
+    } catch (err) {
+      showToast(`Freeze failed: ${err.message}`);
+    }
+  });
 }
 
 // --- 5. Live Flight Deck & Capsule Differ ---
+
+async function loadLiveBufferIfEmpty() {
+  if (!liveStreamFeed || liveStreamFeed.children.length > 0) return;
+  try {
+    const res = await fetch('/api/buffer?durationMs=60000');
+    const data = await res.json();
+    if (data.events && Array.isArray(data.events)) {
+      const sorted = [...data.events].reverse();
+      for (const e of sorted.slice(0, 80)) {
+        appendLiveFeedEvent(e);
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function setupKeyboardShortcuts() {
+  window.addEventListener('keydown', (e) => {
+    const tag = (e.target?.tagName || '').toLowerCase();
+    const isInput = tag === 'input' || tag === 'textarea' || tag === 'select';
+
+    // Alt+Shift+B -> Instant Freeze Capsule!
+    if (e.altKey && e.shiftKey && (e.key === 'B' || e.key === 'b')) {
+      e.preventDefault();
+      document.getElementById('freezeNowBtn')?.click();
+      return;
+    }
+
+    if (isInput) return;
+
+    // Space -> Play / Pause playback
+    if (e.code === 'Space') {
+      e.preventDefault();
+      playPauseBtn?.click();
+      return;
+    }
+
+    // Left Arrow -> Previous Event
+    if (e.code === 'ArrowLeft') {
+      e.preventDefault();
+      document.getElementById('stepPrevBtn')?.click();
+      return;
+    }
+
+    // Right Arrow -> Next Event
+    if (e.code === 'ArrowRight') {
+      e.preventDefault();
+      document.getElementById('stepNextBtn')?.click();
+      return;
+    }
+
+    // Escape -> Close Vault Drawer
+    if (e.code === 'Escape') {
+      const studioBody = document.getElementById('studioBody');
+      if (studioBody && !studioBody.classList.contains('sidebar-collapsed')) {
+        studioBody.classList.add('sidebar-collapsed');
+        document.getElementById('toggleVaultBtn')?.classList.remove('active');
+      }
+      return;
+    }
+
+    // Alt+1..4 -> Switch Modes
+    if (e.altKey) {
+      if (e.key === '1') switchMode('inspector');
+      if (e.key === '2') switchMode('live');
+      if (e.key === '3') switchMode('diff');
+      if (e.key === '4') switchMode('cli');
+    }
+  });
+}
+
 let liveStreamCount = 0;
 let currentLiveFilter = 'ALL';
 
@@ -1466,7 +1751,22 @@ async function runCapsuleDiff() {
     });
 
     // 1. Verdict Banner
-    const verdictBannerHtml = hasRegression
+    const verdictBannerHtml = d.isIdentical
+      ? `
+      <div class="diff-verdict-banner nominal">
+        <div class="verdict-left">
+          <div class="verdict-badge-row">
+            <span class="verdict-badge" style="border-color:#38bdf8;color:#38bdf8;">● IDENTICAL CAPSULES AUDITED</span>
+            <span class="verdict-tag">SELF-COMPARISON</span>
+          </div>
+          <h3 class="verdict-headline">Same Capsule Selected for Both Pods</h3>
+          <p class="verdict-summary">
+            Baseline A and Comparison B are the identical snapshot (<strong>${escapeHtml(d.capsuleA.title)}</strong>). Select two distinct snapshots (e.g. Healthy Baseline vs Crash Snapshot) to isolate runtime regressions.
+          </p>
+        </div>
+      </div>
+      `
+      : hasRegression
       ? `
       <div class="diff-verdict-banner regression">
         <div class="verdict-left">

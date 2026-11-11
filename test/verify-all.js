@@ -35,7 +35,7 @@ async function runVerification() {
   });
 
   await daemon.start();
-  console.log('✔ [1/6] Blackbox Daemon Server booted on port', testPort);
+  console.log('✔ [1/9] Blackbox Daemon Server booted on port', testPort);
 
   // Spawn the supervised Demo Backend Server
   const demoServerScript = path.join(ROOT_DIR, 'src/demo/demo-server.js');
@@ -48,7 +48,7 @@ async function runVerification() {
 
   // Wait for demo server to listen
   await sleep(900);
-  console.log('✔ [2/6] Supervised Backend ("nexuspay-api") spawned & hooked into PTY/Stream collector');
+  console.log('✔ [2/9] Supervised Backend ("nexuspay-api") spawned & hooked into PTY/Stream collector');
 
   // Step A: Simulate Healthy Baseline Flow & Freeze Healthy Capsule
   const baseTraceId = 'tr_healthy_001';
@@ -117,7 +117,7 @@ async function runVerification() {
   });
   const healthyCapsuleData = await healthyFreezeRes.json();
   assert.equal(healthyCapsuleData.ok, true);
-  console.log('✔ [3/6] Healthy Baseline Capsule frozen:', healthyCapsuleData.capsule.id);
+  console.log('✔ [3/9] Healthy Baseline Capsule frozen:', healthyCapsuleData.capsule.id);
 
   // Step B: Simulate Real Full-Stack Crash (Browser Click -> POST /api/checkout -> Backend stderr Stack Trace -> HTTP 500)
   const crashTraceId = 'tr_crash_checkout_999';
@@ -214,7 +214,7 @@ async function runVerification() {
     'Expected local source code X-Ray snippet extracted from demo-server.js'
   );
 
-  console.log('✔ [4/6] End-to-End Causal Fault Chain verified:');
+  console.log('✔ [4/9] End-to-End Causal Fault Chain verified:');
   console.log('        Headline :', crashCapsule.causal.rootCauseSummary.headline);
   console.log(
     '        Culprit  :',
@@ -229,7 +229,7 @@ async function runVerification() {
   const diffJson = await diffRes.json();
   assert.equal(diffJson.ok, true);
   assert.equal(diffJson.diff.statusChange, 'HEALTHY_SNAPSHOT -> FAULT_DETECTED');
-  console.log('✔ [5/6] Capsule Differential & Regression Engine verified');
+  console.log('✔ [5/9] Capsule Differential & Regression Engine verified');
 
   // Step D: Verify Model Context Protocol (MCP) JSON-RPC 2.0 Server
   const mcp = new BlackboxMcpServer({
@@ -257,10 +257,44 @@ async function runVerification() {
   const mcpText = callRpc.result.content[0].text;
   assert.ok(mcpText.includes('BLACKBOX Flight Recorder — Full-Stack Bug Capsule'));
   assert.ok(mcpText.includes('partnerShare'));
-  console.log('✔ [6/6] MCP Server JSON-RPC 2.0 tools verified (`get_latest_crash_capsule`)');
+  console.log('✔ [6/9] MCP Server JSON-RPC 2.0 tools verified (`get_latest_crash_capsule`)');
+
+  // Step E: Verify On-Demand Source Code X-Ray REST API (/api/source)
+  const culpritFile = crashCapsule.causal.rootCauseSummary.culpritFile;
+  const culpritLine = crashCapsule.causal.rootCauseSummary.culpritLine;
+  const sourceRes = await fetch(
+    `http://127.0.0.1:${testPort}/api/source?file=${encodeURIComponent(
+      culpritFile
+    )}&line=${culpritLine}&radius=6`
+  );
+  const sourceJson = await sourceRes.json();
+  assert.equal(sourceJson.ok, true);
+  assert.ok(sourceJson.snippet, 'Expected source code snippet from /api/source');
+  assert.equal(sourceJson.snippet.targetLine, 77);
+  console.log('✔ [7/9] On-Demand Source Code X-Ray API verified (`/api/source`)');
+
+  // Step F: Verify Self-Differential comparison
+  const selfDiffRes = await fetch(
+    `http://127.0.0.1:${testPort}/api/capsules/diff?a=${crashCapsule.id}&b=${crashCapsule.id}`
+  );
+  const selfDiffJson = await selfDiffRes.json();
+  assert.equal(selfDiffJson.ok, true);
+  assert.equal(selfDiffJson.diff.isIdentical, true);
+  assert.equal(selfDiffJson.diff.newCausalChains.length, 0);
+  console.log('✔ [8/9] Self-Differential Invariance verified (zero false regressions)');
+
+  // Step G: Verify Capsule Deletion API (DELETE /api/capsules/:id)
+  const delRes = await fetch(`http://127.0.0.1:${testPort}/api/capsules/${crashCapsule.id}`, {
+    method: 'DELETE',
+  });
+  const delJson = await delRes.json();
+  assert.equal(delJson.ok, true);
+  const afterDelRes = await fetch(`http://127.0.0.1:${testPort}/api/capsules/${crashCapsule.id}`);
+  assert.equal(afterDelRes.status, 404);
+  console.log('✔ [9/9] Archival Vault Deletion & Index Pruning verified');
 
   daemon.stop();
-  console.log('\n🎉 ALL BLACKBOX SYSTEMS PASSED VERIFICATION WITH 100% PRECISION!');
+  console.log('\n🎉 ALL 9 BLACKBOX SUBSYSTEMS PASSED VERIFICATION WITH 100% PRECISION!');
   process.exit(0);
 }
 

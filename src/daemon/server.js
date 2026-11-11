@@ -13,6 +13,7 @@ import { WebSocketServer } from 'ws';
 import { BlackboxRingBuffer } from '../core/ring-buffer.js';
 import { CapsuleVault } from '../core/capsule-vault.js';
 import { captureGitState } from '../core/git-inspector.js';
+import { resolveLocalFile, extractSourceSnippet } from '../core/stack-parser.js';
 import { ProcessSupervisor } from './process-supervisor.js';
 
 function freePortIfOccupied(port) {
@@ -354,6 +355,11 @@ export class BlackboxDaemonServer {
         });
       }
 
+      if (pathname === '/api/capsules' && req.method === 'DELETE') {
+        const deletedCount = this.vault.clearAllCapsules();
+        return this._sendJson(res, 200, { ok: true, deletedCount });
+      }
+
       if (pathname === '/api/capsules/diff' && req.method === 'GET') {
         const idA = parsedUrl.searchParams.get('a');
         const idB = parsedUrl.searchParams.get('b');
@@ -367,6 +373,12 @@ export class BlackboxDaemonServer {
         return this._sendJson(res, 200, { ok: true, capsule: imported });
       }
 
+      if (pathname.startsWith('/api/capsules/') && req.method === 'DELETE') {
+        const id = decodeURIComponent(pathname.replace('/api/capsules/', ''));
+        const ok = this.vault.deleteCapsule(id);
+        return this._sendJson(res, 200, { ok, id });
+      }
+
       if (pathname.startsWith('/api/capsules/') && req.method === 'GET') {
         const id = decodeURIComponent(pathname.replace('/api/capsules/', ''));
         const capsule = this.vault.getCapsule(id);
@@ -374,6 +386,24 @@ export class BlackboxDaemonServer {
           return this._sendJson(res, 404, { ok: false, error: `Capsule "${id}" not found` });
         }
         return this._sendJson(res, 200, { ok: true, capsule });
+      }
+
+      if (pathname === '/api/source' && req.method === 'GET') {
+        const rawFile = parsedUrl.searchParams.get('file');
+        const line = parseInt(parsedUrl.searchParams.get('line') || '1', 10);
+        const radius = parseInt(parsedUrl.searchParams.get('radius') || '8', 10);
+
+        if (!rawFile) {
+          return this._sendJson(res, 400, { ok: false, error: 'Missing "file" query parameter' });
+        }
+
+        const resolved = resolveLocalFile(rawFile, this.projectCwd);
+        if (!resolved) {
+          return this._sendJson(res, 404, { ok: false, error: `File not found: ${rawFile}` });
+        }
+
+        const snippet = extractSourceSnippet(resolved, line, radius);
+        return this._sendJson(res, 200, { ok: true, snippet, resolvedPath: resolved });
       }
 
       if (pathname === '/api/git' && req.method === 'GET') {

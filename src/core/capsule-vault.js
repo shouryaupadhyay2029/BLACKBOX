@@ -205,6 +205,47 @@ export class CapsuleVault {
   }
 
   /**
+   * Deletes a single capsule from disk and the index by its ID.
+   * @param {string} id
+   * @returns {boolean}
+   */
+  deleteCapsule(id) {
+    if (!id) return false;
+    const safeId = path.basename(id).replace(/\.(blackbox|kala)\.json$/, '');
+    const candidates = [
+      path.join(this.storageDir, `${safeId}.blackbox.json`),
+      path.join(this.storageDir, `${safeId}.kala.json`),
+    ];
+    let deleted = false;
+    for (const filePath of candidates) {
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+          deleted = true;
+        } catch {
+          // ignore
+        }
+      }
+    }
+    this.capsulesIndex = this._loadIndex().filter((c) => c.id !== safeId);
+    this._saveIndex();
+    return deleted;
+  }
+
+  /**
+   * Clears all saved capsules from the vault.
+   * @returns {number}
+   */
+  clearAllCapsules() {
+    const list = this.listCapsules();
+    let count = 0;
+    for (const c of list) {
+      if (this.deleteCapsule(c.id)) count++;
+    }
+    return count;
+  }
+
+  /**
    * Compares two capsules (`capsuleA` vs `capsuleB`) to highlight regressions in
    * HTTP status codes, new terminal exceptions, and modified Git files.
    */
@@ -215,6 +256,7 @@ export class CapsuleVault {
       throw new Error('Both capsules must exist to compute a differential comparison.');
     }
 
+    const isIdentical = capA.id === capB.id;
     const endpointsA = this._summarizeEndpoints(capA.events);
     const endpointsB = this._summarizeEndpoints(capB.events);
     const allRoutes = new Set([...Object.keys(endpointsA), ...Object.keys(endpointsB)]);
@@ -233,14 +275,30 @@ export class CapsuleVault {
       }
     }
 
+    let newCausalChains = [];
+    if (!isIdentical) {
+      const chainsA = capA.causal?.causalChains || [];
+      const signaturesA = new Set(
+        chainsA.map(
+          (c) =>
+            `${c.culprit?.culpritFile || ''}:${c.culprit?.culpritLine || ''}:${c.networkRequest?.url || ''}`
+        )
+      );
+      newCausalChains = (capB.causal?.causalChains || []).filter((c) => {
+        const sig = `${c.culprit?.culpritFile || ''}:${c.culprit?.culpritLine || ''}:${c.networkRequest?.url || ''}`;
+        return !signaturesA.has(sig);
+      });
+    }
+
     return {
       capsuleA: { id: capA.id, title: capA.title, createdAt: capA.createdAt },
       capsuleB: { id: capB.id, title: capB.title, createdAt: capB.createdAt },
-      statusChange: `${capA.status} -> ${capB.status}`,
+      isIdentical,
+      statusChange: isIdentical ? `${capA.status} (Identical)` : `${capA.status} -> ${capB.status}`,
       routeDiffs,
-      newCausalChains: capB.causal?.causalChains || [],
+      newCausalChains,
       gitCommitChange: `${capA.git?.headCommit || 'none'} -> ${capB.git?.headCommit || 'none'}`,
-      gitModifiedFilesAfter: capB.git?.modifiedFiles || [],
+      gitModifiedFilesAfter: isIdentical ? [] : (capB.git?.modifiedFiles || []),
     };
   }
 
