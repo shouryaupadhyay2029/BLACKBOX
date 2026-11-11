@@ -3188,6 +3188,20 @@ body::before {
   gap: 12px;
 }
 
+
+.hex-card-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--crimson-bright);
+  background: rgba(210, 19, 25, 0.12);
+  border: 1px solid rgba(210, 19, 25, 0.35);
+  padding: 2px 7px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
 .hex-card-title {
   margin: 0;
   font-family: var(--font-sans);

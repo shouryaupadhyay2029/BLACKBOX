@@ -398,25 +398,30 @@
           </div>
         </div>
 
-        <!-- Part 2: 3-Column Card Grid (Telemetry where your agent works) -->
+        <!-- Part 2: The Core Need & Benefits of Blackbox (Why You & AI Need Telemetry) -->
         <div class="hex-cards-section" id="hexAgentSection">
           <div class="hex-section-header">
+            <div class="hex-eyebrow-pill">
+              <span class="hex-prompt-glyph">✦</span>
+              <span>THE GROUND-TRUTH TELEMETRY HARNESS</span>
+            </div>
             <h2 class="hex-section-title">
-              Telemetry where <br />
-              <em class="hex-serif-italic">your agent works</em>
+              Why developers &amp; AI agents <br />
+              <em class="hex-serif-italic">need a Blackbox</em>
             </h2>
             <p class="hex-section-desc">
-              Build locally, inspect multi-plane time-travel, and collaborate with autonomous AI agents.
+              AI models are brilliant at writing code, but completely blind to your localhost runtime. Blackbox captures full-stack execution telemetry so you and your agents fix bugs in 1 shot — with zero hallucinations.
             </p>
           </div>
 
           <div class="hex-cards-grid">
-            <!-- Card 1: Works in any terminal (Real CLI Commands) -->
+            <!-- Pillar 1: Ground Truth vs Blind Guessing -->
             <div class="hex-card">
               <div class="hex-card-content">
-                <h3 class="hex-card-title">Works in any terminal</h3>
+                <div class="hex-card-badge">THE CONTEXT GAP SOLVED</div>
+                <h3 class="hex-card-title">Ground truth, zero hallucinations</h3>
                 <p class="hex-card-text">
-                  Interact directly with Blackbox from your terminal. Inspect stored capsules, auto-freeze on hotkey (<code>Ctrl+B</code>), and print causal fault chains directly to stdout.
+                  Asking an AI to debug without runtime telemetry is like asking a surgeon to operate blindfolded. Blackbox records the last 60 seconds of execution and hands your AI the exact trigger, network payload, and crashing V8 stack trace via MCP.
                 </p>
               </div>
               <div class="hex-mini-window">
@@ -426,34 +431,33 @@
                     <span class="dot-yellow"></span>
                     <span class="dot-green"></span>
                   </div>
-                  <span class="hex-term-title">blackbox capsules</span>
+                  <span class="hex-term-title">Without Blackbox vs. With Blackbox</span>
                 </div>
                 <div class="hex-mini-body">
                   <div class="hex-term-line mini">
-                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox capsules</span>
+                    <span class="term-red">✕ Without:</span> <span class="term-dim">"It crashed, please fix."</span>
                   </div>
                   <div class="hex-term-res mini">
-                    Found 21 Blackbox Bug Capsule(s):<br />
-                    • <span class="term-red">[FAULT]</span> cap_2026-11-11_4u2j (20:30:12) :: HTTP 500 on /api/checkout<br />
-                    • <span class="term-ok">[OK]</span>    cap_2026-11-11_6d65 (20:28:45) :: Healthy Inventory Baseline
+                    <span class="term-fault">⚠️</span> AI guesses. Asks you to copy-paste terminal logs, network tabs, and files. 45 minutes wasted.
                   </div>
                   <div class="hex-term-line mini">
-                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox inspect latest</span>
+                    <span class="term-ok">✓ With Blackbox:</span> <span class="term-cyan">get_latest_crash_capsule()</span>
                   </div>
                   <div class="hex-term-res mini">
-                    <span class="term-cyan">Causal Diagnosis:</span> <span class="term-red">FAULT_DETECTED</span><br />
-                    <span class="term-dim">Culprit: demo-server.js:46 · Confidence: 96%</span>
+                    <span class="term-ok">✓</span> Ground truth delivered via MCP<br />
+                    <span class="term-dim">Culprit: demo-server.js:46 · Patch applied in 1 shot</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Card 2: Plays nicely with coding agents (Real stdio MCP Server) -->
+            <!-- Pillar 2: 4 Disconnected Silos Unified -->
             <div class="hex-card">
               <div class="hex-card-content">
-                <h3 class="hex-card-title">Plays nicely with coding agents</h3>
+                <div class="hex-card-badge">SINGLE UNIFIED TIMELINE</div>
+                <h3 class="hex-card-title">One timeline across 4 planes</h3>
                 <p class="hex-card-text">
-                  Use Claude Code, Cursor, Windsurf, or Gemini CLI to analyze crashes and patch bugs. Connect your agent with our stdio MCP server: <code>blackbox mcp</code>
+                  Debugging normally forces you to cross-reference Chrome DevTools, raw terminal stdout, IDE files, and Git diffs across 4 screens. Blackbox correlates user clicks, HTTP packets, backend exceptions, and uncommitted code on a single horological timeline.
                 </p>
               </div>
               <div class="hex-mini-window">
@@ -463,33 +467,35 @@
                     <span class="dot-yellow"></span>
                     <span class="dot-green"></span>
                   </div>
-                  <span class="hex-term-title">Claude Code with Blackbox MCP</span>
+                  <span class="hex-term-title">Synchronized Multi-Plane Flight Capsule</span>
                 </div>
-                <div class="hex-mini-body agent-theme">
-                  <div class="agent-banner">
-                    <pre class="agent-mascot">
-  ╭──────╮
-  │ 👾   │ Claude Code
-  ╰──────╯</pre>
+                <div class="hex-mini-body">
+                  <div class="hex-term-line mini">
+                    <span class="term-cyan">Plane I (DOM):</span> <span class="term-dim">Clicked #btnInstantCrash (14:32:01)</span>
                   </div>
                   <div class="hex-term-line mini">
-                    <span class="term-prompt">&gt;</span> <span class="term-cmd">Inspect latest crash with Blackbox MCP</span>
+                    <span class="term-cyan">Plane II (HTTP):</span> <span class="term-red">POST /api/checkout [500] (12ms)</span>
+                  </div>
+                  <div class="hex-term-line mini">
+                    <span class="term-cyan">Plane III (Code):</span> <span class="term-red">demo-server.js:46 TypeError</span>
+                  </div>
+                  <div class="hex-term-line mini">
+                    <span class="term-cyan">Plane IV (Git):</span> <span class="term-dim">demo-server.js modified (+3/-1)</span>
                   </div>
                   <div class="hex-term-res mini">
-                    <span class="term-ok">✓</span> Tool call: <span class="term-dim">get_latest_crash_capsule()</span><br />
-                    <span class="term-ok">✓</span> Root cause identified: <span class="term-red">demo-server.js:46 (partnerShare)</span><br />
-                    <span class="term-cyan">&gt; Applying null-coalescing patch to demo-server.js:46...</span> <span class="term-cursor">█</span>
+                    <span class="term-ok">✓</span> All 4 planes correlated in &lt; 1.2ms
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Card 3: Zero-config runtime supervisor (Real blackbox run & auto-freeze) -->
+            <!-- Pillar 3: The "It Worked 5 Minutes Ago" Regression Differ -->
             <div class="hex-card">
               <div class="hex-card-content">
-                <h3 class="hex-card-title">Zero-config runtime supervisor</h3>
+                <div class="hex-card-badge">REGRESSION AUDITING</div>
+                <h3 class="hex-card-title">"It worked 5 minutes ago" solved</h3>
                 <p class="hex-card-text">
-                  Wrap any dev server with <code>blackbox run</code>. A transparent reverse proxy captures HTTP traffic, stream-parses terminal PTY output, and auto-freezes an immutable 60s capsule on unhandled errors.
+                  When your app suddenly starts breaking and cascading, you waste hours wondering whether it was a network timeout, stale cache, or bad code change. The Capsule Differ compares Golden Baseline A vs Crash B, instantly pinpointing the regression.
                 </p>
               </div>
               <div class="hex-mini-window">
@@ -499,23 +505,21 @@
                     <span class="dot-yellow"></span>
                     <span class="dot-green"></span>
                   </div>
-                  <span class="hex-term-title">blackbox run "npm run dev"</span>
+                  <span class="hex-term-title">Bipartite Capsule Differential</span>
                 </div>
                 <div class="hex-mini-body">
                   <div class="hex-term-line mini">
-                    <span class="term-prompt">→</span> <span class="term-cmd">blackbox run "npm run dev"</span>
-                  </div>
-                  <div class="hex-term-res mini">
-                    <span class="term-ok">✓</span> Supervised PID 4821 (vite v5.4.10)<br />
-                    <span class="term-ok">✓</span> Wiretap Proxy active on <span class="term-cyan">:4000</span> (60s ring buffer)<br />
-                    <span class="term-ok">✓</span> Studio Flight Deck open at <span class="term-cyan">http://localhost:9876</span>
+                    <span class="term-ok">Baseline A:</span> <span class="term-dim">HTTP 200 OK (14ms) · git@clean</span>
                   </div>
                   <div class="hex-term-line mini">
-                    <span class="term-prompt">💥</span> <span class="term-red">HTTP 500 on POST /api/checkout</span>
+                    <span class="term-red">Comparison B:</span> <span class="term-red">HTTP 500 Error (354ms) · git@dirty</span>
                   </div>
                   <div class="hex-term-res mini">
-                    <span class="term-ok">❄️</span> Auto-frozen capsule: <span class="term-cyan">cap_2026-11-11_4u2j</span><br />
-                    <span class="term-dim">Culprit: demo-server.js:46 (96% confidence)</span>
+                    <span class="term-fault">▲ Delta:</span> <span class="term-red">demo-server.js:46 uncommitted null-ref</span><br />
+                    <span class="term-dim">Route /api/checkout inverted 200 → 500 (+340ms)</span>
+                  </div>
+                  <div class="hex-term-line mini">
+                    <span class="term-ok">✓ Root cause time:</span> <span class="term-cyan">Instant (0 git bisecting)</span>
                   </div>
                 </div>
               </div>
