@@ -1,40 +1,40 @@
 {
   "manifest_version": 3,
-  "name": "BLACKBOX — Localhost Flight Recorder & Time-Travel Capsule",
+  "name": "BLACKBOX — Localhost Flight Recorder Agent",
   "version": "1.0.0",
-  "description": "Zero-config 60s rolling flight recorder linking Browser DOM, Network Traces, Local Terminal stdout/stderr, and Git Diff.",
-  "permissions": ["activeTab", "storage", "scripting"],
+  "description": "Zero-config localhost flight recorder agent. Automatically streams DOM snapshots, clicks, console errors, and HTTP trace IDs to Blackbox Daemon (:9876).",
+  "permissions": ["tabs"],
   "host_permissions": [
     "http://localhost/*",
-    "https://localhost/*",
-    "http://127.0.0.1/*",
-    "https://127.0.0.1/*"
+    "http://127.0.0.1/*"
   ],
+  "action": {
+    "default_title": "BLACKBOX Flight Recorder",
+    "default_popup": "popup.html"
+  },
   "background": {
     "service_worker": "background.js"
   },
-  "action": {
-    "default_popup": "popup.html",
-    "default_title": "BLACKBOX Localhost Flight Recorder"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "http://localhost/*",
-        "https://localhost/*",
-        "http://127.0.0.1/*",
-        "https://127.0.0.1/*"
-      ],
-      "js": ["content-script.js"],
-      "run_at": "document_start"
-    }
-  ],
   "commands": {
     "freeze-capsule": {
       "suggested_key": {
         "default": "Alt+Shift+B"
       },
-      "description": "Freeze a Blackbox Time-Travel Bug Capsule immediately"
+      "description": "Freeze 60-Second Time-Travel Bug Capsule"
     }
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "exclude_matches": [
+        "http://localhost:9876/*",
+        "http://127.0.0.1:9876/*"
+      ],
+      "js": ["inject.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

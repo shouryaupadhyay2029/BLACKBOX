@@ -3,16 +3,36 @@
   "version": "1.0.0",
   "description": "BLACKBOX — The Localhost Flight Recorder & Causal Time-Travel Bug Capsule System (Browser <-> Network <-> Backend Terminal <-> Git Diff + MCP)",
   "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./sdk": "./src/sdk/browser-agent.js"
+  },
   "bin": {
     "blackbox": "./bin/blackbox.js",
     "blackbox-mcp": "./bin/blackbox-mcp.js",
     "kala": "./bin/blackbox.js",
     "kala-mcp": "./bin/blackbox-mcp.js"
   },
+  "files": [
+    "bin/",
+    "src/",
+    "extension/",
+    "install.sh",
+    "install.ps1",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "preferGlobal": true,
   "scripts": {
     "start": "node ./bin/blackbox.js demo",
     "demo": "node ./bin/blackbox.js demo",
     "studio": "node ./bin/blackbox.js studio",
+    "init": "node ./bin/blackbox.js init",
+    "doctor": "node ./bin/blackbox.js doctor",
     "mcp": "node ./bin/blackbox-mcp.js",
     "test": "node ./test/verify-all.js"
   },
@@ -23,8 +43,10 @@
     "localhost",
     "bug-capsule",
     "mcp",
+    "model-context-protocol",
     "devtools",
-    "causal-tracing"
+    "causal-tracing",
+    "ai-debugging"
   ],
   "author": "Shourya Upadhyay",
   "license": "MIT",

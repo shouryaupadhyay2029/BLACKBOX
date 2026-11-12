@@ -325,6 +325,7 @@
                 <button class="hex-tab active" data-cmd="npm install -g blackbox-flight-recorder">npm</button>
                 <button class="hex-tab" data-cmd="pnpm add -g blackbox-flight-recorder">pnpm</button>
                 <button class="hex-tab" data-cmd="npx blackbox-flight-recorder demo">npx</button>
+                <button class="hex-tab" data-cmd="blackbox init --inject">init</button>
                 <button class="hex-tab" data-cmd="npm install &amp;&amp; npm link">source</button>
                 <button class="hex-tab" data-cmd="claude mcp add blackbox -- blackbox mcp">mcp</button>
               </div>
@@ -434,17 +435,7 @@
               </p>
               <div class="setup-code-panel">
                 <div class="setup-code-header">
-                  <span>Method A: From Source Repository (Immediate)</span>
-                  <button class="btn-copy-snippet" data-copy="git clone https://github.com/your-username/blackbox.git&#10;cd blackbox&#10;npm install&#10;npm link">Copy</button>
-                </div>
-                <pre class="setup-code-pre">git clone https://github.com/your-username/blackbox.git
-cd blackbox
-npm install
-npm link</pre>
-              </div>
-              <div class="setup-code-panel">
-                <div class="setup-code-header">
-                  <span>Method B: Global Package Install</span>
+                  <span>Method A: Global Package Install (npm / pnpm / npx)</span>
                   <button class="btn-copy-snippet" data-copy="npm install -g blackbox-flight-recorder">Copy</button>
                 </div>
                 <pre class="setup-code-pre">npm install -g blackbox-flight-recorder
@@ -452,37 +443,45 @@ npm link</pre>
 pnpm add -g blackbox-flight-recorder
 npx blackbox-flight-recorder demo</pre>
               </div>
+              <div class="setup-code-panel">
+                <div class="setup-code-header">
+                  <span>Method B: From Source Repository (macOS / Linux / Windows)</span>
+                  <button class="btn-copy-snippet" data-copy="git clone https://github.com/shourya-upadhyay/blackbox.git&#10;cd blackbox&#10;npm install &amp;&amp; npm link">Copy</button>
+                </div>
+                <pre class="setup-code-pre">git clone https://github.com/shourya-upadhyay/blackbox.git
+cd blackbox
+npm install &amp;&amp; npm link   <span class="c-comment"># or ./install.sh | .\install.ps1</span></pre>
+              </div>
             </div>
 
             <!-- Step 2: Run Demo or Supervise Your Own Project -->
             <div class="hex-setup-card">
               <div class="setup-card-top">
-                <span class="setup-step-num">STEP 02 · SUPERVISE</span>
+                <span class="setup-step-num">STEP 02 · ONBOARD &amp; SUPERVISE</span>
                 <span class="setup-step-tag">NODE · PYTHON · GO · RUST</span>
               </div>
-              <h3 class="setup-card-title">Try the 10s Demo or Wrap Your Own Server</h3>
+              <h3 class="setup-card-title">1-Command Project Setup or Instant Demo</h3>
               <p class="setup-card-desc">
-                Experience Blackbox immediately with the built-in NexusPay target sandbox, or wrap your own dev command (Next.js, Vite, Express, FastAPI, Go) with <code>blackbox run</code>.
+                Run <code>blackbox init --inject</code> inside any repo to scaffold <code>.blackbox</code>, MCP configs, and Browser SDK, or wrap your dev server with <code>blackbox run</code>.
               </p>
               <div class="setup-code-panel">
                 <div class="setup-code-header">
-                  <span>Option 1: Instant Interactive Demo Sandbox (:9876 + :4400)</span>
-                  <button class="btn-copy-snippet" data-copy="blackbox demo">Copy</button>
+                  <span>Option 1: 1-Command Project Onboarding + Supervision</span>
+                  <button class="btn-copy-snippet" data-copy="blackbox init --inject&#10;blackbox run &quot;npm run dev&quot; --proxy 4000:3000">Copy</button>
                 </div>
-                <pre class="setup-code-pre">blackbox demo
-<span class="c-comment"># Boots Studio UI at http://localhost:9876</span>
-<span class="c-comment"># Boots Target App at http://localhost:4400</span></pre>
+                <pre class="setup-code-pre"><span class="c-comment"># Auto-creates .blackbox, .cursor/mcp.json &amp; injects Browser SDK:</span>
+blackbox init --inject
+
+<span class="c-comment"># Supervise dev server + attach HTTP Wiretap (4000 -&gt; 3000):</span>
+blackbox run "npm run dev" --proxy 4000:3000</pre>
               </div>
               <div class="setup-code-panel">
                 <div class="setup-code-header">
-                  <span>Option 2: Wrap Your Existing Project + HTTP Wiretap Proxy</span>
-                  <button class="btn-copy-snippet" data-copy="blackbox run &quot;npm run dev&quot; --proxy 4000:3000">Copy</button>
+                  <span>Option 2: Instant Interactive Demo Sandbox (:9876 + :4400)</span>
+                  <button class="btn-copy-snippet" data-copy="blackbox demo">Copy</button>
                 </div>
-                <pre class="setup-code-pre"><span class="c-comment"># Supervise your dev server &amp; capture PTY stdout/stderr:</span>
-blackbox run "npm run dev"
-
-<span class="c-comment"># Or attach transparent HTTP Wiretap (4000 -&gt; 3000):</span>
-blackbox run "npm run dev" --proxy 4000:3000</pre>
+                <pre class="setup-code-pre">blackbox demo
+<span class="c-comment"># Boots Studio UI at http://localhost:9876 + Sandbox at :4400</span></pre>
               </div>
             </div>
 
@@ -747,6 +746,10 @@ blackbox run "npm run dev" --proxy 4000:3000</pre>
             <span class="ref-eyebrow">✦ CLI COMMANDS, MCP TOOLS &amp; KEYBOARD SHORTCUTS REFERENCE (CLICK ANY ROW TO COPY)</span>
           </div>
           <div class="hex-cli-ref-grid">
+            <div class="cli-ref-row" data-copy="blackbox init --inject" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox init [--inject]</code>
+              <span class="cli-ref-desc">Initialize Blackbox in any project (<code>.blackbox</code>, <code>.cursor/mcp.json</code>, <code>.gitignore</code> &amp; HTML SDK tag)</span>
+            </div>
             <div class="cli-ref-row" data-copy="blackbox demo" title="Click to copy command">
               <code class="cli-ref-cmd">blackbox demo</code>
               <span class="cli-ref-desc">Launch Blackbox Studio (<code>:9876</code>) + Interactive NexusPay Target Sandbox (<code>:4400</code>)</span>
@@ -774,6 +777,10 @@ blackbox run "npm run dev" --proxy 4000:3000</pre>
             <div class="cli-ref-row" data-copy="blackbox mcp" title="Click to copy command">
               <code class="cli-ref-cmd">blackbox mcp</code>
               <span class="cli-ref-desc">Start the stdio Model Context Protocol (MCP) JSON-RPC 2.0 server for AI coding agents</span>
+            </div>
+            <div class="cli-ref-row" data-copy="blackbox doctor" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox doctor</code>
+              <span class="cli-ref-desc">Run environment, port, capsule vault, and live daemon health diagnostics</span>
             </div>
             <div class="cli-ref-row" data-copy="Alt+Shift+B" title="Keyboard Shortcut">
               <code class="cli-ref-cmd">Alt + Shift + B / Ctrl + B</code>

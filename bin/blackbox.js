@@ -3,8 +3,10 @@
  * BLACKBOX CLI — The Localhost Flight Recorder & Causal Time-Travel Capsule System
  *
  * Commands:
- *   blackbox run "<command>" [--port 9876] [--proxy 4000:3000]  Supervise any dev command with 60s rolling flight recorder
+ *   blackbox init [--inject]                                    Initialize Blackbox Vault & MCP configs (.cursor/mcp.json) in current project
+ *   blackbox doctor                                             Verify Node, Git, Vault permissions, Daemon & MCP readiness
  *   blackbox demo                                               Launch Blackbox Studio + Interactive Full-Stack Target Sandbox
+ *   blackbox run "<command>" [--port 9876] [--proxy 4000:3000]  Supervise any dev command with 60s rolling flight recorder
  *   blackbox studio [--port 9876]                               Start Blackbox Studio & Daemon standalone
  *   blackbox freeze [--title "..."]                             Trigger an immediate capsule freeze on the active daemon
  *   blackbox capsules                                           List all saved Bug Capsules in the vault
@@ -12,6 +14,7 @@
  *   blackbox mcp                                                Start the stdio Model Context Protocol (MCP) server
  */
 
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -100,13 +103,11 @@ function attachTerminalHotkey(daemon) {
     process.stdin.setRawMode(true);
     process.stdin.resume();
     process.stdin.on('data', (key) => {
-      // Ctrl+C -> exit cleanly
       if (key[0] === 3) {
         console.log('\n[BLACKBOX] Shutting down Flight Recorder Daemon...');
         cleanup();
         process.exit(0);
       }
-      // Ctrl+B (ASCII 2) -> Freeze Capsule immediately
       if (key[0] === 2) {
         const cap = daemon.freezeNow({ triggerReason: 'CLI_HOTKEY_CTRL_B' });
         console.log(
@@ -121,6 +122,130 @@ function attachTerminalHotkey(daemon) {
 
 async function main() {
   const port = Number(parseFlag('--port', process.env.BLACKBOX_PORT || process.env.KALA_PORT || 9876));
+
+  if (subcommand === '--version' || subcommand === '-v' || subcommand === 'version') {
+    console.log('blackbox-flight-recorder v1.0.0');
+    return;
+  }
+
+  if (subcommand === 'init') {
+    const cwd = process.cwd();
+    console.log(`\n⚡ Initializing BLACKBOX in ${cwd}...\n`);
+
+    // 1. Create .blackbox/capsules directory
+    const capsulesDir = path.join(cwd, '.blackbox', 'capsules');
+    fs.mkdirSync(capsulesDir, { recursive: true });
+    console.log('  \x1b[32m✔\x1b[0m Created archival vault directory: .blackbox/capsules');
+
+    // 2. Ensure .blackbox/ is in .gitignore
+    const gitignorePath = path.join(cwd, '.gitignore');
+    if (fs.existsSync(gitignorePath)) {
+      const gitignore = fs.readFileSync(gitignorePath, 'utf8');
+      if (!gitignore.includes('.blackbox')) {
+        fs.appendFileSync(gitignorePath, '\n.blackbox/\n', 'utf8');
+        console.log('  \x1b[32m✔\x1b[0m Added .blackbox/ to .gitignore');
+      } else {
+        console.log('  \x1b[32m✔\x1b[0m .blackbox/ already present in .gitignore');
+      }
+    }
+
+    // 3. Configure .cursor/mcp.json for Cursor / Windsurf
+    const cursorDir = path.join(cwd, '.cursor');
+    const cursorMcpPath = path.join(cursorDir, 'mcp.json');
+    fs.mkdirSync(cursorDir, { recursive: true });
+    let cursorConfig = { mcpServers: {} };
+    if (fs.existsSync(cursorMcpPath)) {
+      try {
+        cursorConfig = JSON.parse(fs.readFileSync(cursorMcpPath, 'utf8'));
+        cursorConfig.mcpServers = cursorConfig.mcpServers || {};
+      } catch {
+        cursorConfig = { mcpServers: {} };
+      }
+    }
+    cursorConfig.mcpServers.blackbox = {
+      command: 'blackbox',
+      args: ['mcp'],
+    };
+    fs.writeFileSync(cursorMcpPath, JSON.stringify(cursorConfig, null, 2) + '\n', 'utf8');
+    console.log('  \x1b[32m✔\x1b[0m Configured MCP server in .cursor/mcp.json');
+
+    // 4. Configure .mcp.json for Claude Code / Antigravity / Zed
+    const stdMcpPath = path.join(cwd, '.mcp.json');
+    let stdConfig = { mcpServers: {} };
+    if (fs.existsSync(stdMcpPath)) {
+      try {
+        stdConfig = JSON.parse(fs.readFileSync(stdMcpPath, 'utf8'));
+        stdConfig.mcpServers = stdConfig.mcpServers || {};
+      } catch {
+        stdConfig = { mcpServers: {} };
+      }
+    }
+    stdConfig.mcpServers.blackbox = {
+      command: 'blackbox',
+      args: ['mcp'],
+    };
+    fs.writeFileSync(stdMcpPath, JSON.stringify(stdConfig, null, 2) + '\n', 'utf8');
+    console.log('  \x1b[32m✔\x1b[0m Configured MCP server in .mcp.json');
+
+    // 5. Optional HTML SDK injection if --inject passed
+    const sdkTag = `<script src="http://localhost:${port}/sdk/browser-agent.js" data-blackbox-endpoint="http://localhost:${port}"></script>`;
+    if (args.includes('--inject')) {
+      const candidates = [
+        path.join(cwd, 'index.html'),
+        path.join(cwd, 'public', 'index.html'),
+      ];
+      for (const htmlFile of candidates) {
+        if (fs.existsSync(htmlFile)) {
+          let content = fs.readFileSync(htmlFile, 'utf8');
+          if (!content.includes('browser-agent.js')) {
+            content = content.replace('</head>', `  ${sdkTag}\n</head>`);
+            fs.writeFileSync(htmlFile, content, 'utf8');
+            console.log(`  \x1b[32m✔\x1b[0m Injected Browser Agent SDK into ${path.relative(cwd, htmlFile)}`);
+          }
+        }
+      }
+    }
+
+    console.log('\n🚀 \x1b[1mBlackbox initialized! Next steps:\x1b[0m');
+    console.log(`  1. Add to your frontend HTML <head> (or run 'blackbox init --inject'):\n     \x1b[36m${sdkTag}\x1b[0m`);
+    console.log('  2. Supervise your dev server:\n     \x1b[32mblackbox run "npm run dev"\x1b[0m');
+    console.log(`  3. Open Blackbox Studio UI:\n     \x1b[32mhttp://localhost:${port}\x1b[0m\n`);
+    return;
+  }
+
+  if (subcommand === 'doctor') {
+    console.log('\n🩺 \x1b[1mBLACKBOX ENVIRONMENT DIAGNOSTICS (DOCTOR)\x1b[0m\n');
+    const nodeVer = process.versions.node;
+    const major = Number(nodeVer.split('.')[0]);
+    console.log(`  ${major >= 18 ? '\x1b[32m✔\x1b[0m' : '\x1b[31m✘\x1b[0m'} Node.js Runtime       : v${nodeVer} (requires >= 18.0.0)`);
+
+    try {
+      const gitVer = execSync('git --version', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+      console.log(`  \x1b[32m✔\x1b[0m Git Inspector         : ${gitVer}`);
+    } catch {
+      console.log('  \x1b[33m!\x1b[0m Git Inspector         : git not found on PATH');
+    }
+
+    const vault = new CapsuleVault({ projectCwd: process.cwd() });
+    const count = vault.listCapsules().length;
+    console.log(`  \x1b[32m✔\x1b[0m Archival Vault        : ${vault.storageDir} (${count} capsules indexed)`);
+
+    const mcp = new BlackboxMcpServer({ projectCwd: process.cwd() });
+    const rpcRes = await mcp.handleJsonRpc({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
+    console.log(`  \x1b[32m✔\x1b[0m MCP Server Engine     : ${rpcRes.result.serverInfo.name} v${rpcRes.result.serverInfo.version} (ready)`);
+
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/status`);
+      const data = await res.json();
+      if (data.ok) {
+        console.log(`  \x1b[32m✔\x1b[0m Active Daemon (:9876) : ONLINE (${data.buffer.activeEvents} events in ring buffer)`);
+      }
+    } catch {
+      console.log(`  \x1b[36mℹ\x1b[0m Active Daemon (:9876) : Standby (start with 'blackbox demo' or 'blackbox run "..."')`);
+    }
+    console.log('\n✅ All Blackbox core systems are healthy and ready.\n');
+    return;
+  }
 
   if (subcommand === 'mcp') {
     const mcp = new BlackboxMcpServer({ projectCwd: process.cwd() });
@@ -262,6 +387,8 @@ async function main() {
   // Help output
   printBanner(port);
   console.log('Usage:');
+  console.log('  blackbox init [--inject]                   Initialize Blackbox & MCP configs in current project');
+  console.log('  blackbox doctor                            Verify Node, Git, Vault, Daemon & MCP health');
   console.log('  blackbox demo                              Launch Blackbox Studio + Interactive Target Sandbox');
   console.log('  blackbox run "<cmd>" [--proxy 4000:3000]   Supervise any backend/frontend dev command');
   console.log('  blackbox studio [--port 9876]              Run Blackbox Daemon & Studio UI');
