@@ -161,7 +161,7 @@ async function main() {
   }
 
   if (subcommand === 'freeze') {
-    const title = parseFlag('--title', '');
+    const title = parseFlag('--title', parseFlag('--reason', ''));
     const res = await fetch(`http://127.0.0.1:${port}/api/freeze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

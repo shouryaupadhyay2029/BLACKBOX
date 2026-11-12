@@ -308,7 +308,7 @@
             <div class="hex-eyebrow-pill">
               <span class="hex-prompt-glyph">&gt;_ The Blackbox CLI</span>
               <span class="hex-eyebrow-divider">·</span>
-              <a href="#hexFeatures" class="hex-eyebrow-link">Read the announcement &gt;</a>
+              <a href="#hexSetupGuide" class="hex-eyebrow-link">Read the setup &amp; install guide &gt;</a>
             </div>
 
             <h2 class="hex-hero-title">
@@ -317,15 +317,16 @@
             </h2>
 
             <p class="hex-hero-desc">
-              Supervise projects, record 60s flight telemetry, auto-freeze crashes, and connect your agents... without leaving your terminal.
+              Supervise projects, record 60s flight telemetry, auto-freeze crashes, and connect your coding agents via MCP... without leaving your terminal.
             </p>
 
             <div class="hex-install-container">
               <div class="hex-install-tabs">
-                <button class="hex-tab active" data-cmd="npm i -g blackbox-flight-recorder">npm</button>
-                <button class="hex-tab" data-cmd="curl -fsSL https://blackbox.run/install.sh | bash">curl</button>
-                <button class="hex-tab" data-cmd="npx blackbox run &quot;npm run dev&quot;">npx</button>
+                <button class="hex-tab active" data-cmd="npm install -g blackbox-flight-recorder">npm</button>
                 <button class="hex-tab" data-cmd="pnpm add -g blackbox-flight-recorder">pnpm</button>
+                <button class="hex-tab" data-cmd="npx blackbox-flight-recorder demo">npx</button>
+                <button class="hex-tab" data-cmd="npm install &amp;&amp; npm link">source</button>
+                <button class="hex-tab" data-cmd="claude mcp add blackbox -- blackbox mcp">mcp</button>
               </div>
 
               <div class="hex-install-box">
@@ -333,7 +334,7 @@
                 <div class="crop-corner top-right"></div>
                 <div class="crop-corner bottom-left"></div>
                 <div class="crop-corner bottom-right"></div>
-                <span class="hex-install-code" id="hexInstallCodeText">npm i -g blackbox-flight-recorder</span>
+                <span class="hex-install-code" id="hexInstallCodeText">npm install -g blackbox-flight-recorder</span>
                 <button class="hex-copy-btn" id="hexCopyBtn" title="Copy to clipboard">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -344,9 +345,9 @@
             </div>
 
             <div class="hex-cta-row">
-              <a href="#hexFeatures" class="hex-link-item">
+              <a href="#hexSetupGuide" class="hex-link-item">
                 <span class="hex-link-icon">📖</span>
-                <span>Read the CLI docs</span>
+                <span>Installation &amp; Setup Guide</span>
               </a>
               <a href="/?mode=live" class="hex-link-item highlight">
                 <span>→ Launch Flight Deck</span>
@@ -380,25 +381,168 @@
                   Type a command and press Enter. Try <span class="term-hl">`blackbox help`</span> to get started.
                 </div>
                 <div class="hex-term-line">
-                  <span class="term-prompt">→ ~</span> <span class="term-cmd">blackbox run "npm run dev"</span>
+                  <span class="term-prompt">→ ~</span> <span class="term-cmd">blackbox run "npm run dev" --proxy 4000:3000</span>
                 </div>
                 <div class="hex-term-res">
-                  <span class="term-ok">✓</span> Supervised PID 4821 (vite v5.4.10)<br />
-                  <span class="term-ok">✓</span> Transparent Wiretap Proxy active on <span class="term-cyan">:4000</span><br />
+                  <span class="term-ok">✓</span> Supervised dev-server PID 4821 (PTY &amp; stderr collector active)<br />
+                  <span class="term-ok">✓</span> Wiretap Proxy active on <span class="term-cyan">http://localhost:4000 → 127.0.0.1:3000</span><br />
                   <span class="term-ok">✓</span> 60s Horological RingBuffer active (0 disk I/O, RAM circular)<br />
                   <span class="term-ok">✓</span> Studio Flight Deck open at <span class="term-cyan">http://localhost:9876</span>
                 </div>
                 <div class="hex-term-line">
-                  <span class="term-prompt">→ ~</span> <span class="term-cmd">blackbox freeze --reason "Checkout 500 Anomaly"</span>
+                  <span class="term-prompt">→ ~</span> <span class="term-cmd">blackbox freeze --title "Checkout 500 Anomaly"</span>
                 </div>
                 <div class="hex-term-res">
-                  <span class="term-ok">✓</span> Capsule frozen: <span class="term-dim">(cap_2026-11-11_4u2j)</span><br />
-                  <span class="term-fault">💥</span> Culprit: <span class="term-red">demo-server.js:46</span> (96% confidence)<br />
-                  <span class="term-ok">✓</span> AI Root-Cause Dossier compiled & ready for MCP
+                  <span class="term-ok">❄️</span> Capsule Frozen: <span class="term-dim">cap_2026-11-11T16-42-33_qukm</span><br />
+                  <span class="term-fault">💥</span> Culprit: <span class="term-red">src/demo/demo-server.js:77</span> (96% confidence)<br />
+                  <span class="term-ok">✓</span> AI Root-Cause Dossier compiled &amp; ready for MCP
                 </div>
                 <div class="hex-term-line">
                   <span class="term-prompt">→ ~</span> <span class="term-cursor">█</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Part 1.5: Complete Step-by-Step Installation, Project Setup & MCP Integration Guide -->
+        <div class="hex-setup-section" id="hexSetupGuide">
+          <div class="hex-section-header">
+            <div class="hex-eyebrow-pill">
+              <span class="hex-prompt-glyph">⚡</span>
+              <span>INSTALLATION, SETUP &amp; INTEGRATION BLUEPRINT</span>
+            </div>
+            <h2 class="hex-section-title">
+              Set up Blackbox in <br />
+              <em class="hex-serif-italic">under 60 seconds</em>
+            </h2>
+            <p class="hex-section-desc">
+              Whether you want to test the interactive sandbox right now, wrap your own local application, or wire autonomous AI agents via Model Context Protocol (MCP) — follow these 4 steps.
+            </p>
+          </div>
+
+          <div class="hex-setup-grid">
+            <!-- Step 1: Installation -->
+            <div class="hex-setup-card">
+              <div class="setup-card-top">
+                <span class="setup-step-num">STEP 01 · INSTALL</span>
+                <span class="setup-step-tag">ZERO HEAVY DEPS</span>
+              </div>
+              <h3 class="setup-card-title">Install Globally or Link from Source</h3>
+              <p class="setup-card-desc">
+                Clone the repository and run <code>npm link</code> to make the <code>blackbox</code> and <code>blackbox-mcp</code> binaries globally available, or install directly via npm / pnpm.
+              </p>
+              <div class="setup-code-panel">
+                <div class="setup-code-header">
+                  <span>Method A: From Source Repository (Immediate)</span>
+                  <button class="btn-copy-snippet" data-copy="git clone https://github.com/your-username/blackbox.git&#10;cd blackbox&#10;npm install&#10;npm link">Copy</button>
+                </div>
+                <pre class="setup-code-pre">git clone https://github.com/your-username/blackbox.git
+cd blackbox
+npm install
+npm link</pre>
+              </div>
+              <div class="setup-code-panel">
+                <div class="setup-code-header">
+                  <span>Method B: Global Package Install</span>
+                  <button class="btn-copy-snippet" data-copy="npm install -g blackbox-flight-recorder">Copy</button>
+                </div>
+                <pre class="setup-code-pre">npm install -g blackbox-flight-recorder
+<span class="c-comment"># Or with pnpm / npx:</span>
+pnpm add -g blackbox-flight-recorder
+npx blackbox-flight-recorder demo</pre>
+              </div>
+            </div>
+
+            <!-- Step 2: Run Demo or Supervise Your Own Project -->
+            <div class="hex-setup-card">
+              <div class="setup-card-top">
+                <span class="setup-step-num">STEP 02 · SUPERVISE</span>
+                <span class="setup-step-tag">NODE · PYTHON · GO · RUST</span>
+              </div>
+              <h3 class="setup-card-title">Try the 10s Demo or Wrap Your Own Server</h3>
+              <p class="setup-card-desc">
+                Experience Blackbox immediately with the built-in NexusPay target sandbox, or wrap your own dev command (Next.js, Vite, Express, FastAPI, Go) with <code>blackbox run</code>.
+              </p>
+              <div class="setup-code-panel">
+                <div class="setup-code-header">
+                  <span>Option 1: Instant Interactive Demo Sandbox (:9876 + :4400)</span>
+                  <button class="btn-copy-snippet" data-copy="blackbox demo">Copy</button>
+                </div>
+                <pre class="setup-code-pre">blackbox demo
+<span class="c-comment"># Boots Studio UI at http://localhost:9876</span>
+<span class="c-comment"># Boots Target App at http://localhost:4400</span></pre>
+              </div>
+              <div class="setup-code-panel">
+                <div class="setup-code-header">
+                  <span>Option 2: Wrap Your Existing Project + HTTP Wiretap Proxy</span>
+                  <button class="btn-copy-snippet" data-copy="blackbox run &quot;npm run dev&quot; --proxy 4000:3000">Copy</button>
+                </div>
+                <pre class="setup-code-pre"><span class="c-comment"># Supervise your dev server &amp; capture PTY stdout/stderr:</span>
+blackbox run "npm run dev"
+
+<span class="c-comment"># Or attach transparent HTTP Wiretap (4000 -&gt; 3000):</span>
+blackbox run "npm run dev" --proxy 4000:3000</pre>
+              </div>
+            </div>
+
+            <!-- Step 3: 1-Line Browser Agent SDK -->
+            <div class="hex-setup-card">
+              <div class="setup-card-top">
+                <span class="setup-step-num">STEP 03 · BROWSER SDK</span>
+                <span class="setup-step-tag">DOM + FETCH INTERCEPTOR</span>
+              </div>
+              <h3 class="setup-card-title">Add the 1-Line Browser Flight Recorder</h3>
+              <p class="setup-card-desc">
+                Drop this script tag into your frontend's <code>index.html</code> or root <code>layout.tsx</code>. It captures DOM snapshots, user clicks, console errors, and injects <code>X-Blackbox-Trace-Id</code> into every network call.
+              </p>
+              <div class="setup-code-panel">
+                <div class="setup-code-header">
+                  <span>Frontend HTML / Layout Script Tag</span>
+                  <button class="btn-copy-snippet" data-copy="&lt;script src=&quot;http://localhost:9876/sdk/browser-agent.js&quot; data-blackbox-endpoint=&quot;http://localhost:9876&quot;&gt;&lt;/script&gt;">Copy</button>
+                </div>
+                <pre class="setup-code-pre">&lt;script 
+  src="http://localhost:9876/sdk/browser-agent.js" 
+  data-blackbox-endpoint="http://localhost:9876"
+&gt;&lt;/script&gt;</pre>
+              </div>
+              <div class="setup-feature-pills">
+                <span class="setup-pill">✓ Auto-Injects X-Blackbox-Trace-Id</span>
+                <span class="setup-pill">✓ Captures DOM &amp; Click Coordinates</span>
+                <span class="setup-pill">✓ Alt+Shift+B Hotkey HUD</span>
+              </div>
+            </div>
+
+            <!-- Step 4: Connect to AI Coding Agents via MCP -->
+            <div class="hex-setup-card">
+              <div class="setup-card-top">
+                <span class="setup-step-num">STEP 04 · AI AGENTS (MCP)</span>
+                <span class="setup-step-tag">CLAUDE · CURSOR · WINDSURF</span>
+              </div>
+              <h3 class="setup-card-title">Connect Autonomous Coding Agents via MCP</h3>
+              <p class="setup-card-desc">
+                Plug Blackbox's native stdio JSON-RPC 2.0 MCP server into Claude Code or Cursor. Ask your agent: <em>"Inspect the latest crash with Blackbox and fix the bug"</em> for a 1-shot patch.
+              </p>
+              <div class="setup-code-panel">
+                <div class="setup-code-header">
+                  <span>Claude Code CLI Setup</span>
+                  <button class="btn-copy-snippet" data-copy="claude mcp add blackbox -- blackbox mcp">Copy</button>
+                </div>
+                <pre class="setup-code-pre">claude mcp add blackbox -- blackbox mcp</pre>
+              </div>
+              <div class="setup-code-panel">
+                <div class="setup-code-header">
+                  <span>Cursor / Windsurf (.cursor/mcp.json)</span>
+                  <button class="btn-copy-snippet" data-copy="{&#10;  &quot;mcpServers&quot;: {&#10;    &quot;blackbox&quot;: {&#10;      &quot;command&quot;: &quot;blackbox&quot;,&#10;      &quot;args&quot;: [&quot;mcp&quot;]&#10;    }&#10;  }&#10;}">Copy</button>
+                </div>
+                <pre class="setup-code-pre">{
+  "mcpServers": {
+    "blackbox": {
+      "command": "blackbox",
+      "args": ["mcp"]
+    }
+  }
+}</pre>
               </div>
             </div>
           </div>
@@ -451,7 +595,7 @@
                   </div>
                   <div class="hex-term-res mini">
                     <span class="term-ok">✓</span> Ground truth delivered via MCP<br />
-                    <span class="term-dim">Culprit: demo-server.js:46 · Patch applied in 1 shot</span>
+                    <span class="term-dim">Culprit: demo-server.js:77 · Patch applied in 1 shot</span>
                   </div>
                 </div>
               </div>
@@ -483,7 +627,7 @@
                     <span class="term-cyan">Plane II (HTTP):</span> <span class="term-red">POST /api/checkout [500] (12ms)</span>
                   </div>
                   <div class="hex-term-line mini">
-                    <span class="term-cyan">Plane III (Code):</span> <span class="term-red">demo-server.js:46 TypeError</span>
+                    <span class="term-cyan">Plane III (Code):</span> <span class="term-red">demo-server.js:77 TypeError</span>
                   </div>
                   <div class="hex-term-line mini">
                     <span class="term-cyan">Plane IV (Git):</span> <span class="term-dim">demo-server.js modified (+3/-1)</span>
@@ -521,7 +665,7 @@
                     <span class="term-red">Comparison B:</span> <span class="term-red">HTTP 500 Error (354ms) · git@dirty</span>
                   </div>
                   <div class="hex-term-res mini">
-                    <span class="term-fault">▲ Delta:</span> <span class="term-red">demo-server.js:46 uncommitted null-ref</span><br />
+                    <span class="term-fault">▲ Delta:</span> <span class="term-red">demo-server.js:77 uncommitted null-ref</span><br />
                     <span class="term-dim">Route /api/checkout inverted 200 → 500 (+340ms)</span>
                   </div>
                   <div class="hex-term-line mini">
@@ -533,7 +677,7 @@
           </div>
         </div>
 
-        <!-- Part 3: 2-Column Code Control Matrix (Everything you need to control Blackbox with code) -->
+        <!-- Part 3: 2-Column Code Control Matrix + Complete CLI & Shortcuts Reference -->
         <div class="hex-code-section" id="hexFeatures">
           <div class="hex-code-left">
             <div class="hex-code-icon">
@@ -593,6 +737,47 @@
                   Keep your debugging context in line with your repo. Use <code>blackbox inspect</code> to compile zero-hallucination Root-Cause Dossiers and <code>blackbox capsules</code> to archive, diff, and export state.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Part 4: Everyday CLI Commands & Keyboard Shortcuts Reference Table -->
+        <div class="hex-cli-ref-wrap">
+          <div class="hex-cli-ref-header">
+            <span class="ref-eyebrow">✦ CLI COMMANDS, MCP TOOLS &amp; KEYBOARD SHORTCUTS REFERENCE (CLICK ANY ROW TO COPY)</span>
+          </div>
+          <div class="hex-cli-ref-grid">
+            <div class="cli-ref-row" data-copy="blackbox demo" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox demo</code>
+              <span class="cli-ref-desc">Launch Blackbox Studio (<code>:9876</code>) + Interactive NexusPay Target Sandbox (<code>:4400</code>)</span>
+            </div>
+            <div class="cli-ref-row" data-copy="blackbox run &quot;npm run dev&quot; --proxy 4000:3000" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox run "&lt;cmd&gt;" [--proxy 4000:3000]</code>
+              <span class="cli-ref-desc">Supervise any backend/frontend dev command with 60s rolling flight recorder &amp; HTTP wiretap</span>
+            </div>
+            <div class="cli-ref-row" data-copy="blackbox studio --port 9876" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox studio [--port 9876]</code>
+              <span class="cli-ref-desc">Start the Blackbox Daemon &amp; Time-Travel Studio UI standalone</span>
+            </div>
+            <div class="cli-ref-row" data-copy="blackbox freeze --title &quot;Login Regression&quot;" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox freeze [--title "..."]</code>
+              <span class="cli-ref-desc">Trigger an immediate capsule freeze on the active 60s rolling ring buffer</span>
+            </div>
+            <div class="cli-ref-row" data-copy="blackbox capsules" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox capsules</code>
+              <span class="cli-ref-desc">List all saved Time-Travel Bug Capsules in <code>.blackbox/capsules</code></span>
+            </div>
+            <div class="cli-ref-row" data-copy="blackbox inspect latest" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox inspect [capsuleId|latest]</code>
+              <span class="cli-ref-desc">Print the full Causal Fault Chain &amp; AI Root-Cause Diagnostic Markdown to stdout</span>
+            </div>
+            <div class="cli-ref-row" data-copy="blackbox mcp" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox mcp</code>
+              <span class="cli-ref-desc">Start the stdio Model Context Protocol (MCP) JSON-RPC 2.0 server for AI coding agents</span>
+            </div>
+            <div class="cli-ref-row" data-copy="Alt+Shift+B" title="Keyboard Shortcut">
+              <code class="cli-ref-cmd">Alt + Shift + B / Ctrl + B</code>
+              <span class="cli-ref-desc">Instant 60s capsule freeze from Browser / Studio (<code>Alt+Shift+B</code>) or Terminal (<code>Ctrl+B</code>)</span>
             </div>
           </div>
         </div>

@@ -1135,6 +1135,36 @@ function setupHexCliSection() {
       showToast('⚡ Opening NexusPay Sandbox at http://localhost:4400/');
     });
   }
+
+  document.querySelectorAll('.btn-copy-snippet').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const raw = btn.getAttribute('data-copy') || '';
+      try {
+        await navigator.clipboard.writeText(raw);
+        const prev = btn.textContent;
+        btn.textContent = '✓ Copied';
+        setTimeout(() => {
+          btn.textContent = prev;
+        }, 1600);
+        showToast('✓ Copied setup snippet to clipboard!');
+      } catch {
+        showToast('Snippet: ' + raw);
+      }
+    });
+  });
+
+  document.querySelectorAll('.cli-ref-row').forEach((row) => {
+    row.addEventListener('click', async () => {
+      const raw = row.getAttribute('data-copy') || '';
+      if (!raw) return;
+      try {
+        await navigator.clipboard.writeText(raw);
+        showToast(`✓ Copied: ${raw}`);
+      } catch {
+        showToast(raw);
+      }
+    });
+  });
 }
 
 function setupVaultToggle() {

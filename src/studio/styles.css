@@ -3550,3 +3550,236 @@ body::before {
 .chain-node:active {
   transform: translateY(0);
 }
+
+
+/* --------------------------------------------------------------------------
+   PART 1.5: STEP-BY-STEP INSTALLATION, SETUP & MCP INTEGRATION BLUEPRINT
+   -------------------------------------------------------------------------- */
+.hex-setup-section {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  position: relative;
+  z-index: 2;
+  max-width: 1360px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hex-setup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.hex-setup-card {
+  background: rgba(10, 13, 28, 0.88);
+  border: 1px solid rgba(175, 174, 162, 0.24);
+  border-radius: 10px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.48);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.hex-setup-card:hover {
+  border-color: rgba(210, 19, 25, 0.55);
+  transform: translateY(-2px);
+}
+
+.setup-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.setup-step-num {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--crimson-red);
+  background: rgba(210, 19, 25, 0.12);
+  border: 1px solid rgba(210, 19, 25, 0.35);
+  padding: 3px 9px;
+  border-radius: 3px;
+}
+
+.setup-step-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--stone-muted);
+}
+
+.setup-card-title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+.setup-card-desc {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--stone-muted);
+}
+
+.setup-card-desc code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: rgba(4, 6, 15, 0.8);
+  border: 1px solid rgba(175, 174, 162, 0.22);
+  color: var(--stone-light);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.setup-code-panel {
+  background: #050711;
+  border: 1px solid rgba(175, 174, 162, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.setup-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 12px;
+  background: rgba(18, 23, 48, 0.65);
+  border-bottom: 1px solid rgba(175, 174, 162, 0.15);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--stone-grey);
+}
+
+.btn-copy-snippet {
+  background: rgba(210, 19, 25, 0.14);
+  border: 1px solid rgba(210, 19, 25, 0.4);
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-copy-snippet:hover {
+  background: var(--crimson-red);
+  border-color: var(--crimson-red);
+}
+
+.setup-code-pre {
+  margin: 0;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: #E2E8F0;
+  overflow-x: auto;
+}
+
+.setup-code-pre .c-comment {
+  color: #64748B;
+}
+
+.setup-feature-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.setup-pill {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 4px 9px;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   PART 4: CLI COMMANDS & SHORTCUTS REFERENCE MATRIX
+   -------------------------------------------------------------------------- */
+.hex-cli-ref-wrap {
+  max-width: 1360px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  background: rgba(8, 11, 24, 0.9);
+  border: 1px solid rgba(175, 174, 162, 0.25);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+}
+
+.hex-cli-ref-header {
+  padding: 13px 20px;
+  background: rgba(18, 22, 48, 0.75);
+  border-bottom: 1px solid rgba(175, 174, 162, 0.2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--stone-light);
+}
+
+.hex-cli-ref-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.cli-ref-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(175, 174, 162, 0.12);
+  border-right: 1px solid rgba(175, 174, 162, 0.12);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cli-ref-row:hover {
+  background: rgba(210, 19, 25, 0.09);
+}
+
+.cli-ref-cmd {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #38BDF8;
+}
+
+.cli-ref-desc {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--stone-muted);
+}
+
+.cli-ref-desc code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--stone-light);
+}
+
+@media (max-width: 1100px) {
+  .hex-setup-grid,
+  .hex-cli-ref-grid {
+    grid-template-columns: 1fr;
+  }
+}
