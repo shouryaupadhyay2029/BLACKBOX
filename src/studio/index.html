@@ -155,11 +155,11 @@
         <div class="pane" id="paneBrowser">
           <div class="pane-header">
             <div class="pane-title">
-              <span class="plane-badge plane-browser">PLANE I · BROWSER</span>
-              <span>VISUAL DOM REPLAY & CLIENT STATE</span>
+              <span class="plane-badge plane-browser">1 · BROWSER</span>
+              <span>WHAT YOU CLICKED</span><span class="plane-status-pill" id="plane1Status">IDLE</span>
             </div>
             <div class="pane-tabs">
-              <button class="tab-btn active" data-pane="p1" data-tab="dom">DOM VIEWPORT</button>
+              <button class="tab-btn active" data-pane="p1" data-tab="dom">SCREEN REPLAY</button>
               <button class="tab-btn" data-pane="p1" data-tab="console">CONSOLE (<span id="consoleCount">0</span>)</button>
               <button class="tab-btn" data-pane="p1" data-tab="storage">STORAGE</button>
             </div>
@@ -203,12 +203,12 @@
         <div class="pane" id="paneNetwork">
           <div class="pane-header">
             <div class="pane-title">
-              <span class="plane-badge plane-network">PLANE II · NETWORK</span>
-              <span>CAUSAL HTTP / WS WATERFALL & PAYLOADS</span>
+              <span class="plane-badge plane-network">2 · NETWORK</span>
+              <span>API REQUESTS</span><span class="plane-status-pill" id="plane2Status">IDLE</span>
             </div>
             <div class="pane-tabs">
               <button class="tab-btn active" data-pane="p2" data-tab="waterfall">REQUESTS (<span id="netCount">0</span>)</button>
-              <button class="tab-btn" data-pane="p2" data-tab="payload">PAYLOAD INSPECTOR</button>
+              <button class="tab-btn" data-pane="p2" data-tab="payload">PAYLOAD DETAILS</button>
             </div>
           </div>
           <div class="pane-body">
@@ -227,12 +227,12 @@
         <div class="pane" id="paneTerminal">
           <div class="pane-header">
             <div class="pane-title">
-              <span class="plane-badge plane-terminal">PLANE III · CODE &amp; RUNTIME</span>
-              <span>LOCAL SOURCE X-RAY &amp; BACKEND STDOUT/STDERR</span>
+              <span class="plane-badge plane-terminal">3 · CODE &amp; CRASH</span>
+              <span>EXACT BROKEN LINE</span><span class="plane-status-pill" id="plane3Status">IDLE</span>
             </div>
             <div class="pane-tabs">
-              <button class="tab-btn active" data-pane="p3" data-tab="xray">SOURCE CODE X-RAY</button>
-              <button class="tab-btn" data-pane="p3" data-tab="terminal">TERMINAL STREAM (<span id="termCount">0</span>)</button>
+              <button class="tab-btn active" data-pane="p3" data-tab="xray">BROKEN CODE</button>
+              <button class="tab-btn" data-pane="p3" data-tab="terminal">TERMINAL (<span id="termCount">0</span>)</button>
             </div>
           </div>
           <div class="pane-body">
@@ -254,12 +254,12 @@
         <div class="pane" id="paneGitAi">
           <div class="pane-header">
             <div class="pane-title">
-              <span class="plane-badge plane-git">PLANE IV · GIT & AI BRIDGE</span>
-              <span>UNCOMMITTED GIT DIFF & AI DIAGNOSTIC PACKET</span>
+              <span class="plane-badge plane-git">4 · GIT &amp; AI FIX</span>
+              <span>RECENT CHANGES</span><span class="plane-status-pill" id="plane4Status">IDLE</span>
             </div>
             <div class="pane-tabs">
-              <button class="tab-btn active" data-pane="p4" data-tab="git">GIT WORKING TREE</button>
-              <button class="tab-btn" data-pane="p4" data-tab="aiprompt">AI ROOT-CAUSE MARKDOWN</button>
+              <button class="tab-btn active" data-pane="p4" data-tab="git">CODE CHANGES</button>
+              <button class="tab-btn" data-pane="p4" data-tab="aiprompt">AI FIX PROMPT</button>
             </div>
           </div>
           <div class="pane-body">
@@ -268,8 +268,8 @@
             </div>
             <div class="tab-panel" id="p4-aiprompt">
               <div class="ai-packet-header-bar">
-                <span>Autonomous AI Prompt Packet</span>
-                <button class="mini-btn" id="btnCopyRawMarkdown">✦ Copy Full Prompt</button>
+                <span>Paste into Cursor / Claude / ChatGPT for a 1-shot fix (click + payload + code + Git diff)</span>
+                <button class="mini-btn" id="btnCopyRawMarkdown">✦ Copy AI Fix Prompt</button>
               </div>
               <pre class="code-block" id="aiMarkdownPreview">Select a capsule to view its compiled AI Root-Cause Diagnostic Packet.</pre>
             </div>

@@ -4123,3 +4123,496 @@ body::before {
   right: 18px !important;
   transform: translateY(-50%) !important;
 }
+
+
+/* ==========================================================================
+   HUMAN-FIRST 4-PLANE CLARITY: STATUS PILLS, CRASH CALLOUTS & SMART GIT CARDS
+   ========================================================================== */
+.pane.pane-fault {
+  border-color: rgba(244, 63, 94, 0.35);
+  box-shadow: inset 0 2px 0 rgba(244, 63, 94, 0.7), 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+.plane-status-pill {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #A1A1AA;
+  white-space: nowrap;
+}
+
+.plane-status-pill.tone-fault {
+  background: rgba(244, 63, 94, 0.16);
+  border-color: rgba(244, 63, 94, 0.45);
+  color: #FDA4AF;
+}
+
+.plane-status-pill.tone-ok {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #6EE7B7;
+}
+
+.plane-status-pill.tone-warn {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(251, 191, 36, 0.35);
+  color: #FCD34D;
+}
+
+.friendly-empty-card {
+  margin: 14px;
+  padding: 18px 20px;
+  border-radius: 8px;
+  border: 1px dashed rgba(175, 174, 162, 0.22);
+  background: rgba(10, 13, 28, 0.55);
+}
+
+.fec-title {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 650;
+  color: #F4F3EE;
+  margin-bottom: 6px;
+}
+
+.fec-sub {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.55;
+  color: #94A3B8;
+}
+
+.fec-sub strong {
+  color: #E2E8F0;
+}
+
+/* Plane 1 Console Error Cards */
+.console-err-card {
+  border-left: 3px solid #F43F5E !important;
+  background: rgba(244, 63, 94, 0.07) !important;
+  border-radius: 4px;
+  margin: 4px 0;
+  padding: 10px 12px !important;
+}
+
+.console-level-pill {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.console-level-pill.err {
+  background: rgba(244, 63, 94, 0.2);
+  color: #FDA4AF;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+}
+
+.console-level-pill.warn {
+  background: rgba(245, 158, 11, 0.18);
+  color: #FCD34D;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.console-level-pill.info {
+  background: rgba(148, 163, 184, 0.14);
+  color: #CBD5E1;
+}
+
+.console-time-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #94A3B8;
+}
+
+.console-err-msg {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFE4E6;
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+/* Plane 2 Network Summary & Clear Payload Inspector */
+.plane-alert-strip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  margin: 8px 10px;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.plane-alert-strip.fault {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.32);
+  color: #FFE4E6;
+}
+
+.plane-alert-strip.ok {
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  color: #D1FAE5;
+}
+
+.pas-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #FB7185;
+  flex-shrink: 0;
+}
+
+.pas-dot.ok {
+  background: #34D399;
+}
+
+.payload-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: #94A3B8;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.payload-meta-strip code {
+  color: #BAE6FD;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.payload-section-label {
+  margin-top: 12px;
+  margin-bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #94A3B8;
+}
+
+.payload-section-label.err {
+  color: #FDA4AF;
+}
+
+.payload-code-box {
+  background: #060913 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 10px 12px !important;
+  margin: 0;
+}
+
+.payload-code-box.err {
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+/* Plane 3 Human-Readable Error Callout + Unmistakable Crashed Line */
+.crash-diagnosis-callout {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.14), rgba(15, 18, 36, 0.85));
+  border: 1px solid rgba(244, 63, 94, 0.38);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.cdc-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.cdc-type-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #E11D48;
+  color: #FFFFFF;
+}
+
+.cdc-where {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: #CBD5E1;
+}
+
+.cdc-where code {
+  font-family: var(--font-mono);
+  color: #7DD3FC;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.cdc-where strong {
+  color: #FFFFFF;
+}
+
+.cdc-msg {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #FFF1F2;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.xray-card-fault {
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+
+.xray-file-title {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: #F8FAFC;
+}
+
+.xray-fn-muted {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.xray-path-sub {
+  font-size: 10px;
+  color: #64748B;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xray-code-body {
+  background: #070A14;
+  padding: 6px 0;
+}
+
+.xray-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.xray-line .ln-code {
+  flex: 1;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.xray-line.target-line {
+  background: rgba(244, 63, 94, 0.18) !important;
+  border-left: 3px solid #F43F5E !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+
+.ln-crash-tag {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #E11D48;
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(225, 29, 72, 0.45);
+}
+
+.stack-more-details {
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  background: rgba(10, 13, 26, 0.65);
+  padding: 8px 10px;
+}
+
+.stack-more-details summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #94A3B8;
+  font-weight: 600;
+}
+
+.stack-more-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Plane 4 Smart Git Verdict & Culprit-First File Diff Cards */
+.git-verdict-card {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.git-verdict-card.hit {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.16), rgba(15, 18, 36, 0.88));
+  border: 1px solid rgba(244, 63, 94, 0.45);
+}
+
+.git-verdict-card.info {
+  background: rgba(14, 18, 42, 0.65);
+  border: 1px solid rgba(175, 174, 162, 0.22);
+}
+
+.gvc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.gvc-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.gvc-badge.hit {
+  background: #E11D48;
+  color: #FFFFFF;
+}
+
+.gvc-badge.info {
+  background: rgba(56, 189, 248, 0.14);
+  color: #7DD3FC;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.gvc-count {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #94A3B8;
+}
+
+.gvc-text {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: #E2E8F0;
+  line-height: 1.5;
+}
+
+.gvc-text code {
+  font-family: var(--font-mono);
+  color: #FCA5A5;
+  background: rgba(244, 63, 94, 0.14);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.git-file-card {
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 11, 24, 0.8);
+  overflow: hidden;
+}
+
+.git-file-card.culprit-file {
+  border-color: rgba(244, 63, 94, 0.45);
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.12);
+}
+
+.git-file-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  background: rgba(15, 20, 42, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  user-select: none;
+}
+
+.git-file-summary::-webkit-details-marker {
+  display: none;
+}
+
+.gfs-left,
+.gfs-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.gfs-chevron {
+  color: #94A3B8;
+  font-size: 11px;
+  transition: transform 0.15s ease;
+}
+
+.git-file-card[open] .gfs-chevron {
+  transform: rotate(90deg);
+}
+
+.gfs-name {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #F1F5F9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gfs-culprit-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  color: #FDA4AF;
+  white-space: nowrap;
+}
+
+.gfs-stat {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.gfs-stat.add {
+  color: #34D399;
+}
+
+.gfs-stat.del {
+  color: #FB7185;
+}

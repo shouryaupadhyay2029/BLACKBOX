@@ -319,6 +319,7 @@ async function selectCapsule(id) {
     timeScrubber.value = String(currentRelMs);
 
     renderCausalBanner(activeCapsule);
+    updatePlaneStatusPills(activeCapsule);
     renderScrubberMarkers(activeCapsule);
     renderSourceXrayPane(activeCapsule);
     renderGitAndAiPane(activeCapsule);
@@ -326,6 +327,71 @@ async function selectCapsule(id) {
     syncTimeScrubber(currentRelMs);
   } catch (err) {
     showToast(`Error loading capsule: ${err.message}`);
+  }
+}
+
+function updatePlaneStatusPills(capsule) {
+  const counts = capsule.causal?.counts || {};
+  const summary = capsule.causal?.rootCauseSummary || {};
+  const overlaps = capsule.causal?.causalChains?.flatMap((c) => c.gitDiffOverlaps || []) || [];
+
+  const setPill = (id, paneId, text, tone) => {
+    const el = document.getElementById(id);
+    const paneEl = document.getElementById(paneId);
+    if (el) {
+      el.textContent = text;
+      el.className = `plane-status-pill tone-${tone}`;
+    }
+    if (paneEl) {
+      paneEl.classList.toggle('pane-fault', tone === 'fault');
+    }
+  };
+
+  // Plane 1: Browser
+  const bErrs = counts.browserErrors || 0;
+  const clicks = counts.uiActions || 0;
+  if (bErrs > 0) {
+    setPill('plane1Status', 'paneBrowser', `${bErrs} ERROR${bErrs > 1 ? 'S' : ''}`, 'fault');
+  } else if (clicks > 0) {
+    setPill('plane1Status', 'paneBrowser', `${clicks} ACTION${clicks > 1 ? 'S' : ''}`, 'ok');
+  } else {
+    setPill('plane1Status', 'paneBrowser', 'SNAPSHOT', 'neutral');
+  }
+
+  // Plane 2: Network
+  const netTotal = counts.networkCalls || 0;
+  const netFail = counts.failedNetworkCalls || 0;
+  if (netFail > 0) {
+    setPill('plane2Status', 'paneNetwork', `${netFail} FAILED`, 'fault');
+  } else if (netTotal > 0) {
+    setPill('plane2Status', 'paneNetwork', `${netTotal} OK`, 'ok');
+  } else {
+    setPill('plane2Status', 'paneNetwork', 'NO API CALLS', 'neutral');
+  }
+
+  // Plane 3: Broken Code & Runtime
+  if (summary.culpritFile) {
+    const base = summary.culpritFile.split(/[\\/]/).pop();
+    setPill(
+      'plane3Status',
+      'paneTerminal',
+      `${base}${summary.culpritLine ? ':' + summary.culpritLine : ''}`,
+      'fault'
+    );
+  } else if ((counts.terminalErrors || 0) > 0) {
+    setPill('plane3Status', 'paneTerminal', `${counts.terminalErrors} STDERR`, 'fault');
+  } else {
+    setPill('plane3Status', 'paneTerminal', 'CLEAN', 'ok');
+  }
+
+  // Plane 4: Git & AI Fix
+  const dirtyCount = capsule.git?.modifiedFiles?.length || 0;
+  if (overlaps.length > 0) {
+    setPill('plane4Status', 'paneGitAi', 'DIRECT HIT', 'fault');
+  } else if (dirtyCount > 0) {
+    setPill('plane4Status', 'paneGitAi', `${dirtyCount} EDITED`, 'warn');
+  } else {
+    setPill('plane4Status', 'paneGitAi', 'CLEAN GIT', 'ok');
   }
 }
 
@@ -471,18 +537,34 @@ function renderStaticEventLists(capsule) {
 
   browserConsoleList.innerHTML =
     consoleEvents.length === 0
-      ? '<div class="empty-hint">No browser console logs or uncaught errors recorded.</div>'
+      ? `<div class="friendly-empty-card">
+          <div class="fec-title">No Console Errors Recorded</div>
+          <div class="fec-sub">Browser console stayed clean during this 60-second window.</div>
+        </div>`
       : consoleEvents
           .map((e) => {
             const relMs = Math.max(0, e.timestampMs - startMs);
             const isErr = e.severity === 'error' || e.severity === 'fatal';
+            const rawMsg = String(e.payload?.message || '');
+            const firstLine = rawMsg.split(/\r?\n/)[0];
+            const errTypeMatch = /\b(TypeError|ReferenceError|SyntaxError|RangeError|URIError|EvalError|Error)\b/.exec(firstLine);
+            const badgeLabel =
+              e.type === 'UNCAUGHT_ERROR'
+                ? errTypeMatch ? errTypeMatch[1] : 'Uncaught Exception'
+                : e.type === 'UNHANDLED_REJECTION'
+                ? 'Unhandled Promise'
+                : isErr
+                ? 'Console Error'
+                : e.severity === 'warn'
+                ? 'Warning'
+                : 'Log';
             return `
-              <div class="term-row log-row clickable-scrub ${isErr ? 'stderr' : ''}" data-rel-ms="${relMs}" title="Click to jump time-travel scrubber to +${(relMs / 1000).toFixed(3)}s">
+              <div class="term-row log-row clickable-scrub ${isErr ? 'stderr console-err-card' : ''}" data-rel-ms="${relMs}" title="Click to jump time-travel scrubber to +${(relMs / 1000).toFixed(3)}s">
                 <div class="term-meta">
-                  <span>[${escapeHtml(e.type)}]</span>
-                  <span>+${(relMs / 1000).toFixed(3)}s</span>
+                  <span class="console-level-pill ${isErr ? 'err' : e.severity === 'warn' ? 'warn' : 'info'}">${escapeHtml(badgeLabel)}</span>
+                  <span class="console-time-tag">+${(relMs / 1000).toFixed(2)}s</span>
                 </div>
-                <div>${escapeHtml(e.payload?.message || '')}</div>
+                <div class="${isErr ? 'console-err-msg' : ''}">${escapeHtml(firstLine)}</div>
               </div>
             `;
           })
@@ -501,11 +583,34 @@ function renderStaticEventLists(capsule) {
   const netEvents = events.filter((e) => e.plane === 'NETWORK' && e.type === 'HTTP_TRACE');
   netCount.textContent = String(netEvents.length);
   const maxNetDur = Math.max(50, ...netEvents.map((n) => Number(n.payload?.durationMs) || 0));
+  const failedNets = netEvents.filter((n) => (n.payload?.status || 0) >= 400 || n.payload?.error);
+  const hasFrontendCrash = (capsule.causal?.counts?.browserErrors || 0) > 0;
+
+  const netSummaryHtml =
+    failedNets.length > 0
+      ? `<div class="plane-alert-strip fault">
+          <span class="pas-dot"></span>
+          <span><strong>${failedNets.length} API request${failedNets.length > 1 ? 's' : ''} failed</strong> (${escapeHtml(failedNets[0].payload?.method || 'GET')} ${escapeHtml(failedNets[0].payload?.url || '')} → HTTP ${failedNets[0].payload?.status || 'ERR'}). Click any row to see what was sent &amp; returned.</span>
+        </div>`
+      : netEvents.length > 0
+      ? `<div class="plane-alert-strip ok">
+          <span class="pas-dot ok"></span>
+          <span>All <strong>${netEvents.length} API request${netEvents.length > 1 ? 's' : ''}</strong> succeeded (HTTP 2xx/3xx). Click any row to inspect payloads.</span>
+        </div>`
+      : '';
 
   networkWaterfallList.innerHTML =
     netEvents.length === 0
-      ? '<div class="empty-hint">No HTTP/WS network requests captured in this window.</div>'
-      : netEvents
+      ? `<div class="friendly-empty-card">
+          <div class="fec-title">${hasFrontendCrash ? 'No API Calls Involved in This Crash' : 'No Network Requests Captured'}</div>
+          <div class="fec-sub">${
+            hasFrontendCrash
+              ? 'This error happened directly inside browser JavaScript before any backend API request was sent. Check <strong>Plane 1 (What You Clicked)</strong> and <strong>Plane 3 (Exact Broken Line)</strong>.'
+              : 'No fetch/XHR or proxied HTTP requests occurred in this 60-second window.'
+          }</div>
+        </div>`
+      : netSummaryHtml +
+        netEvents
           .map((e, idx) => {
             const relMs = Math.max(0, e.timestampMs - startMs);
             const status = e.payload?.status || 0;
@@ -621,36 +726,59 @@ function buildCurlCommand(netEvt) {
 function renderNetworkPayloadDetail(netEvt) {
   const p = netEvt.payload || {};
   const curlCmd = buildCurlCommand(netEvt);
+  const status = p.status || 0;
+  const isErr = status >= 400 || Boolean(p.error);
+  const statusMeaning =
+    status === 200
+      ? 'OK'
+      : status === 201
+      ? 'Created'
+      : status === 400
+      ? 'Bad Request'
+      : status === 401
+      ? 'Unauthorized'
+      : status === 403
+      ? 'Forbidden'
+      : status === 404
+      ? 'Not Found'
+      : status === 500
+      ? 'Server Crash'
+      : status === 502
+      ? 'Bad Gateway'
+      : status === 503
+      ? 'Service Unavailable'
+      : status >= 500
+      ? 'Server Error'
+      : status >= 400
+      ? 'Client Error'
+      : 'Network Error';
   const hasReqHeaders = p.requestHeaders && Object.keys(p.requestHeaders).length > 0;
   const hasResHeaders = p.responseHeaders && Object.keys(p.responseHeaders).length > 0;
 
   networkPayloadInspector.innerHTML = `
-    <div class="xray-card">
+    <div class="xray-card ${isErr ? 'xray-card-fault' : ''}">
       <div class="xray-header">
-        <span>${escapeHtml(p.method || 'GET')} ${escapeHtml(p.url || '')} → HTTP ${
-    p.status || 'ERR'
-  } (${p.durationMs || 0}ms)</span>
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+          <span class="status-pill ${status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx'}">${status || 'ERR'} ${statusMeaning}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.method || 'GET')} ${escapeHtml(p.url || '')} · ${p.durationMs || 0}ms</span>
+        </div>
         <button class="mini-btn" id="btnCopyCurl" style="flex:none;padding:2px 8px;">📋 Copy cURL</button>
       </div>
-      <div style="padding:10px;">
-        <div style="margin-bottom:6px;color:#94a3b8;">
-          <strong>Causal Trace-ID:</strong> <code style="color:#a5b4fc">${escapeHtml(
-            netEvt.traceId || 'none'
-          )}</code>
+      <div style="padding:12px;">
+        <div class="payload-meta-strip">
           ${
             p.triggerSelector
-              ? ` · <strong>Triggered By UI:</strong> <code style="color:#38bdf8">${escapeHtml(
-                  p.triggerSelector
-                )}</code>`
+              ? `<span><strong>Triggered by:</strong> <code>${escapeHtml(p.triggerSelector)}</code></span>`
               : ''
           }
+          <span><strong>Trace ID:</strong> <code>${escapeHtml(netEvt.traceId || 'none')}</code></span>
         </div>
-        <div style="margin-top:10px;font-weight:700;color:#cbd5e1;">Request Payload:</div>
-        <pre class="code-block" style="background:#070a12;border-radius:6px;margin-top:4px;">${escapeHtml(
+        <div class="payload-section-label">↑ SENT TO SERVER (Request Body)</div>
+        <pre class="code-block payload-code-box">${escapeHtml(
           formatJsonOrText(p.requestBody)
         )}</pre>
-        <div style="margin-top:10px;font-weight:700;color:#cbd5e1;">Response Payload:</div>
-        <pre class="code-block" style="background:#070a12;border-radius:6px;margin-top:4px;">${escapeHtml(
+        <div class="payload-section-label ${isErr ? 'err' : ''}">↓ RETURNED FROM SERVER (Response Body)</div>
+        <pre class="code-block payload-code-box ${isErr ? 'err' : ''}">${escapeHtml(
           formatJsonOrText(p.responseBody)
         )}</pre>
         ${
@@ -660,12 +788,12 @@ function renderNetworkPayloadDetail(netEvt) {
             <summary style="cursor:pointer;color:#94a3b8;font-size:11px;font-weight:700;">HTTP Headers (${Object.keys(p.requestHeaders || {}).length} req / ${Object.keys(p.responseHeaders || {}).length} res)</summary>
             ${
               hasReqHeaders
-                ? `<div style="margin-top:6px;font-size:10px;color:#64748b;">REQUEST HEADERS</div><pre class="code-block" style="background:#070a12;border-radius:6px;margin-top:2px;">${escapeHtml(JSON.stringify(p.requestHeaders, null, 2))}</pre>`
+                ? `<div class="payload-section-label" style="margin-top:8px;">REQUEST HEADERS</div><pre class="code-block payload-code-box">${escapeHtml(JSON.stringify(p.requestHeaders, null, 2))}</pre>`
                 : ''
             }
             ${
               hasResHeaders
-                ? `<div style="margin-top:6px;font-size:10px;color:#64748b;">RESPONSE HEADERS</div><pre class="code-block" style="background:#070a12;border-radius:6px;margin-top:2px;">${escapeHtml(JSON.stringify(p.responseHeaders, null, 2))}</pre>`
+                ? `<div class="payload-section-label" style="margin-top:8px;">RESPONSE HEADERS</div><pre class="code-block payload-code-box">${escapeHtml(JSON.stringify(p.responseHeaders, null, 2))}</pre>`
                 : ''
             }
           </details>
@@ -728,6 +856,14 @@ async function inspectSourceFile(filePath, line = 1) {
 function renderSourceXrayPane(capsule) {
   const snippets = [];
   const seen = new Set();
+  const primaryChain = capsule.causal?.causalChains?.[0] || null;
+  const rawErrorMsg =
+    primaryChain?.browserError?.message ||
+    (primaryChain?.backendError?.rawText || '').trim().split(/\r?\n/).find((l) => /error|exception/i.test(l)) ||
+    (primaryChain?.backendError?.rawText || '').trim().split(/\r?\n/)[0] ||
+    '';
+  const errTypeMatch = /\b(TypeError|ReferenceError|SyntaxError|RangeError|URIError|Error)\b/.exec(rawErrorMsg);
+  const errorKind = errTypeMatch ? errTypeMatch[1] : primaryChain?.backendError ? 'Backend Exception' : 'Frontend Exception';
 
   // Gather snippets from causal chains & terminal events
   for (const chain of capsule.causal?.causalChains || []) {
@@ -761,51 +897,79 @@ function renderSourceXrayPane(capsule) {
   }
 
   if (snippets.length === 0) {
-    sourceXrayContainer.innerHTML =
-      '<div class="empty-hint">No local source code stack frames triggered in this capsule.</div>';
-  } else {
-    sourceXrayContainer.innerHTML = snippets
-      .map(({ frame, snippet }) => {
-        const codeLines = snippet.lines
-          .map(
-            (ln) => `
-            <div class="xray-line ${ln.isTarget ? 'target-line' : ''}">
-              <span class="ln-num">${ln.isTarget ? '▶ ' : ''}${ln.lineNumber}</span>
-              <span>${escapeHtml(ln.code)}</span>
-            </div>
-          `
-          )
-          .join('');
+    sourceXrayContainer.innerHTML = `<div class="friendly-empty-card">
+      <div class="fec-title">No Broken Code Line Triggered</div>
+      <div class="fec-sub">This capsule is a clean snapshot with no uncaught runtime exceptions. Whenever an error fires in your frontend or backend, Blackbox opens the exact file from disk and highlights the crashing line right here.</div>
+    </div>`;
+    return;
+  }
 
-        return `
-          <div class="xray-card">
-            <div class="xray-header">
-              <span>📄 ${escapeHtml(snippet.fileName)}:${snippet.targetLine} (${escapeHtml(
-          frame.functionName || 'anonymous'
-        )})</span>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:10px;color:#94a3b8;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(snippet.filePath)}">${escapeHtml(snippet.filePath)}</span>
-                <button class="mini-btn btn-copy-loc" data-loc="${escapeHtml(`${snippet.filePath}:${snippet.targetLine}`)}" style="flex:none;padding:2px 7px;" title="Copy exact file:line location">📋 Copy</button>
-              </div>
-            </div>
-            <div>${codeLines}</div>
-          </div>
-        `;
-      })
+  const primary = snippets[0];
+  const fnLabel =
+    primary.frame.functionName && primary.frame.functionName !== '<anonymous>'
+      ? `inside <code>${escapeHtml(primary.frame.functionName)}()</code>`
+      : 'in module scope';
+
+  const errorBannerHtml = rawErrorMsg
+    ? `
+    <div class="crash-diagnosis-callout">
+      <div class="cdc-top">
+        <span class="cdc-type-pill">${escapeHtml(errorKind)}</span>
+        <span class="cdc-where">Crashed ${fnLabel} · <strong>${escapeHtml(primary.snippet.fileName)}:${primary.snippet.targetLine}</strong></span>
+      </div>
+      <div class="cdc-msg">${escapeHtml(rawErrorMsg.replace(/^Uncaught\s+/i, '').slice(0, 220))}</div>
+    </div>
+  `
+    : '';
+
+  const renderCard = ({ frame, snippet }, isPrimary) => {
+    const codeLines = snippet.lines
+      .map(
+        (ln) => `
+        <div class="xray-line ${ln.isTarget ? 'target-line' : ''}">
+          <span class="ln-num">${ln.lineNumber}</span>
+          <span class="ln-code">${escapeHtml(ln.code)}</span>
+          ${ln.isTarget ? '<span class="ln-crash-tag">◀ CRASHED HERE</span>' : ''}
+        </div>
+      `
+      )
       .join('');
 
-    sourceXrayContainer.querySelectorAll('.btn-copy-loc').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const loc = btn.getAttribute('data-loc') || '';
-        try {
-          await navigator.clipboard.writeText(loc);
-          showToast(`📋 Copied location: ${loc}`);
-        } catch {
-          showToast(loc);
-        }
-      });
+    return `
+      <div class="xray-card ${isPrimary ? 'xray-card-fault' : ''}">
+        <div class="xray-header">
+          <span class="xray-file-title">📄 ${escapeHtml(snippet.fileName)}<strong>:${snippet.targetLine}</strong> <span class="xray-fn-muted">(${escapeHtml(frame.functionName || 'anonymous')})</span></span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="xray-path-sub" title="${escapeHtml(snippet.filePath)}">${escapeHtml(snippet.filePath)}</span>
+            <button class="mini-btn btn-copy-loc" data-loc="${escapeHtml(`${snippet.filePath}:${snippet.targetLine}`)}" style="flex:none;padding:2px 8px;" title="Copy exact file:line location">📋 Copy</button>
+          </div>
+        </div>
+        <div class="xray-code-body">${codeLines}</div>
+      </div>
+    `;
+  };
+
+  const extraCardsHtml =
+    snippets.length > 1
+      ? `<details class="stack-more-details">
+          <summary>Show ${snippets.length - 1} other call-stack frame${snippets.length - 1 > 1 ? 's' : ''}</summary>
+          <div class="stack-more-list">${snippets.slice(1).map((s) => renderCard(s, false)).join('')}</div>
+        </details>`
+      : '';
+
+  sourceXrayContainer.innerHTML = `${errorBannerHtml}${renderCard(primary, true)}${extraCardsHtml}`;
+
+  sourceXrayContainer.querySelectorAll('.btn-copy-loc').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const loc = btn.getAttribute('data-loc') || '';
+      try {
+        await navigator.clipboard.writeText(loc);
+        showToast(`📋 Copied location: ${loc}`);
+      } catch {
+        showToast(loc);
+      }
     });
-  }
+  });
 }
 
 function renderColorizedDiff(rawDiff) {
@@ -830,68 +994,110 @@ function renderColorizedDiff(rawDiff) {
     .join('');
 }
 
+function countDiffAddsDels(diffText = '') {
+  let adds = 0;
+  let dels = 0;
+  for (const line of diffText.split(/\r?\n/)) {
+    if (line.startsWith('+') && !line.startsWith('+++')) adds++;
+    else if (line.startsWith('-') && !line.startsWith('---')) dels++;
+  }
+  return { adds, dels };
+}
+
 function renderGitAndAiPane(capsule) {
   aiMarkdownPreview.textContent =
     capsule.aiDiagnosticMarkdown || 'No AI diagnostic markdown compiled.';
 
   const git = capsule.git || {};
   if (!git.isGitRepo) {
-    gitInspectorContainer.innerHTML =
-      '<div class="empty-hint">Target directory is not a Git repository.</div>';
+    gitInspectorContainer.innerHTML = `<div class="friendly-empty-card">
+      <div class="fec-title">Not a Git Repository</div>
+      <div class="fec-sub">Initialize Git in this project to correlate crashes directly against your recent uncommitted edits.</div>
+    </div>`;
     return;
   }
 
   const overlaps =
     capsule.causal?.causalChains?.flatMap((c) => c.gitDiffOverlaps || []) || [];
+  const culpritPathNorm = (capsule.causal?.rootCauseSummary?.culpritFile || '')
+    .replace(/\\/g, '/')
+    .toLowerCase();
 
   const overlapBanner =
     overlaps.length > 0
       ? `
-      <div class="xray-card" style="border-color:#ef4444;">
-        <div class="xray-header" style="background:rgba(239,68,68,0.2);color:#fca5a5;">
-          <span>🎯 HIGH-CONFIDENCE GIT DIFF OVERLAP DETECTED</span>
-          <span>${escapeHtml(overlaps[0].confidence)}</span>
+      <div class="git-verdict-card hit">
+        <div class="gvc-top">
+          <span class="gvc-badge hit">🎯 LIKELY CAUSE · RECENT EDIT OVERLAP</span>
+          <button class="mini-btn" id="btnInspectGitHit" style="flex:none;padding:2px 9px;">Open Line ${overlaps[0].crashLine} →</button>
         </div>
-        <div style="padding:10px;">
-          Crash at <strong style="cursor:pointer;text-decoration:underline;" id="btnInspectGitHit">${escapeHtml(overlaps[0].file)}:${
-          overlaps[0].crashLine
-        }</strong> directly overlaps uncommitted working-tree edit hunk <code>${escapeHtml(
-          overlaps[0].hunkRange
-        )}</code>!
+        <div class="gvc-text">
+          Your uncommitted edit in <strong>${escapeHtml(overlaps[0].file)}</strong> (lines <code>${escapeHtml(overlaps[0].hunkRange)}</code>) directly overlaps crashing line <strong>${overlaps[0].crashLine}</strong>.
         </div>
       </div>
     `
-      : '';
-
-  const modFiles = (git.modifiedFiles || []).slice(0, 20);
-  const modPillsHtml =
-    modFiles.length > 0
-      ? `<div class="git-mod-pills">${modFiles
-          .map((f) => {
-            const p = typeof f === 'string' ? f : f.path;
-            const st = typeof f === 'string' ? 'M' : f.status || 'M';
-            return `<button class="git-mod-pill" data-file="${escapeHtml(p)}" title="Click to open ${escapeHtml(p)} in Source Code X-Ray"><span class="git-st">${escapeHtml(st)}</span> ${escapeHtml(p)}</button>`;
-          })
-          .join('')}</div>`
-      : '';
-
-  gitInspectorContainer.innerHTML = `
-    ${overlapBanner}
-    <div class="xray-card">
-      <div class="xray-header">
-        <span>🌿 Branch: ${escapeHtml(git.branch || 'main')} @ ${escapeHtml(
-    git.headCommit || ''
-  )}</span>
-        <span>${
-          git.isDirty
-            ? `${git.modifiedFiles?.length || 0} Uncommitted File(s)`
-            : 'Clean Working Tree'
-        }</span>
+      : git.isDirty
+      ? `
+      <div class="git-verdict-card info">
+        <div class="gvc-top">
+          <span class="gvc-badge info">🌿 ${escapeHtml(git.branch || 'main')} @ ${escapeHtml(git.headCommit || '')}</span>
+          <span class="gvc-count">${git.modifiedFiles?.length || 0} uncommitted file(s)</span>
+        </div>
+        <div class="gvc-text">
+          Showing your uncommitted working-tree edits below. Click any file to inspect its full code in Plane 3.
+        </div>
       </div>
-      ${modPillsHtml}
-      <div class="colorized-diff-box">${renderColorizedDiff(git.rawDiff)}</div>
-    </div>
-  `;
+    `
+      : `
+      <div class="friendly-empty-card">
+        <div class="fec-title">Clean Git Working Tree (${escapeHtml(git.branch || 'main')} @ ${escapeHtml(git.headCommit || '')})</div>
+        <div class="fec-sub">No uncommitted file edits since your last commit.</div>
+      </div>
+    `;
+
+  const diffFiles = Array.isArray(git.diffFiles) ? [...git.diffFiles] : [];
+
+  // Sort culprit / overlapping file FIRST so the developer never has to scroll past .gitignore
+  const isCulpritFile = (relPath = '') => {
+    const norm = relPath.replace(/\\/g, '/').toLowerCase();
+    if (overlaps.some((o) => o.file.replace(/\\/g, '/').toLowerCase() === norm)) return true;
+    if (culpritPathNorm && (culpritPathNorm.endsWith(norm) || norm.endsWith(culpritPathNorm))) return true;
+    return false;
+  };
+
+  diffFiles.sort((a, b) => (isCulpritFile(b.relativePath) ? 1 : 0) - (isCulpritFile(a.relativePath) ? 1 : 0));
+
+  let filesHtml = '';
+  if (diffFiles.length > 0) {
+    filesHtml = diffFiles
+      .map((df, idx) => {
+        const culprit = isCulpritFile(df.relativePath);
+        const { adds, dels } = countDiffAddsDels(df.rawDiff || '');
+        const shouldOpen = culprit || (idx === 0 && diffFiles.length <= 2);
+        return `
+          <details class="git-file-card ${culprit ? 'culprit-file' : ''}" ${shouldOpen ? 'open' : ''}>
+            <summary class="git-file-summary">
+              <div class="gfs-left">
+                <span class="gfs-chevron">▸</span>
+                <span class="gfs-name">${escapeHtml(df.relativePath)}</span>
+                ${culprit ? '<span class="gfs-culprit-badge">★ CULPRIT FILE</span>' : ''}
+              </div>
+              <div class="gfs-right">
+                <span class="gfs-stat add">+${adds}</span>
+                <span class="gfs-stat del">-${dels}</span>
+                <button class="mini-btn git-open-xray" data-file="${escapeHtml(df.relativePath)}" style="flex:none;padding:1px 7px;" title="Inspect in Plane 3">Inspect</button>
+              </div>
+            </summary>
+            <div class="colorized-diff-box">${renderColorizedDiff(df.rawDiff)}</div>
+          </details>
+        `;
+      })
+      .join('');
+  } else if (git.rawDiff) {
+    filesHtml = `<div class="xray-card"><div class="colorized-diff-box">${renderColorizedDiff(git.rawDiff)}</div></div>`;
+  }
+
+  gitInspectorContainer.innerHTML = `${overlapBanner}${filesHtml}`;
 
   if (overlaps.length > 0) {
     document.getElementById('btnInspectGitHit')?.addEventListener('click', () => {
@@ -899,10 +1105,13 @@ function renderGitAndAiPane(capsule) {
     });
   }
 
-  gitInspectorContainer.querySelectorAll('.git-mod-pill').forEach((btn) => {
-    btn.addEventListener('click', () => {
+  gitInspectorContainer.querySelectorAll('.git-open-xray').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const f = btn.getAttribute('data-file');
-      if (f) inspectSourceFile(f, 1);
+      const targetLine = isCulpritFile(f) ? capsule.causal?.rootCauseSummary?.culpritLine || 1 : 1;
+      if (f) inspectSourceFile(f, targetLine);
     });
   });
 }

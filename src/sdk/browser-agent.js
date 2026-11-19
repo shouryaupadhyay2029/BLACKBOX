@@ -624,10 +624,14 @@
     setTimeout(() => captureDomSnapshot('ON_UNHANDLED_REJECTION'), 50);
   });
 
-  // --- 6. Shadow-DOM Floating Flight Recorder HUD Pill ---
+  // --- 6. Shadow-DOM Minimal Frosted-Glass Floating HUD Dock ---
   let hudStatsEl = null;
+  let hudErrEl = null;
   let hudDotEl = null;
+  let hudPillEl = null;
+  let hudFreezeBtn = null;
   let hudToastEl = null;
+  let hudToastTimer = null;
 
   function mountHudPill() {
     if (!document.body || document.getElementById('__blackbox_hud_host__') || document.getElementById('__kala_hud_host__')) return;
@@ -637,171 +641,381 @@
 
     shadow.innerHTML = `
       <style>
-        .blackbox-pill {
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+        .bb-dock {
           position: fixed;
-          bottom: 16px;
-          right: 16px;
+          bottom: 18px;
+          right: 18px;
           z-index: 2147483647;
-          display: flex;
+          height: 38px;
+          display: inline-flex;
           align-items: center;
-          gap: 10px;
-          background: rgba(14, 17, 36, 0.94);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(175, 174, 162, 0.35);
+          gap: 8px;
+          padding: 0 6px 0 12px;
           border-radius: 999px;
-          padding: 7px 15px;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
-          font-size: 12px;
-          color: #F4F3EE;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+          background: rgba(10, 11, 15, 0.86);
+          -webkit-backdrop-filter: blur(22px) saturate(180%);
+          backdrop-filter: blur(22px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.11);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.10),
+            0 18px 40px -10px rgba(0, 0, 0, 0.65),
+            0 2px 10px rgba(0, 0, 0, 0.35);
+          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          color: #F4F4F5;
           user-select: none;
+          transition: border-color 0.25s ease, box-shadow 0.25s ease, padding 0.22s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .blackbox-dot {
-          width: 9px;
-          height: 9px;
+        .bb-dock:hover {
+          border-color: rgba(255, 255, 255, 0.18);
+        }
+        .bb-dock.has-error {
+          border-color: rgba(244, 63, 94, 0.42);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.09),
+            0 0 24px -4px rgba(244, 63, 94, 0.28),
+            0 18px 40px -10px rgba(0, 0, 0, 0.7);
+        }
+        .bb-identity {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          cursor: default;
+        }
+        .bb-dot-wrap {
+          position: relative;
+          width: 8px;
+          height: 8px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .bb-dot {
+          width: 7px;
+          height: 7px;
           border-radius: 50%;
-          background: #10b981;
-          box-shadow: 0 0 10px #10b981;
-          animation: pulse 2s infinite;
+          background: #34D399;
+          box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.18);
+          transition: background 0.25s ease, box-shadow 0.25s ease;
         }
-        .blackbox-dot.offline {
-          background: #f59e0b;
-          box-shadow: 0 0 8px #f59e0b;
+        .bb-dot::after {
+          content: "";
+          position: absolute;
+          inset: -2px;
+          border-radius: 50%;
+          border: 1px solid #34D399;
+          opacity: 0;
+          animation: bbPing 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
         }
-        .blackbox-dot.error {
-          background: #D21319;
-          box-shadow: 0 0 12px #D21319;
+        .bb-dot.offline {
+          background: #FBBF24;
+          box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.18);
         }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.55; transform: scale(0.88); }
+        .bb-dot.offline::after {
+          border-color: #FBBF24;
+          animation: none;
         }
-        .blackbox-brand {
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          color: #F4F3EE;
+        .bb-dot.error {
+          background: #FB7185;
+          box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.25);
         }
-        .blackbox-stats {
-          color: #AFAEA2;
-          font-size: 11px;
+        .bb-dot.error::after {
+          border-color: #F43F5E;
+          animation-duration: 1.5s;
         }
-        .blackbox-btn {
-          background: #D21319;
-          border: 1px solid #FF262E;
-          color: #ffffff;
-          font-weight: 700;
-          font-size: 11px;
-          padding: 5px 12px;
+        @keyframes bbPing {
+          0% { transform: scale(0.8); opacity: 0.7; }
+          80%, 100% { transform: scale(2.1); opacity: 0; }
+        }
+        .bb-brand {
+          font-size: 10.5px;
+          font-weight: 650;
+          letter-spacing: 0.14em;
+          color: #F4F4F5;
+          line-height: 1;
+        }
+        .bb-sep {
+          width: 1px;
+          height: 14px;
+          background: rgba(255, 255, 255, 0.10);
+          flex-shrink: 0;
+        }
+        .bb-metrics {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font-variant-numeric: tabular-nums;
+          font-size: 10.5px;
+          color: #A1A1AA;
+        }
+        .bb-err-chip {
+          display: none;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 7px;
           border-radius: 999px;
+          background: rgba(244, 63, 94, 0.15);
+          border: 1px solid rgba(244, 63, 94, 0.32);
+          color: #FDA4AF;
+          font-size: 10px;
+          font-weight: 600;
+          line-height: 1.2;
+        }
+        .bb-err-chip.visible {
+          display: inline-flex;
+        }
+        .bb-freeze-btn {
+          height: 26px;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 0 10px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.13);
+          color: #FAFAFA;
+          font-family: inherit;
+          font-size: 11px;
+          font-weight: 550;
+          letter-spacing: 0.01em;
           cursor: pointer;
-          box-shadow: 0 2px 10px rgba(210, 19, 25, 0.4);
-          transition: transform 0.15s ease, opacity 0.15s ease;
+          transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease, color 0.16s ease;
         }
-        .blackbox-btn:hover {
-          transform: translateY(-1px);
-          filter: brightness(1.1);
+        .bb-freeze-btn:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.24);
         }
-        .blackbox-link {
-          color: #AFAEA2;
+        .bb-freeze-btn:active {
+          transform: scale(0.97);
+        }
+        .bb-freeze-btn.saved {
+          background: rgba(16, 185, 129, 0.18);
+          border-color: rgba(52, 211, 153, 0.4);
+          color: #6EE7B7;
+        }
+        .bb-kbd {
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 9px;
+          color: rgba(255, 255, 255, 0.42);
+          padding: 1px 4px;
+          border-radius: 4px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .bb-studio-link {
+          height: 26px;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 0 8px;
+          border-radius: 999px;
+          color: #A1A1AA;
           text-decoration: none;
           font-size: 11px;
-          font-weight: 600;
+          font-weight: 500;
+          transition: color 0.16s ease, background 0.16s ease;
         }
-        .blackbox-link:hover {
-          color: #F4F3EE;
-          text-decoration: underline;
+        .bb-studio-link:hover {
+          color: #FAFAFA;
+          background: rgba(255, 255, 255, 0.07);
         }
-        .blackbox-toast {
-          position: fixed;
-          bottom: 60px;
-          right: 16px;
-          z-index: 2147483647;
-          background: rgba(15, 23, 42, 0.96);
-          border: 1px solid #10b981;
-          color: #f8fafc;
-          padding: 10px 14px;
-          border-radius: 10px;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: 12px;
-          display: none;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        .blackbox-toast a {
-          color: #34d399;
-          font-weight: 700;
-          margin-left: 8px;
-        }
-        .blackbox-min-btn {
-          background: transparent;
-          border: 1px solid rgba(175, 174, 162, 0.25);
-          color: #AFAEA2;
-          width: 22px;
-          height: 22px;
+        .bb-min-btn {
+          width: 26px;
+          height: 26px;
           border-radius: 50%;
+          border: 1px solid transparent;
+          background: transparent;
+          color: #71717A;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          font-size: 11px;
           padding: 0;
+          transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
         }
-        .blackbox-min-btn:hover {
-          color: #F4F3EE;
-          border-color: rgba(175, 174, 162, 0.6);
+        .bb-min-btn:hover {
+          color: #F4F4F5;
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.10);
         }
-        .blackbox-pill.minimized {
-          padding: 7px 10px;
+        .bb-dock.minimized {
+          padding: 0 6px 0 11px;
           gap: 6px;
+          cursor: pointer;
         }
-        .blackbox-pill.minimized .blackbox-brand,
-        .blackbox-pill.minimized .blackbox-stats,
-        .blackbox-pill.minimized .blackbox-btn,
-        .blackbox-pill.minimized .blackbox-link {
+        .bb-dock.minimized .bb-brand,
+        .bb-dock.minimized .bb-sep,
+        .bb-dock.minimized .bb-count-text,
+        .bb-dock.minimized .bb-freeze-btn,
+        .bb-dock.minimized .bb-studio-link {
           display: none;
         }
+        .bb-toast {
+          position: fixed;
+          bottom: 66px;
+          right: 18px;
+          z-index: 2147483647;
+          display: none;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 12px 9px 13px;
+          border-radius: 12px;
+          background: rgba(10, 11, 15, 0.92);
+          -webkit-backdrop-filter: blur(22px) saturate(180%);
+          backdrop-filter: blur(22px) saturate(180%);
+          border: 1px solid rgba(52, 211, 153, 0.3);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 18px 36px -8px rgba(0, 0, 0, 0.65);
+          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 11.5px;
+          color: #E4E4E7;
+          animation: bbToastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .bb-toast.visible {
+          display: inline-flex;
+        }
+        @keyframes bbToastIn {
+          from { opacity: 0; transform: translateY(6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .bb-toast-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #34D399;
+          flex-shrink: 0;
+        }
+        .bb-toast-cta {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 4px 9px;
+          border-radius: 999px;
+          background: rgba(52, 211, 153, 0.14);
+          border: 1px solid rgba(52, 211, 153, 0.32);
+          color: #6EE7B7;
+          text-decoration: none;
+          font-size: 11px;
+          font-weight: 600;
+          transition: background 0.15s ease;
+        }
+        .bb-toast-cta:hover {
+          background: rgba(52, 211, 153, 0.24);
+        }
       </style>
-      <div class="blackbox-toast" id="blackboxToast"></div>
-      <div class="blackbox-pill" id="blackboxPill">
-        <span class="blackbox-dot" id="blackboxDot"></span>
-        <span class="blackbox-brand">BLACKBOX</span>
-        <span class="blackbox-stats" id="blackboxStats">60s Ring Buffer</span>
-        <button class="blackbox-btn" id="blackboxFreezeBtn" title="Shortcut: Alt+Shift+B">Freeze Capsule</button>
-        <a class="blackbox-link" href="${BLACKBOX_HTTP}" target="_blank" title="Open Blackbox Studio">Studio ↗</a>
-        <button class="blackbox-min-btn" id="blackboxMinBtn" title="Minimize / Expand Blackbox HUD">—</button>
+      <div class="bb-toast" id="blackboxToast"></div>
+      <div class="bb-dock" id="blackboxPill">
+        <span class="bb-identity" title="Blackbox 60s Rolling Flight Recorder">
+          <span class="bb-dot-wrap"><span class="bb-dot" id="blackboxDot"></span></span>
+          <span class="bb-brand">BLACKBOX</span>
+        </span>
+        <span class="bb-sep"></span>
+        <span class="bb-metrics">
+          <span class="bb-count-text" id="blackboxStats">0 evts</span>
+          <span class="bb-err-chip" id="blackboxErrChip"></span>
+        </span>
+        <span class="bb-sep"></span>
+        <button class="bb-freeze-btn" id="blackboxFreezeBtn" title="Freeze last 60s capsule (Alt+Shift+B)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"></circle>
+            <circle cx="12" cy="12" r="3" fill="currentColor"></circle>
+          </svg>
+          <span id="blackboxFreezeLabel">Freeze</span>
+          <span class="bb-kbd">⌥⇧B</span>
+        </button>
+        <a class="bb-studio-link" href="${BLACKBOX_HTTP}" target="_blank" title="Open Blackbox Studio">
+          <span>Studio</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 17L17 7"></path>
+            <path d="M7 7h10v10"></path>
+          </svg>
+        </a>
+        <button class="bb-min-btn" id="blackboxMinBtn" title="Minimize dock" aria-label="Minimize Blackbox dock">
+          <svg id="blackboxMinIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+          </svg>
+        </button>
       </div>
     `;
 
     document.body.appendChild(host);
     hudStatsEl = shadow.getElementById('blackboxStats');
+    hudErrEl = shadow.getElementById('blackboxErrChip');
     hudDotEl = shadow.getElementById('blackboxDot');
+    hudPillEl = shadow.getElementById('blackboxPill');
     hudToastEl = shadow.getElementById('blackboxToast');
-    const pillEl = shadow.getElementById('blackboxPill');
+    hudFreezeBtn = shadow.getElementById('blackboxFreezeBtn');
+    const freezeLabel = shadow.getElementById('blackboxFreezeLabel');
     const minBtn = shadow.getElementById('blackboxMinBtn');
-    const freezeBtn = shadow.getElementById('blackboxFreezeBtn');
-    freezeBtn.addEventListener('click', () => triggerFreezeNow('HUD_BUTTON_CLICK'));
-    minBtn.addEventListener('click', () => {
-      const collapsed = pillEl.classList.toggle('minimized');
-      minBtn.textContent = collapsed ? '+' : '—';
-      minBtn.title = collapsed ? 'Expand Blackbox HUD' : 'Minimize Blackbox HUD';
+    const minIcon = shadow.getElementById('blackboxMinIcon');
+
+    hudFreezeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerFreezeNow('HUD_BUTTON_CLICK');
+      hudFreezeBtn.classList.add('saved');
+      if (freezeLabel) freezeLabel.textContent = 'Saved';
+      setTimeout(() => {
+        hudFreezeBtn?.classList.remove('saved');
+        if (freezeLabel) freezeLabel.textContent = 'Freeze';
+      }, 1500);
+    });
+
+    const toggleMinimize = (e) => {
+      if (e) e.stopPropagation();
+      const collapsed = hudPillEl.classList.toggle('minimized');
+      minBtn.title = collapsed ? 'Expand Blackbox dock' : 'Minimize dock';
+      if (minIcon) {
+        minIcon.innerHTML = collapsed
+          ? '<path d="M12 5v14"></path><path d="M5 12h14"></path>'
+          : '<path d="M5 12h14"></path>';
+      }
+    };
+
+    minBtn.addEventListener('click', toggleMinimize);
+    hudPillEl.addEventListener('click', () => {
+      if (hudPillEl.classList.contains('minimized')) {
+        toggleMinimize();
+      }
     });
     updateHudStatus();
   }
 
   function updateHudStatus() {
     if (!hudStatsEl || !hudDotEl) return;
-    hudStatsEl.textContent = `${eventCount} evts${errorCount > 0 ? ` · ${errorCount} err` : ''}`;
+    hudStatsEl.textContent = `${eventCount} evts`;
+    if (hudErrEl) {
+      if (errorCount > 0) {
+        hudErrEl.textContent = `${errorCount} ${errorCount === 1 ? 'fault' : 'faults'}`;
+        hudErrEl.classList.add('visible');
+      } else {
+        hudErrEl.classList.remove('visible');
+      }
+    }
     hudDotEl.className =
-      'blackbox-dot' + (!wsConnected ? ' offline' : errorCount > 0 ? ' error' : '');
+      'bb-dot' + (!wsConnected ? ' offline' : errorCount > 0 ? ' error' : '');
+    if (hudPillEl) {
+      hudPillEl.classList.toggle('has-error', errorCount > 0);
+    }
   }
 
   function showHudToast(text, url) {
     if (!hudToastEl) return;
-    hudToastEl.style.display = 'block';
-    hudToastEl.innerHTML = `<span>⚡ ${text}</span> ${
-      url ? `<a href="${url}" target="_blank">Inspect in Studio →</a>` : ''
-    }`;
-    setTimeout(() => {
-      if (hudToastEl) hudToastEl.style.display = 'none';
+    if (hudToastTimer) clearTimeout(hudToastTimer);
+    const shortText = String(text || 'Capsule Frozen').replace(/cap_\d{4}-\d{2}-\d{2}T[\d-]+Z_/, 'cap_');
+    hudToastEl.innerHTML = `
+      <span class="bb-toast-dot"></span>
+      <span>${shortText}</span>
+      ${url ? `<a class="bb-toast-cta" href="${url}" target="_blank">Open Studio →</a>` : ''}
+    `;
+    hudToastEl.classList.add('visible');
+    hudToastTimer = setTimeout(() => {
+      if (hudToastEl) hudToastEl.classList.remove('visible');
+      hudToastTimer = null;
     }, 6500);
   }
 
