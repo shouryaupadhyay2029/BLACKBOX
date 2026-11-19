@@ -10,5 +10,6 @@ export { CapsuleVault } from './core/capsule-vault.js';
 export { BlackboxRingBuffer, KalaRingBuffer } from './core/ring-buffer.js';
 export { buildCausalAnalysis } from './core/causal-correlator.js';
 export { parseStackAndCode, resolveLocalFile, extractSourceSnippet } from './core/stack-parser.js';
+export { lookupSourceMapPosition, resolveBrowserStackWithSourceMaps } from './core/sourcemap-resolver.js';
 export { captureGitState, correlateStackWithGitDiff } from './core/git-inspector.js';
 export { BlackboxMcpServer, KalaMcpServer } from './mcp/mcp-server.js';

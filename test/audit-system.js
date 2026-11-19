@@ -19,6 +19,7 @@ const jsFiles = [
   'src/core/git-inspector.js',
   'src/core/ring-buffer.js',
   'src/core/stack-parser.js',
+  'src/core/sourcemap-resolver.js',
   'src/daemon/process-supervisor.js',
   'src/daemon/server.js',
   'src/daemon/wiretap-proxy.js',

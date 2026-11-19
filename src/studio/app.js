@@ -1163,6 +1163,7 @@ function syncTimeScrubber(relMs) {
     cursorLaser.style.display = 'block';
     cursorLaser.style.left = `${xPct}%`;
     cursorLaser.style.top = `${yPct}%`;
+    cursorLaser.classList.toggle('flip-left', xPct > 65);
     cursorLaserLabel.textContent = `Click: ${
       activeClickEvt.payload?.text || activeClickEvt.payload?.selector || 'Element'
     }`;

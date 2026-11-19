@@ -176,6 +176,40 @@
         head.insertBefore(baseEl, head.firstChild);
       }
 
+      // Compact inline dev-server <style> tags (strip comments & extra whitespace) so <head> never starves <body>
+      clone.querySelectorAll('style').forEach((styleEl) => {
+        if (styleEl.textContent) {
+          styleEl.textContent = styleEl.textContent
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        }
+      });
+
+      // Snapshot <canvas> elements as PNG <img> nodes so Canvas/Radar/Chart apps replay visually
+      const origCanvases = document.querySelectorAll('canvas');
+      const cloneCanvases = clone.querySelectorAll('canvas');
+      origCanvases.forEach((origC, idx) => {
+        const cloneC = cloneCanvases[idx];
+        if (!cloneC) return;
+        try {
+          if (origC.width > 0 && origC.height > 0) {
+            const dataUrl = origC.toDataURL('image/png');
+            if (dataUrl && dataUrl.length < 220000) {
+              const img = document.createElement('img');
+              img.setAttribute('src', dataUrl);
+              if (cloneC.getAttribute('class')) img.setAttribute('class', cloneC.getAttribute('class'));
+              if (cloneC.getAttribute('style')) img.setAttribute('style', cloneC.getAttribute('style'));
+              img.style.width = origC.clientWidth ? `${origC.clientWidth}px` : `${origC.width}px`;
+              img.style.height = origC.clientHeight ? `${origC.clientHeight}px` : `${origC.height}px`;
+              cloneC.replaceWith(img);
+            }
+          }
+        } catch {
+          // ignore tainted cross-origin canvases
+        }
+      });
+
       // Sync live input, textarea, and select values into the cloned attributes
       const origInputs = document.querySelectorAll('input, textarea, select');
       const cloneInputs = clone.querySelectorAll('input, textarea, select');
@@ -199,7 +233,10 @@
         }
       });
 
-      return '<!DOCTYPE html>\n' + clone.outerHTML.slice(0, 120000);
+      // Budget <head> and <body> separately so <body> is NEVER chopped off by large dev CSS
+      const headHtml = (clone.querySelector('head')?.outerHTML || '<head></head>').slice(0, 260000);
+      const bodyHtml = (clone.querySelector('body')?.outerHTML || '<body></body>').slice(0, 260000);
+      return `<!DOCTYPE html>\n<html>${headHtml}${bodyHtml}</html>`;
     } catch {
       return '<html><body>DOM Snapshot unavailable</body></html>';
     }
@@ -289,11 +326,20 @@
       }
       const target = e.target;
       const traceId = genTraceId();
-      const selector = getSelector(target);
-      const text = ((target && (target.innerText || target.value)) || '')
+      const clickable = target && target.closest ? target.closest('button, a, [role="button"], input, select') || target : target;
+      const selector = getSelector(clickable);
+      const rawText = (
+        (clickable &&
+          (clickable.getAttribute?.('aria-label') ||
+            clickable.getAttribute?.('title') ||
+            clickable.innerText ||
+            clickable.value)) ||
+        ''
+      )
         .trim()
         .replace(/\s+/g, ' ')
         .slice(0, 60);
+      const text = rawText;
 
       lastActionTrace = {
         traceId,

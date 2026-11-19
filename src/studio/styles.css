@@ -4057,3 +4057,69 @@ body::before {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+
+/* ==========================================================================
+   RESPONSIVE TOPBAR FIT (ZERO OVERFLOW ON 1200px-1440px) & LASER LABEL FLIP
+   ========================================================================== */
+.topbar {
+  padding: 0 14px;
+  gap: 10px;
+}
+
+.brand-wordmark-img {
+  height: 24px;
+}
+
+.mode-switcher {
+  gap: 4px;
+  padding: 3px;
+}
+
+.mode-btn {
+  padding: 5px 10px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.telemetry-cluster {
+  gap: 6px;
+}
+
+.stat-pill {
+  padding: 4px 8px;
+  font-size: 10px;
+  gap: 5px;
+}
+
+.vault-toggle-btn {
+  padding: 4px 9px;
+  font-size: 10px;
+  gap: 6px;
+}
+
+.action-btn {
+  padding: 5px 10px;
+  font-size: 10px;
+  gap: 4px;
+}
+
+@media (max-width: 1440px) {
+  .stat-git-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 1220px) {
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 12px;
+  }
+}
+
+.cursor-laser.flip-left .laser-label {
+  left: auto !important;
+  right: 18px !important;
+  transform: translateY(-50%) !important;
+}

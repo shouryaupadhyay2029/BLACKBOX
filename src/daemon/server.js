@@ -14,6 +14,7 @@ import { BlackboxRingBuffer } from '../core/ring-buffer.js';
 import { CapsuleVault } from '../core/capsule-vault.js';
 import { captureGitState } from '../core/git-inspector.js';
 import { resolveLocalFile, extractSourceSnippet } from '../core/stack-parser.js';
+import { resolveBrowserStackWithSourceMaps } from '../core/sourcemap-resolver.js';
 import { ProcessSupervisor } from './process-supervisor.js';
 
 function freePortIfOccupied(port) {
@@ -85,15 +86,29 @@ export class BlackboxDaemonServer {
     this.studioClients = new Set();
     this.agentClients = new Set();
 
-    // Auto-freeze grace window & cooldown state
+    // Auto-freeze grace window, source-map resolution & cooldown state
     this.pendingFreezeTimer = null;
     this.lastAutoFreezeMs = 0;
     this.autoFreezeCooldownMs = 3500;
+    this._pendingSourceMapTasks = new Set();
+  }
+
+  /**
+   * Waits briefly (max 350ms) for any in-flight dev-server Source Map lookups to finish
+   * before freezing a capsule so browser TSX/JSX stack lines map 1:1 to disk.
+   */
+  async _waitForSourceMaps(timeoutMs = 350) {
+    if (this._pendingSourceMapTasks.size === 0) return;
+    await Promise.race([
+      Promise.allSettled([...this._pendingSourceMapTasks]),
+      new Promise((r) => setTimeout(r, timeoutMs)),
+    ]);
   }
 
   /**
    * Schedules an automatic capsule freeze after a 350ms grace window so trailing
-   * stack trace lines, response bodies, and UI error states are all captured together.
+   * stack trace lines, source-map resolutions, response bodies, and UI error states
+   * are all captured together.
    */
   scheduleAutoFreeze(triggerReason, defaultTitle = '') {
     const now = Date.now();
@@ -104,16 +119,13 @@ export class BlackboxDaemonServer {
       return; // Already waiting in the 350ms grace window
     }
 
-    this.pendingFreezeTimer = setTimeout(() => {
+    this.pendingFreezeTimer = setTimeout(async () => {
       this.pendingFreezeTimer = null;
       this.lastAutoFreezeMs = Date.now();
-      const capsule = this.freezeNow({
+      await this._waitForSourceMaps(350);
+      this.freezeNow({
         triggerReason,
         title: defaultTitle,
-      });
-      this._broadcastToStudio({
-        type: 'CAPSULE_FROZEN',
-        capsule: this._toSummary(capsule),
       });
     }, 350);
   }
@@ -207,21 +219,23 @@ export class BlackboxDaemonServer {
         this._ingestTelemetryEvent(ev);
       }
     } else if (msg.action === 'FREEZE_CAPSULE') {
-      const capsule = this.freezeNow({
-        triggerReason: msg.triggerReason || 'BROWSER_HOTKEY_FREEZE',
-        title: msg.title || '',
-        notes: msg.notes || '',
+      this._waitForSourceMaps(250).then(() => {
+        const capsule = this.freezeNow({
+          triggerReason: msg.triggerReason || 'BROWSER_HOTKEY_FREEZE',
+          title: msg.title || '',
+          notes: msg.notes || '',
+        });
+        if (ws && ws.readyState === 1) {
+          ws.send(
+            JSON.stringify({
+              type: 'CAPSULE_CREATED',
+              capsuleId: capsule.id,
+              title: capsule.title,
+              studioUrl: `http://localhost:${this.port}/?capsule=${capsule.id}`,
+            })
+          );
+        }
       });
-      if (ws && ws.readyState === 1) {
-        ws.send(
-          JSON.stringify({
-            type: 'CAPSULE_CREATED',
-            capsuleId: capsule.id,
-            title: capsule.title,
-            studioUrl: `http://localhost:${this.port}/?capsule=${capsule.id}`,
-          })
-        );
-      }
     }
   }
 
@@ -236,6 +250,34 @@ export class BlackboxDaemonServer {
     }
 
     const evt = this.ringBuffer.push(rawEvent);
+
+    // Enrich localhost browser stack traces with exact original TypeScript/TSX line numbers via live Vite/Next Source Maps
+    if (
+      evt.plane === 'BROWSER' &&
+      (evt.type === 'UNCAUGHT_ERROR' ||
+        evt.type === 'UNHANDLED_REJECTION' ||
+        (evt.type === 'CONSOLE' && evt.severity === 'error'))
+    ) {
+      const rawStack = evt.payload?.stack || (evt.type === 'CONSOLE' ? evt.payload?.message : '') || '';
+      if (/https?:\/\/(localhost|127\.0\.0\.1)/i.test(rawStack)) {
+        const smTask = resolveBrowserStackWithSourceMaps(rawStack)
+          .then((mapped) => {
+            if (mapped && mapped !== rawStack) {
+              if (evt.payload?.stack) {
+                evt.payload.rawCompiledStack = evt.payload.stack;
+                evt.payload.stack = mapped;
+              } else if (evt.type === 'CONSOLE') {
+                evt.payload.stack = mapped;
+              }
+            }
+          })
+          .catch(() => {})
+          .finally(() => {
+            this._pendingSourceMapTasks.delete(smTask);
+          });
+        this._pendingSourceMapTasks.add(smTask);
+      }
+    }
 
     // Check if auto-freeze should fire on unhandled browser errors, React console stack errors, or 5xx network traces
     if (this.autoFreeze) {
@@ -352,6 +394,7 @@ export class BlackboxDaemonServer {
 
       if (pathname === '/api/freeze' && req.method === 'POST') {
         const body = await this._readJsonBody(req);
+        await this._waitForSourceMaps(250);
         const capsule = this.freezeNow({
           triggerReason: body.triggerReason || 'MANUAL_FREEZE',
           title: body.title || '',
