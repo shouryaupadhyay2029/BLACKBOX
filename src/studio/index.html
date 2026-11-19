@@ -34,7 +34,10 @@
         <span>✦</span>
         <span id="gitStatText">git: clean</span>
       </div>
-      <input type="checkbox" id="autoFreezeCheck" checked style="display:none;" />
+      <label class="stat-pill autofreeze-toggle" title="Auto-freeze 60s capsule immediately on HTTP 5xx or unhandled exceptions">
+        <input type="checkbox" id="autoFreezeCheck" checked />
+        <span>AUTO-FREEZE</span>
+      </label>
       <button class="vault-toggle-btn" id="toggleVaultBtn" title="Toggle Archival Vault Drawer">
         <span>✦ ARCHIVE VAULT</span>
         <span class="badge-count" id="capsuleCountBadge">0</span>
@@ -66,7 +69,12 @@
         <button class="mini-btn btn-danger-ghost" id="clearVaultBtn" title="Clear all capsules from vault">🗑 CLEAR</button>
       </div>
       <div class="vault-search-wrap">
-        <input type="text" id="capsuleSearchInput" class="vault-search-input" placeholder="🔍 Search capsules..." />
+        <input type="text" id="capsuleSearchInput" class="vault-search-input" placeholder="🔍 Search capsules, files, IDs..." />
+        <div class="vault-filter-pills" id="vaultFilterPills">
+          <button class="vault-pill active" data-vault-filter="ALL">ALL</button>
+          <button class="vault-pill" data-vault-filter="FAULT">FAULTS</button>
+          <button class="vault-pill" data-vault-filter="SNAPSHOT">SNAPSHOTS</button>
+        </div>
       </div>
       <div class="capsule-list" id="capsuleList">
         <div class="empty-hint">No capsules frozen yet. Trigger a failure or freeze a state to begin inspection.</div>
@@ -82,9 +90,10 @@
           <div class="meta-left">
             <span class="status-tag" id="capsuleStatusTag">READY</span>
             <span class="dossier-pill" id="capsuleIdBadge">ARCHIVE DOSSIER</span>
+            <button class="mini-btn btn-edit-meta" id="btnEditCapsuleMeta" title="Rename capsule or add engineer notes">✎ LABEL / NOTE</button>
           </div>
           <div class="meta-right">
-            <span class="geo-stamp">✦ 44°00'N 98°76'E · LOCALHOST FLIGHT RECORDER</span>
+            <span class="geo-stamp" id="projectTelemetryStamp">✦ LOCALHOST FLIGHT RECORDER · CONNECTING</span>
           </div>
         </div>
 
@@ -296,6 +305,9 @@
         <div class="scrubber-readout">
           <div class="time-primary" id="scrubberTimeReadout">+0.00s / 0.00s</div>
           <div class="time-sub" id="scrubberEventReadout">0 / 0 events</div>
+        </div>
+        <div class="scrubber-shortcuts" title="Keyboard Shortcuts">
+          <kbd>Space</kbd> Play · <kbd>←</kbd><kbd>→</kbd> Step · <kbd>Alt+Shift+B</kbd> Freeze
         </div>
       </footer>
 
@@ -770,9 +782,13 @@ blackbox run "npm run dev" --proxy 4000:3000</pre>
               <code class="cli-ref-cmd">blackbox capsules</code>
               <span class="cli-ref-desc">List all saved Time-Travel Bug Capsules in <code>.blackbox/capsules</code></span>
             </div>
-            <div class="cli-ref-row" data-copy="blackbox inspect latest" title="Click to copy command">
-              <code class="cli-ref-cmd">blackbox inspect [capsuleId|latest]</code>
+            <div class="cli-ref-row" data-copy="blackbox inspect latest_fault" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox inspect [id|latest|latest_fault]</code>
               <span class="cli-ref-desc">Print the full Causal Fault Chain &amp; AI Root-Cause Diagnostic Markdown to stdout</span>
+            </div>
+            <div class="cli-ref-row" data-copy="blackbox diff" title="Click to copy command">
+              <code class="cli-ref-cmd">blackbox diff [capA] [capB]</code>
+              <span class="cli-ref-desc">Diff Golden Baseline vs Crash capsule for HTTP regressions, new fault chains &amp; Git drift</span>
             </div>
             <div class="cli-ref-row" data-copy="blackbox mcp" title="Click to copy command">
               <code class="cli-ref-cmd">blackbox mcp</code>
@@ -817,11 +833,14 @@ blackbox run "npm run dev" --proxy 4000:3000</pre>
       </div>
       <div class="live-feed-hud">
         <div class="live-feed-toolbar">
-          <div class="feed-col-header">PLANE &amp; MONOTONIC TIMESTAMP</div>
-          <div class="feed-col-header">CAUSAL PAYLOAD TELEMETRY</div>
+          <div class="live-search-group">
+            <input type="text" id="liveSearchInput" class="live-search-input" placeholder="🔍 Filter live stream by route, text, trace ID..." />
+          </div>
           <div class="feed-col-actions">
+            <button class="mini-btn" id="livePauseBtn" title="Pause or resume incoming live stream display">⏸ PAUSE</button>
+            <button class="mini-btn" id="liveClearBtn" title="Clear active 60s rolling ring buffer">🗑 CLEAR BUFFER</button>
             <button class="action-btn btn-freeze btn-live-freeze" id="liveDeckFreezeBtn" title="Instant Freeze Active Ring Buffer">⚡ Freeze 60s Buffer</button>
-            <span class="feed-stream-rate" id="liveStreamRateBadge">120 events in ring buffer</span>
+            <span class="feed-stream-rate" id="liveStreamRateBadge">0 events buffered (60s window)</span>
           </div>
         </div>
         <div class="live-stream-feed" id="liveStreamFeed"></div>

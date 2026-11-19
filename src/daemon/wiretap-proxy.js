@@ -7,6 +7,7 @@
  */
 
 import http from 'node:http';
+import net from 'node:net';
 import { nowPreciseMs } from '../core/ring-buffer.js';
 
 export class WiretapProxy {
@@ -128,6 +129,9 @@ export class WiretapProxy {
               'x-blackbox-trace-id': traceId,
               'x-kala-trace-id': traceId,
             };
+            // Remove conflicting hop-by-hop framing headers now that body is buffered
+            delete outHeaders['transfer-encoding'];
+            delete outHeaders['content-encoding'];
             clientRes.writeHead(proxyRes.statusCode || 200, outHeaders);
             clientRes.end(outBuffer);
           });
@@ -167,6 +171,39 @@ export class WiretapProxy {
       clientReq.on('end', () => proxyReq.end());
     });
 
+    // Transparent WebSocket / HMR upgrade tunneling (e.g. Vite HMR, Next.js Fast Refresh, Socket.IO)
+    this.server.on('upgrade', (req, clientSocket, head) => {
+      const upstreamPort = Number(targetUrl.port) || (targetUrl.protocol === 'https:' ? 443 : 80);
+      const upstreamSocket = net.connect(upstreamPort, targetUrl.hostname, () => {
+        const rawHeaders = [];
+        for (let i = 0; i < req.rawHeaders.length; i += 2) {
+          const k = req.rawHeaders[i];
+          const v = k.toLowerCase() === 'host' ? targetUrl.host : req.rawHeaders[i + 1];
+          rawHeaders.push(`${k}: ${v}`);
+        }
+        const handshake = `${req.method} ${req.url} HTTP/${req.httpVersion}\r\n${rawHeaders.join('\r\n')}\r\n\r\n`;
+        upstreamSocket.write(handshake);
+        if (head && head.length) upstreamSocket.write(head);
+        upstreamSocket.pipe(clientSocket);
+        clientSocket.pipe(upstreamSocket);
+      });
+
+      upstreamSocket.on('error', () => {
+        try {
+          clientSocket.destroy();
+        } catch {
+          // ignore
+        }
+      });
+      clientSocket.on('error', () => {
+        try {
+          upstreamSocket.destroy();
+        } catch {
+          // ignore
+        }
+      });
+    });
+
     return new Promise((resolve, reject) => {
       this.server.on('error', reject);
       this.server.listen(this.listenPort, '127.0.0.1', () => {
@@ -177,6 +214,9 @@ export class WiretapProxy {
 
   stop() {
     if (this.server) {
+      if (typeof this.server.closeAllConnections === 'function') {
+        this.server.closeAllConnections();
+      }
       this.server.close();
     }
   }

@@ -237,15 +237,23 @@ export class BlackboxDaemonServer {
 
     const evt = this.ringBuffer.push(rawEvent);
 
-    // Check if auto-freeze should fire on unhandled browser errors or 5xx network traces
+    // Check if auto-freeze should fire on unhandled browser errors, React console stack errors, or 5xx network traces
     if (this.autoFreeze) {
+      const consoleMsg = String(evt.payload?.message || '');
+      const isBrowserConsoleCrash =
+        evt.plane === 'BROWSER' &&
+        evt.type === 'CONSOLE' &&
+        evt.severity === 'error' &&
+        /(TypeError|ReferenceError|SyntaxError|RangeError|Uncaught|The above error occurred in)/i.test(consoleMsg) &&
+        /\bat\s+/.test(consoleMsg);
+
       if (
         evt.plane === 'BROWSER' &&
-        (evt.type === 'UNCAUGHT_ERROR' || evt.type === 'UNHANDLED_REJECTION')
+        (evt.type === 'UNCAUGHT_ERROR' || evt.type === 'UNHANDLED_REJECTION' || isBrowserConsoleCrash)
       ) {
         this.scheduleAutoFreeze(
           evt.type,
-          `Browser ${evt.type}: ${(evt.payload?.message || 'Exception').slice(0, 70)}`
+          `Browser ${evt.type}: ${(evt.payload?.message || 'Exception').split('\n')[0].slice(0, 70)}`
         );
       } else if (
         evt.plane === 'NETWORK' &&
@@ -263,9 +271,9 @@ export class BlackboxDaemonServer {
   }
 
   async _handleHttpRequest(req, res) {
-    // Universal CORS so any localhost port or browser extension can talk to KALA
+    // Universal CORS so any localhost port or browser extension can talk to Blackbox
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     res.setHeader(
       'Access-Control-Allow-Headers',
       'Content-Type, X-Blackbox-Trace-Id, X-Blackbox-Trigger-Action, X-Kala-Trace-Id, X-Kala-Trigger-Action'
@@ -295,15 +303,18 @@ export class BlackboxDaemonServer {
       // 2. REST API Endpoints
       if (pathname === '/api/status' && req.method === 'GET') {
         const git = captureGitState(this.projectCwd);
+        const procs = this.supervisor.listProcesses();
         return this._sendJson(res, 200, {
           ok: true,
           daemonPort: this.port,
           projectCwd: this.projectCwd,
+          projectName: path.basename(this.projectCwd) || 'localhost',
+          demoRunning: procs.some((p) => p.name === 'nexuspay-api' && p.status === 'running'),
           autoFreeze: this.autoFreeze,
           connectedBrowserAgents: this.agentClients.size,
           connectedStudios: this.studioClients.size,
           buffer: this.ringBuffer.getStats(),
-          processes: this.supervisor.listProcesses(),
+          processes: procs,
           git: {
             isGitRepo: git.isGitRepo,
             branch: git.branch,
@@ -319,6 +330,12 @@ export class BlackboxDaemonServer {
         const durationMs = Number(parsedUrl.searchParams.get('durationMs')) || this.windowMs;
         const slice = this.ringBuffer.freezeSlice({ durationMs });
         return this._sendJson(res, 200, slice);
+      }
+
+      if (pathname === '/api/buffer/clear' && req.method === 'POST') {
+        this.ringBuffer.clear();
+        this._broadcastToStudio({ type: 'BUFFER_CLEARED' });
+        return this._sendJson(res, 200, { ok: true });
       }
 
       if (pathname === '/api/ingest' && req.method === 'POST') {
@@ -371,6 +388,19 @@ export class BlackboxDaemonServer {
         const body = await this._readJsonBody(req);
         const imported = this.vault.importCapsule(body.capsule || body);
         return this._sendJson(res, 200, { ok: true, capsule: imported });
+      }
+
+      if (pathname.startsWith('/api/capsules/') && req.method === 'PATCH') {
+        const id = decodeURIComponent(pathname.replace('/api/capsules/', ''));
+        const body = await this._readJsonBody(req);
+        const updated = this.vault.updateCapsule(id, {
+          title: body.title,
+          notes: body.notes,
+        });
+        if (!updated) {
+          return this._sendJson(res, 404, { ok: false, error: `Capsule "${id}" not found` });
+        }
+        return this._sendJson(res, 200, { ok: true, capsule: updated });
       }
 
       if (pathname.startsWith('/api/capsules/') && req.method === 'DELETE') {
@@ -490,11 +520,20 @@ export class BlackboxDaemonServer {
     res.end(JSON.stringify(data));
   }
 
-  _readJsonBody(req) {
-    return new Promise((resolve) => {
+  _readJsonBody(req, maxBytes = 25 * 1024 * 1024) {
+    return new Promise((resolve, reject) => {
       const chunks = [];
-      req.on('data', (c) => chunks.push(c));
+      let total = 0;
+      req.on('data', (c) => {
+        total += c.length;
+        if (total <= maxBytes) {
+          chunks.push(c);
+        }
+      });
       req.on('end', () => {
+        if (total > maxBytes) {
+          return reject(new Error('Request payload exceeds 25MB limit'));
+        }
         try {
           const str = Buffer.concat(chunks).toString('utf8');
           resolve(str ? JSON.parse(str) : {});
@@ -502,6 +541,7 @@ export class BlackboxDaemonServer {
           resolve({});
         }
       });
+      req.on('error', () => resolve({}));
     });
   }
 

@@ -47,6 +47,12 @@ function freePortIfOccupied(port) {
     } catch {
       // ignore
     }
+  } else {
+    try {
+      execSync(`lsof -ti :${port} | xargs kill -9`, { stdio: 'ignore' });
+    } catch {
+      // ignore
+    }
   }
 }
 
@@ -74,9 +80,13 @@ function printBanner(daemonPort, extraLines = []) {
   console.log('\x1b[35m╚══════════════════════════════════════════════════════════════════════════╝\x1b[0m\n');
 }
 
-function attachTerminalHotkey(daemon) {
+function attachTerminalHotkey(daemon, onCleanup = null) {
+  let cleaned = false;
   const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
     try {
+      if (typeof onCleanup === 'function') onCleanup();
       daemon.stop();
     } catch {
       // ignore
@@ -194,15 +204,28 @@ async function main() {
         path.join(cwd, 'index.html'),
         path.join(cwd, 'public', 'index.html'),
       ];
+      let injectedAny = false;
       for (const htmlFile of candidates) {
         if (fs.existsSync(htmlFile)) {
           let content = fs.readFileSync(htmlFile, 'utf8');
           if (!content.includes('browser-agent.js')) {
-            content = content.replace('</head>', `  ${sdkTag}\n</head>`);
+            if (/<\/head>/i.test(content)) {
+              content = content.replace(/<\/head>/i, `  ${sdkTag}\n</head>`);
+            } else {
+              content = `${sdkTag}\n${content}`;
+            }
             fs.writeFileSync(htmlFile, content, 'utf8');
             console.log(`  \x1b[32m✔\x1b[0m Injected Browser Agent SDK into ${path.relative(cwd, htmlFile)}`);
+            injectedAny = true;
+          } else {
+            console.log(`  \x1b[32m✔\x1b[0m Browser Agent SDK already present in ${path.relative(cwd, htmlFile)}`);
+            injectedAny = true;
           }
         }
+      }
+      if (!injectedAny) {
+        console.log('  \x1b[33mℹ\x1b[0m No static index.html found (e.g. Next.js / backend-only).');
+        console.log('    Use the Wiretap Proxy (`blackbox run "<cmd>" --proxy 4000:3000`) or paste the <script> tag into your root layout.');
       }
     }
 
@@ -238,30 +261,39 @@ async function main() {
       const res = await fetch(`http://127.0.0.1:${port}/api/status`);
       const data = await res.json();
       if (data.ok) {
-        console.log(`  \x1b[32m✔\x1b[0m Active Daemon (:9876) : ONLINE (${data.buffer.activeEvents} events in ring buffer)`);
+        console.log(`  \x1b[32m✔\x1b[0m Active Daemon (:${port}) : ONLINE (${data.buffer.activeEvents} events in ring buffer · project: ${data.projectName || 'localhost'})`);
       }
     } catch {
-      console.log(`  \x1b[36mℹ\x1b[0m Active Daemon (:9876) : Standby (start with 'blackbox demo' or 'blackbox run "..."')`);
+      console.log(`  \x1b[36mℹ\x1b[0m Active Daemon (:${port}) : Standby (start with 'blackbox demo' or 'blackbox run "..."')`);
     }
     console.log('\n✅ All Blackbox core systems are healthy and ready.\n');
     return;
   }
 
   if (subcommand === 'mcp') {
-    const mcp = new BlackboxMcpServer({ projectCwd: process.cwd() });
+    const mcp = new BlackboxMcpServer({
+      projectCwd: process.env.BLACKBOX_PROJECT_CWD || process.env.KALA_PROJECT_CWD || process.cwd(),
+      daemonUrl: `http://127.0.0.1:${port}`,
+    });
     mcp.startStdio();
     return;
   }
 
   if (subcommand === 'capsules') {
     const vault = new CapsuleVault({ projectCwd: process.cwd() });
-    const list = vault.listCapsules();
+    const onlyFaults = args.includes('--faults');
+    const limit = Number(parseFlag('--limit', 25));
+    let list = vault.listCapsules();
+    if (onlyFaults) {
+      list = list.filter((c) => c.status === 'FAULT_DETECTED');
+    }
     if (list.length === 0) {
-      console.log('No capsules found in .blackbox/capsules.');
+      console.log(onlyFaults ? 'No FAULT_DETECTED capsules found in .blackbox/capsules.' : 'No capsules found in .blackbox/capsules.');
       return;
     }
-    console.log(`\nFound ${list.length} Blackbox Bug Capsule(s):\n`);
-    for (const c of list) {
+    const shown = list.slice(0, limit);
+    console.log(`\nFound ${list.length} Blackbox Bug Capsule(s)${list.length > shown.length ? ` (showing latest ${shown.length})` : ''}:\n`);
+    for (const c of shown) {
       const tag = c.status === 'FAULT_DETECTED' ? '\x1b[31m[FAULT]\x1b[0m' : '\x1b[32m[OK]\x1b[0m';
       console.log(
         `- ${tag} \x1b[1m${c.id}\x1b[0m (${new Date(c.createdAt).toLocaleTimeString()}) :: ${c.title}`
@@ -270,6 +302,47 @@ async function main() {
         console.log(`    Culprit: ${c.culpritFile}:${c.culpritLine || '?'}`);
       }
     }
+    return;
+  }
+
+  if (subcommand === 'diff') {
+    const vault = new CapsuleVault({ projectCwd: process.cwd() });
+    const list = vault.listCapsules();
+    let idA = args[1];
+    let idB = args[2];
+    if (!idA || !idB) {
+      const fault = list.find((c) => c.status === 'FAULT_DETECTED');
+      const healthy = list.find((c) => c.status !== 'FAULT_DETECTED');
+      if (!idA) idA = healthy?.id || list[list.length - 1]?.id;
+      if (!idB) idB = fault?.id || list[0]?.id;
+    }
+    if (!idA || !idB) {
+      console.error('Need at least 2 capsules in .blackbox/capsules (or pass: blackbox diff <idA> <idB>).');
+      process.exit(1);
+    }
+    const diff = vault.diffCapsules(idA, idB);
+    console.log('\n⚡ BLACKBOX CAPSULE REGRESSION DIFF\n');
+    console.log(`  Baseline A : ${diff.capsuleA.id} — ${diff.capsuleA.title}`);
+    console.log(`  Target   B : ${diff.capsuleB.id} — ${diff.capsuleB.title}`);
+    console.log(`  Transition : ${diff.statusChange}`);
+    console.log(`  Git Commit : ${diff.gitCommitChange}`);
+    console.log(`  Routes     : ${diff.totalRoutesAudited} audited, ${diff.routeDiffs.filter((r) => r.regression).length} regression(s)`);
+    if (diff.routeDiffs.length > 0) {
+      console.log('\n  HTTP Route Deltas:');
+      for (const r of diff.routeDiffs) {
+        const marker = r.regression ? '\x1b[31m[REGRESSION]\x1b[0m' : '\x1b[33m[SHIFT]\x1b[0m';
+        const before = r.before ? `${r.before.lastStatus} (${r.before.avgMs}ms)` : 'N/A';
+        const after = r.after ? `${r.after.lastStatus} (${r.after.avgMs}ms)` : 'N/A';
+        console.log(`    ${marker} ${r.route}: ${before} -> ${after}`);
+      }
+    }
+    if (diff.newCausalChains.length > 0) {
+      console.log('\n  Newly Introduced Causal Fault Chains:');
+      for (const ch of diff.newCausalChains) {
+        console.log(`    \x1b[31m✖\x1b[0m ${ch.culpritFile}:${ch.culpritLine || '?'} — ${ch.faultSummary}`);
+      }
+    }
+    console.log('');
     return;
   }
 
@@ -359,16 +432,17 @@ async function main() {
       `🚀 Supervised Command : \x1b[1m${cmdToRun}\x1b[0m (${procName})`,
     ];
 
+    let activeProxy = null;
     if (proxySpec && proxySpec.includes(':')) {
       const [listenPortStr, targetPortStr] = proxySpec.split(':');
-      const proxy = new WiretapProxy({
+      activeProxy = new WiretapProxy({
         listenPort: Number(listenPortStr),
         targetOrigin: `http://127.0.0.1:${targetPortStr}`,
-        kalaPort: port,
+        port,
         ringBuffer: daemon.ringBuffer,
         onHttp5xx: (info) => daemon.scheduleAutoFreeze(info.reason),
       });
-      await proxy.start();
+      await activeProxy.start();
       extraBanner.push(
         `🕵️  Wiretap Proxy      : \x1b[36mhttp://localhost:${listenPortStr} -> 127.0.0.1:${targetPortStr}\x1b[0m`
       );
@@ -380,7 +454,9 @@ async function main() {
       command: cmdToRun,
       cwd: process.cwd(),
     });
-    attachTerminalHotkey(daemon);
+    attachTerminalHotkey(daemon, () => {
+      if (activeProxy) activeProxy.stop();
+    });
     return;
   }
 
@@ -393,8 +469,9 @@ async function main() {
   console.log('  blackbox run "<cmd>" [--proxy 4000:3000]   Supervise any backend/frontend dev command');
   console.log('  blackbox studio [--port 9876]              Run Blackbox Daemon & Studio UI');
   console.log('  blackbox freeze [--title "..."]            Freeze the active 60s rolling ring buffer');
-  console.log('  blackbox capsules                          List all captured Time-Travel Bug Capsules');
-  console.log('  blackbox inspect [capsuleId|latest]        Print Causal Fault Chain & AI Diagnostic Markdown');
+  console.log('  blackbox capsules [--faults]               List all captured Time-Travel Bug Capsules');
+  console.log('  blackbox inspect [id|latest|latest_fault]  Print Causal Fault Chain & AI Diagnostic Markdown');
+  console.log('  blackbox diff [capA] [capB]                Compare Baseline vs Crash capsule for regressions');
   console.log('  blackbox mcp                               Start stdio Model Context Protocol (MCP) server');
 }
 

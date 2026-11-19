@@ -76,11 +76,15 @@ export class BlackboxMcpServer {
               {
                 name: 'list_capsules',
                 description:
-                  'Lists captured KALA Time-Travel Bug Capsules with status, trigger reason, culprit file:line, and timestamps.',
+                  'Lists captured Blackbox Time-Travel Bug Capsules with status, trigger reason, culprit file:line, and timestamps.',
                 inputSchema: {
                   type: 'object',
                   properties: {
                     limit: { type: 'number', description: 'Max capsules to return (default 15)' },
+                    onlyFaults: {
+                      type: 'boolean',
+                      description: 'If true, only return FAULT_DETECTED capsules',
+                    },
                   },
                 },
               },
@@ -93,7 +97,8 @@ export class BlackboxMcpServer {
                   properties: {
                     capsuleId: {
                       type: 'string',
-                      description: 'Optional capsule ID (defaults to "latest")',
+                      description:
+                        'Optional capsule ID, "latest" (default), or "latest_fault" to fetch the most recent crash capsule',
                     },
                   },
                 },
@@ -101,14 +106,19 @@ export class BlackboxMcpServer {
               {
                 name: 'inspect_capsule_timeline',
                 description:
-                  'Filters raw microsecond-indexed telemetry events inside a capsule by plane (BROWSER, NETWORK, TERMINAL) or traceId.',
+                  'Filters raw microsecond-indexed telemetry events inside a capsule by plane (BROWSER, NETWORK, TERMINAL, GIT), severity, or traceId.',
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    capsuleId: { type: 'string', description: 'Capsule ID or "latest"' },
+                    capsuleId: { type: 'string', description: 'Capsule ID, "latest", or "latest_fault"' },
                     plane: {
                       type: 'string',
                       enum: ['BROWSER', 'NETWORK', 'TERMINAL', 'GIT', 'ALL'],
+                    },
+                    severity: {
+                      type: 'string',
+                      enum: ['info', 'warn', 'error', 'fatal', 'ALL'],
+                      description: 'Optional minimum/exact severity filter',
                     },
                     traceId: { type: 'string', description: 'Optional causal trace ID filter' },
                   },
@@ -117,7 +127,7 @@ export class BlackboxMcpServer {
               {
                 name: 'freeze_live_buffer',
                 description:
-                  'Triggers an immediate live freeze of the running KALA Flight Recorder 60s rolling buffer and returns the analyzed capsule.',
+                  'Triggers an immediate live freeze of the running Blackbox Flight Recorder 60s rolling buffer and returns the analyzed capsule.',
                 inputSchema: {
                   type: 'object',
                   properties: {
@@ -180,14 +190,28 @@ export class BlackboxMcpServer {
 
   async _executeTool(name, args) {
     if (name === 'list_capsules') {
-      const list = this.vault.listCapsules().slice(0, args.limit || 15);
+      let list = this.vault.listCapsules();
+      if (args.onlyFaults) {
+        list = list.filter((c) => c.status === 'FAULT_DETECTED');
+      }
+      list = list.slice(0, args.limit || 15);
       return { total: list.length, capsules: list };
     }
 
     if (name === 'get_latest_crash_capsule') {
-      const cap = this.vault.getCapsule(args.capsuleId || 'latest');
+      const requestedId = args.capsuleId || 'latest';
+      const cap = this.vault.getCapsule(requestedId);
       if (!cap) return 'No capsules found in vault.';
-      return cap.aiDiagnosticMarkdown || this.vault.compileAiDiagnosticPrompt(cap);
+      let md = cap.aiDiagnosticMarkdown || this.vault.compileAiDiagnosticPrompt(cap);
+      if (requestedId === 'latest' && cap.status !== 'FAULT_DETECTED') {
+        const recentFault = this.vault
+          .listCapsules()
+          .find((c) => c.status === 'FAULT_DETECTED');
+        if (recentFault) {
+          md += `\n\n> **Note:** Latest capsule is a healthy snapshot. Most recent crash capsule is \`${recentFault.id}\` (${recentFault.title}). Call \`get_latest_crash_capsule({ capsuleId: "latest_fault" })\` to inspect it.`;
+        }
+      }
+      return md;
     }
 
     if (name === 'inspect_capsule_timeline') {
@@ -196,6 +220,9 @@ export class BlackboxMcpServer {
       let events = cap.events || [];
       if (args.plane && args.plane !== 'ALL') {
         events = events.filter((e) => e.plane === args.plane);
+      }
+      if (args.severity && args.severity !== 'ALL') {
+        events = events.filter((e) => e.severity === args.severity);
       }
       if (args.traceId) {
         events = events.filter((e) => e.traceId === args.traceId);

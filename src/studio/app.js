@@ -9,6 +9,11 @@ let maxDurationMs = 1000;
 let lastRenderedDomEventId = null;
 let isPlaying = false;
 let playTimer = null;
+let vaultStatusFilter = 'ALL'; // 'ALL' | 'FAULT' | 'SNAPSHOT'
+let lastDaemonStatus = null;
+let toastTimer = null;
+let liveStreamPaused = false;
+let liveSearchQuery = '';
 
 // DOM Elements
 const capsuleListEl = document.getElementById('capsuleList');
@@ -128,6 +133,8 @@ function connectStudioWebSocket() {
       const msg = JSON.parse(evt.data);
       if (msg.type === 'LIVE_EVENT' && msg.event) {
         appendLiveFeedEvent(msg.event);
+      } else if (msg.type === 'BUFFER_CLEARED') {
+        clearLiveFeedUi();
       } else if (msg.type === 'CAPSULE_FROZEN' && msg.capsule) {
         showToast(`❄️ New Capsule Frozen: ${msg.capsule.title}`);
         await loadCapsulesList();
@@ -146,10 +153,16 @@ function connectStudioWebSocket() {
 }
 
 async function fetchDaemonStatus() {
+  const daemonDot = document.getElementById('daemonDot');
+  const stampEl = document.getElementById('projectTelemetryStamp');
   try {
     const res = await fetch('/api/status');
     const data = await res.json();
     if (!data.ok) return;
+    lastDaemonStatus = data;
+    if (daemonDot) {
+      daemonDot.className = 'dot live';
+    }
     bufferStatText.textContent = `Buffer: ${data.buffer.activeEvents} evts (${data.buffer.memoryMB}MB)`;
     gitStatText.textContent = data.git.isGitRepo
       ? `${data.git.branch}@${data.git.headCommit}${
@@ -157,8 +170,23 @@ async function fetchDaemonStatus() {
         }`
       : 'no-git';
     autoFreezeCheck.checked = Boolean(data.autoFreeze);
+    if (stampEl) {
+      const agents = data.connectedBrowserAgents || 0;
+      const proj = (data.projectName || 'localhost').toUpperCase();
+      stampEl.textContent = `✦ PROJECT: ${proj} · DAEMON :${data.daemonPort || 9876} · ${agents} AGENT${agents === 1 ? '' : 'S'}`;
+    }
+    const rateBadge = document.getElementById('liveStreamRateBadge');
+    if (rateBadge && !liveStreamPaused) {
+      rateBadge.textContent = `${data.buffer.activeEvents} events buffered (${data.buffer.memoryMB}MB · 60s window)`;
+    }
   } catch {
+    if (daemonDot) {
+      daemonDot.className = 'dot offline';
+    }
     bufferStatText.textContent = 'Daemon Disconnected';
+    if (stampEl) {
+      stampEl.textContent = '✦ DAEMON OFFLINE · RECONNECTING...';
+    }
   }
 }
 
@@ -180,8 +208,14 @@ function renderCapsuleSidebar() {
   const query = (searchInput?.value || '').trim().toLowerCase();
 
   let filtered = capsulesList;
+  if (vaultStatusFilter === 'FAULT') {
+    filtered = filtered.filter((c) => c.status === 'FAULT_DETECTED');
+  } else if (vaultStatusFilter === 'SNAPSHOT') {
+    filtered = filtered.filter((c) => c.status !== 'FAULT_DETECTED');
+  }
+
   if (query) {
-    filtered = capsulesList.filter(
+    filtered = filtered.filter(
       (c) =>
         (c.title && c.title.toLowerCase().includes(query)) ||
         (c.id && c.id.toLowerCase().includes(query)) ||
@@ -191,9 +225,10 @@ function renderCapsuleSidebar() {
   }
 
   if (filtered.length === 0) {
-    capsuleListEl.innerHTML = query
-      ? '<div class="empty-hint">No capsules match your search filter.</div>'
-      : '<div class="empty-hint">No capsules frozen yet. Trigger a bug or click "Freeze Capsule Now".</div>';
+    capsuleListEl.innerHTML =
+      query || vaultStatusFilter !== 'ALL'
+        ? '<div class="empty-hint">No capsules match your current filter.</div>'
+        : '<div class="empty-hint">No capsules frozen yet. Trigger a bug or click "Freeze Capsule Now".</div>';
     return;
   }
 
@@ -202,6 +237,9 @@ function renderCapsuleSidebar() {
       const isFault = c.status === 'FAULT_DETECTED';
       const isActive = activeCapsule && activeCapsule.id === c.id;
       const timeStr = new Date(c.createdAt).toLocaleTimeString();
+      const shortCulprit = c.culpritFile
+        ? `${c.culpritFile.split(/[\\/]/).pop()}${c.culpritLine ? ':' + c.culpritLine : ''}`
+        : '';
       return `
         <div class="capsule-card ${isActive ? 'active' : ''}" data-cap-id="${escapeHtml(c.id)}">
           <div class="cap-top">
@@ -214,6 +252,7 @@ function renderCapsuleSidebar() {
             </div>
           </div>
           <div class="cap-title">${escapeHtml(c.title)}</div>
+          ${shortCulprit ? `<div class="cap-culprit-chip">⌖ ${escapeHtml(shortCulprit)}</div>` : ''}
           <div class="cap-meta">
             <span>${c.totalEvents} evts · ${(c.durationMs / 1000).toFixed(1)}s</span>
             <span>${c.totalChains || 0} chain(s)</span>
@@ -301,7 +340,25 @@ function renderCausalBanner(capsule) {
 
   capsuleStatusTag.textContent = isFault ? '✦ FAULT DETECTED' : '✦ HEALTHY SNAPSHOT';
   capsuleStatusTag.className = `status-tag ${isFault ? 'fault' : ''}`;
-  capsuleHeadline.textContent = summary.headline || capsule.title;
+  const isCustomTitle =
+    capsule.title &&
+    !capsule.title.startsWith('Flight Capsule (') &&
+    !capsule.title.startsWith('Auto-frozen on ');
+  capsuleHeadline.textContent = isCustomTitle ? capsule.title : summary.headline || capsule.title;
+
+  let existingNoteEl = document.getElementById('capsuleNoteBanner');
+  if (capsule.notes) {
+    if (!existingNoteEl) {
+      existingNoteEl = document.createElement('div');
+      existingNoteEl.id = 'capsuleNoteBanner';
+      existingNoteEl.className = 'capsule-note-banner';
+      capsuleHeadline.parentElement?.appendChild(existingNoteEl);
+    }
+    existingNoteEl.textContent = `✎ Note: ${capsule.notes}`;
+    existingNoteEl.style.display = 'block';
+  } else if (existingNoteEl) {
+    existingNoteEl.style.display = 'none';
+  }
 
   const rawCulprit = summary.culpritFile || '';
   const shortCulprit = rawCulprit.replace(/^.*?[\\/]blackbox[\\/]/i, '').replace(/\\/g, '/');
@@ -420,7 +477,7 @@ function renderStaticEventLists(capsule) {
             const relMs = Math.max(0, e.timestampMs - startMs);
             const isErr = e.severity === 'error' || e.severity === 'fatal';
             return `
-              <div class="term-row log-row ${isErr ? 'stderr' : ''}" data-rel-ms="${relMs}">
+              <div class="term-row log-row clickable-scrub ${isErr ? 'stderr' : ''}" data-rel-ms="${relMs}" title="Click to jump time-travel scrubber to +${(relMs / 1000).toFixed(3)}s">
                 <div class="term-meta">
                   <span>[${escapeHtml(e.type)}]</span>
                   <span>+${(relMs / 1000).toFixed(3)}s</span>
@@ -431,9 +488,19 @@ function renderStaticEventLists(capsule) {
           })
           .join('');
 
+  browserConsoleList.querySelectorAll('.clickable-scrub').forEach((row) => {
+    row.addEventListener('click', () => {
+      stopPlayback();
+      const targetMs = Number(row.getAttribute('data-rel-ms')) || 0;
+      timeScrubber.value = String(Math.round(targetMs));
+      syncTimeScrubber(targetMs);
+    });
+  });
+
   // 2. Network Waterfall
   const netEvents = events.filter((e) => e.plane === 'NETWORK' && e.type === 'HTTP_TRACE');
   netCount.textContent = String(netEvents.length);
+  const maxNetDur = Math.max(50, ...netEvents.map((n) => Number(n.payload?.durationMs) || 0));
 
   networkWaterfallList.innerHTML =
     netEvents.length === 0
@@ -442,18 +509,19 @@ function renderStaticEventLists(capsule) {
           .map((e, idx) => {
             const relMs = Math.max(0, e.timestampMs - startMs);
             const status = e.payload?.status || 0;
+            const durMs = e.payload?.durationMs ?? 0;
+            const barPct = Math.min(100, Math.max(4, Math.round((durMs / maxNetDur) * 100)));
             const statusClass =
               status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx';
             return `
-              <div class="net-row ${status >= 400 ? 'error-row' : ''}" data-net-idx="${idx}" data-rel-ms="${relMs}">
+              <div class="net-row ${status >= 400 ? 'error-row' : ''}" data-net-idx="${idx}" data-rel-ms="${relMs}" title="Click to inspect payload & jump scrubber to +${(relMs / 1000).toFixed(2)}s">
                 <span class="status-pill ${statusClass}">${status || 'ERR'}</span>
                 <strong style="color:#e2e8f0">${escapeHtml(e.payload?.method || 'GET')}</strong>
-                <span style="color:#38bdf8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(
-                  e.payload?.url || '/'
-                )}</span>
-                <span style="color:#94a3b8;text-align:right;">${
-                  e.payload?.durationMs ?? 0
-                }ms</span>
+                <span class="net-url-col">
+                  <span class="net-url-text">${escapeHtml(e.payload?.url || '/')}</span>
+                  <span class="net-dur-track"><span class="net-dur-fill ${status >= 400 ? 'err' : ''}" style="width:${barPct}%"></span></span>
+                </span>
+                <span style="color:#94a3b8;text-align:right;">${durMs}ms</span>
                 <span style="color:#64748b;text-align:right;">+${(relMs / 1000).toFixed(2)}s</span>
               </div>
             `;
@@ -462,8 +530,12 @@ function renderStaticEventLists(capsule) {
 
   networkWaterfallList.querySelectorAll('.net-row').forEach((row) => {
     row.addEventListener('click', () => {
+      stopPlayback();
       networkWaterfallList.querySelectorAll('.net-row').forEach((r) => r.classList.remove('selected'));
       row.classList.add('selected');
+      const relMs = Number(row.getAttribute('data-rel-ms')) || 0;
+      timeScrubber.value = String(Math.round(relMs));
+      syncTimeScrubber(relMs);
       const idx = Number(row.getAttribute('data-net-idx'));
       const netEvt = netEvents[idx];
       if (netEvt) {
@@ -477,6 +549,9 @@ function renderStaticEventLists(capsule) {
   const defaultNet = netEvents.find((n) => (n.payload?.status || 0) >= 400) || netEvents[0];
   if (defaultNet) {
     renderNetworkPayloadDetail(defaultNet);
+  } else {
+    networkPayloadInspector.innerHTML =
+      '<div class="empty-hint">No HTTP requests captured in this capsule.</div>';
   }
 
   // 3. Backend Terminal Stream
@@ -492,7 +567,7 @@ function renderStaticEventLists(capsule) {
             const isStderr =
               e.type === 'TERMINAL_STDERR' || e.severity === 'error' || e.severity === 'fatal';
             return `
-              <div class="term-row ${isStderr ? 'stderr' : ''}" data-rel-ms="${relMs}">
+              <div class="term-row clickable-scrub ${isStderr ? 'stderr' : ''}" data-rel-ms="${relMs}" title="Click to jump time-travel scrubber to +${(relMs / 1000).toFixed(3)}s">
                 <div class="term-meta">
                   <span>[${escapeHtml(e.source || 'app')} · ${
               isStderr ? 'stderr' : 'stdout'
@@ -504,17 +579,58 @@ function renderStaticEventLists(capsule) {
             `;
           })
           .join('');
+
+  terminalStreamList.querySelectorAll('.clickable-scrub').forEach((row) => {
+    row.addEventListener('click', () => {
+      stopPlayback();
+      const targetMs = Number(row.getAttribute('data-rel-ms')) || 0;
+      timeScrubber.value = String(Math.round(targetMs));
+      syncTimeScrubber(targetMs);
+    });
+  });
+}
+
+function buildCurlCommand(netEvt) {
+  const p = netEvt.payload || {};
+  const method = (p.method || 'GET').toUpperCase();
+  let url = p.url || '/';
+  if (url.startsWith('/') && netEvt.source && /^https?:\/\//i.test(netEvt.source)) {
+    try {
+      url = new URL(url, netEvt.source).toString();
+    } catch {
+      // keep relative
+    }
+  }
+  const parts = [`curl -X ${method} "${url}"`];
+  const headers = p.requestHeaders || {};
+  for (const [k, v] of Object.entries(headers)) {
+    if (/^(host|content-length|connection|accept-encoding)$/i.test(k)) continue;
+    parts.push(`  -H "${k}: ${String(v).replace(/"/g, '\\"')}"`);
+  }
+  if (p.requestBody !== null && p.requestBody !== undefined) {
+    const bodyStr =
+      typeof p.requestBody === 'string' ? p.requestBody : JSON.stringify(p.requestBody);
+    if (!Object.keys(headers).some((k) => k.toLowerCase() === 'content-type')) {
+      parts.push(`  -H "Content-Type: application/json"`);
+    }
+    parts.push(`  -d '${bodyStr.replace(/'/g, "'\\''")}'`);
+  }
+  return parts.join(' \\\n');
 }
 
 function renderNetworkPayloadDetail(netEvt) {
   const p = netEvt.payload || {};
+  const curlCmd = buildCurlCommand(netEvt);
+  const hasReqHeaders = p.requestHeaders && Object.keys(p.requestHeaders).length > 0;
+  const hasResHeaders = p.responseHeaders && Object.keys(p.responseHeaders).length > 0;
+
   networkPayloadInspector.innerHTML = `
     <div class="xray-card">
       <div class="xray-header">
         <span>${escapeHtml(p.method || 'GET')} ${escapeHtml(p.url || '')} → HTTP ${
     p.status || 'ERR'
-  }</span>
-        <span>${p.durationMs || 0}ms</span>
+  } (${p.durationMs || 0}ms)</span>
+        <button class="mini-btn" id="btnCopyCurl" style="flex:none;padding:2px 8px;">📋 Copy cURL</button>
       </div>
       <div style="padding:10px;">
         <div style="margin-bottom:6px;color:#94a3b8;">
@@ -537,9 +653,37 @@ function renderNetworkPayloadDetail(netEvt) {
         <pre class="code-block" style="background:#070a12;border-radius:6px;margin-top:4px;">${escapeHtml(
           formatJsonOrText(p.responseBody)
         )}</pre>
+        ${
+          hasReqHeaders || hasResHeaders
+            ? `
+          <details class="headers-details" style="margin-top:10px;">
+            <summary style="cursor:pointer;color:#94a3b8;font-size:11px;font-weight:700;">HTTP Headers (${Object.keys(p.requestHeaders || {}).length} req / ${Object.keys(p.responseHeaders || {}).length} res)</summary>
+            ${
+              hasReqHeaders
+                ? `<div style="margin-top:6px;font-size:10px;color:#64748b;">REQUEST HEADERS</div><pre class="code-block" style="background:#070a12;border-radius:6px;margin-top:2px;">${escapeHtml(JSON.stringify(p.requestHeaders, null, 2))}</pre>`
+                : ''
+            }
+            ${
+              hasResHeaders
+                ? `<div style="margin-top:6px;font-size:10px;color:#64748b;">RESPONSE HEADERS</div><pre class="code-block" style="background:#070a12;border-radius:6px;margin-top:2px;">${escapeHtml(JSON.stringify(p.responseHeaders, null, 2))}</pre>`
+                : ''
+            }
+          </details>
+        `
+            : ''
+        }
       </div>
     </div>
   `;
+
+  document.getElementById('btnCopyCurl')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(curlCmd);
+      showToast('📋 Copied reproducible cURL command to clipboard!');
+    } catch {
+      showToast('Clipboard copy failed.');
+    }
+  });
 }
 
 
@@ -589,7 +733,7 @@ function renderSourceXrayPane(capsule) {
   for (const chain of capsule.causal?.causalChains || []) {
     const frames = [
       ...(chain.backendError?.frames || []),
-      ...(chain.browserError?.primaryFrame ? [chain.browserError.primaryFrame] : []),
+      ...(chain.browserError?.frames || (chain.browserError?.primaryFrame ? [chain.browserError.primaryFrame] : [])),
     ];
     for (const f of frames) {
       if (f.snippet) {
@@ -639,14 +783,51 @@ function renderSourceXrayPane(capsule) {
               <span>📄 ${escapeHtml(snippet.fileName)}:${snippet.targetLine} (${escapeHtml(
           frame.functionName || 'anonymous'
         )})</span>
-              <span style="font-size:10px;color:#94a3b8">${escapeHtml(snippet.filePath)}</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:10px;color:#94a3b8;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(snippet.filePath)}">${escapeHtml(snippet.filePath)}</span>
+                <button class="mini-btn btn-copy-loc" data-loc="${escapeHtml(`${snippet.filePath}:${snippet.targetLine}`)}" style="flex:none;padding:2px 7px;" title="Copy exact file:line location">📋 Copy</button>
+              </div>
             </div>
             <div>${codeLines}</div>
           </div>
         `;
       })
       .join('');
+
+    sourceXrayContainer.querySelectorAll('.btn-copy-loc').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const loc = btn.getAttribute('data-loc') || '';
+        try {
+          await navigator.clipboard.writeText(loc);
+          showToast(`📋 Copied location: ${loc}`);
+        } catch {
+          showToast(loc);
+        }
+      });
+    });
   }
+}
+
+function renderColorizedDiff(rawDiff) {
+  if (!rawDiff || !rawDiff.trim()) {
+    return '<div class="empty-hint" style="padding:12px;">No uncommitted diff against HEAD.</div>';
+  }
+  return rawDiff
+    .split(/\r?\n/)
+    .map((line) => {
+      let cls = 'diff-ctx';
+      if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('diff --git')) {
+        cls = 'diff-hdr';
+      } else if (line.startsWith('@@')) {
+        cls = 'diff-hunk';
+      } else if (line.startsWith('+')) {
+        cls = 'diff-add';
+      } else if (line.startsWith('-')) {
+        cls = 'diff-del';
+      }
+      return `<div class="git-diff-line ${cls}">${escapeHtml(line || ' ')}</div>`;
+    })
+    .join('');
 }
 
 function renderGitAndAiPane(capsule) {
@@ -672,7 +853,7 @@ function renderGitAndAiPane(capsule) {
           <span>${escapeHtml(overlaps[0].confidence)}</span>
         </div>
         <div style="padding:10px;">
-          Crash at <strong>${escapeHtml(overlaps[0].file)}:${
+          Crash at <strong style="cursor:pointer;text-decoration:underline;" id="btnInspectGitHit">${escapeHtml(overlaps[0].file)}:${
           overlaps[0].crashLine
         }</strong> directly overlaps uncommitted working-tree edit hunk <code>${escapeHtml(
           overlaps[0].hunkRange
@@ -680,6 +861,18 @@ function renderGitAndAiPane(capsule) {
         </div>
       </div>
     `
+      : '';
+
+  const modFiles = (git.modifiedFiles || []).slice(0, 20);
+  const modPillsHtml =
+    modFiles.length > 0
+      ? `<div class="git-mod-pills">${modFiles
+          .map((f) => {
+            const p = typeof f === 'string' ? f : f.path;
+            const st = typeof f === 'string' ? 'M' : f.status || 'M';
+            return `<button class="git-mod-pill" data-file="${escapeHtml(p)}" title="Click to open ${escapeHtml(p)} in Source Code X-Ray"><span class="git-st">${escapeHtml(st)}</span> ${escapeHtml(p)}</button>`;
+          })
+          .join('')}</div>`
       : '';
 
   gitInspectorContainer.innerHTML = `
@@ -695,11 +888,23 @@ function renderGitAndAiPane(capsule) {
             : 'Clean Working Tree'
         }</span>
       </div>
-      <pre class="code-block">${escapeHtml(
-        git.rawDiff || 'No uncommitted diff against HEAD.'
-      )}</pre>
+      ${modPillsHtml}
+      <div class="colorized-diff-box">${renderColorizedDiff(git.rawDiff)}</div>
     </div>
   `;
+
+  if (overlaps.length > 0) {
+    document.getElementById('btnInspectGitHit')?.addEventListener('click', () => {
+      inspectSourceFile(overlaps[0].file, overlaps[0].crashLine || 1);
+    });
+  }
+
+  gitInspectorContainer.querySelectorAll('.git-mod-pill').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const f = btn.getAttribute('data-file');
+      if (f) inspectSourceFile(f, 1);
+    });
+  });
 }
 
 // --- 3. Synchronized Time-Travel Scrubber Logic ---
@@ -918,12 +1123,29 @@ function syncTimeScrubber(relMs) {
 </body>
 </html>`;
     } else {
-      if (rawHtml.includes('</head>')) {
-        rawHtml = rawHtml.replace('</head>', `${darkThemeInjection}</head>`);
-      } else if (rawHtml.includes('<body')) {
-        rawHtml = rawHtml.replace(/<body/i, `<head>${darkThemeInjection}</head><body`);
-      } else {
-        rawHtml = `<!DOCTYPE html><html><head>${darkThemeInjection}</head><body>${rawHtml}</body></html>`;
+      // Preserve authentic app styling for real applications that have stylesheets;
+      // only inject dark fallback for bare unstyled HTML snippets.
+      const hasOwnStyles = /<style[\s>]|<link[^>]+rel=["']?stylesheet/i.test(rawHtml);
+      let baseTag = '';
+      if (!/<base[\s>]/i.test(rawHtml) && activeDomEvt.payload?.url) {
+        try {
+          const origin = new URL(activeDomEvt.payload.url).origin;
+          baseTag = `<base href="${escapeHtml(origin)}/" />`;
+        } catch {
+          // ignore
+        }
+      }
+      const headInject = `${baseTag}${hasOwnStyles ? '' : darkThemeInjection}`;
+      if (headInject) {
+        if (/<head[^>]*>/i.test(rawHtml)) {
+          rawHtml = rawHtml.replace(/<head[^>]*>/i, (m) => `${m}${headInject}`);
+        } else if (rawHtml.includes('</head>')) {
+          rawHtml = rawHtml.replace('</head>', `${headInject}</head>`);
+        } else if (/<body/i.test(rawHtml)) {
+          rawHtml = rawHtml.replace(/<body/i, `<head>${headInject}</head><body`);
+        } else {
+          rawHtml = `<!DOCTYPE html><html><head>${headInject}</head><body>${rawHtml}</body></html>`;
+        }
       }
     }
     domReplayFrame.srcdoc = rawHtml;
@@ -1131,6 +1353,10 @@ function setupHexCliSection() {
 
   if (runDemoBtn) {
     runDemoBtn.addEventListener('click', () => {
+      if (lastDaemonStatus && lastDaemonStatus.demoRunning === false) {
+        showToast('ℹ Demo sandbox is not running. Start it with: blackbox demo');
+        return;
+      }
       window.open('http://localhost:4400/', '_blank');
       showToast('⚡ Opening NexusPay Sandbox at http://localhost:4400/');
     });
@@ -1188,6 +1414,43 @@ function setupVaultToggle() {
   if (searchInput) {
     searchInput.addEventListener('input', renderCapsuleSidebar);
   }
+
+  document.querySelectorAll('#vaultFilterPills .vault-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('#vaultFilterPills .vault-pill').forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+      vaultStatusFilter = pill.getAttribute('data-vault-filter') || 'ALL';
+      renderCapsuleSidebar();
+    });
+  });
+
+  document.getElementById('btnEditCapsuleMeta')?.addEventListener('click', async () => {
+    if (!activeCapsule) {
+      showToast('Select a capsule first.');
+      return;
+    }
+    const newTitle = prompt('Capsule Label / Title:', activeCapsule.title || '');
+    if (newTitle === null) return;
+    const newNotes = prompt('Engineer Notes (optional — included in AI Prompt & MCP):', activeCapsule.notes || '');
+    if (newNotes === null) return;
+    try {
+      const res = await fetch(`/api/capsules/${encodeURIComponent(activeCapsule.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle, notes: newNotes }),
+      });
+      const data = await res.json();
+      if (data.ok && data.capsule) {
+        activeCapsule = data.capsule;
+        renderCausalBanner(activeCapsule);
+        renderGitAndAiPane(activeCapsule);
+        await loadCapsulesList();
+        showToast('✓ Updated capsule label & notes');
+      }
+    } catch (err) {
+      showToast(`Update failed: ${err.message}`);
+    }
+  });
 
   const clearBtn = document.getElementById('clearVaultBtn');
   if (clearBtn) {
@@ -1321,14 +1584,20 @@ function setupActions() {
   });
 
   document.getElementById('exportCapsuleBtn').addEventListener('click', () => {
-    if (!activeCapsule) return;
+    if (!activeCapsule) {
+      showToast('Select a capsule to export.');
+      return;
+    }
     const blob = new Blob([JSON.stringify(activeCapsule, null, 2)], {
       type: 'application/json',
     });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = `${activeCapsule.id}.blackbox.json`;
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast(`⬇ Exported ${activeCapsule.id}.blackbox.json`);
   });
 
   document.getElementById('importCapsuleBtn').addEventListener('click', () => {
@@ -1354,6 +1623,8 @@ function setupActions() {
       }
     } catch (err) {
       showToast(`Import error: ${err.message}`);
+    } finally {
+      e.target.value = '';
     }
   });
 
@@ -1365,6 +1636,11 @@ function setupActions() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ autoFreeze: autoFreezeCheck.checked }),
     });
+    showToast(
+      autoFreezeCheck.checked
+        ? '⚡ Auto-Freeze ON (crashes & HTTP 5xx will freeze automatically)'
+        : '⏸ Auto-Freeze OFF (manual freeze only)'
+    );
   });
 
   document.getElementById('runDiffBtn')?.addEventListener('click', runCapsuleDiff);
@@ -1390,7 +1666,7 @@ function setupActions() {
     });
   }
 
-  // Live Deck plane filtering
+  // Live Deck plane filtering, search, pause & clear
   document.querySelectorAll('.live-filter-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.live-filter-btn').forEach((b) => b.classList.remove('active'));
@@ -1398,6 +1674,28 @@ function setupActions() {
       const filter = btn.getAttribute('data-filter');
       filterLiveDeckEvents(filter);
     });
+  });
+
+  document.getElementById('liveSearchInput')?.addEventListener('input', (e) => {
+    liveSearchQuery = (e.target.value || '').trim().toLowerCase();
+    filterLiveDeckEvents(currentLiveFilter);
+  });
+
+  document.getElementById('livePauseBtn')?.addEventListener('click', (e) => {
+    liveStreamPaused = !liveStreamPaused;
+    e.currentTarget.textContent = liveStreamPaused ? '▶ RESUME' : '⏸ PAUSE';
+    e.currentTarget.classList.toggle('active', liveStreamPaused);
+    showToast(liveStreamPaused ? '⏸ Live Deck stream display paused' : '▶ Live Deck stream resumed');
+  });
+
+  document.getElementById('liveClearBtn')?.addEventListener('click', async () => {
+    try {
+      await fetch('/api/buffer/clear', { method: 'POST' });
+      clearLiveFeedUi();
+      showToast('🗑 Cleared active 60s rolling ring buffer');
+    } catch (err) {
+      showToast(`Clear failed: ${err.message}`);
+    }
   });
 
   if (btnToggleDomFit) {
@@ -1465,15 +1763,25 @@ function setupActions() {
 
 // --- 5. Live Flight Deck & Capsule Differ ---
 
+function clearLiveFeedUi() {
+  liveStreamCount = 0;
+  if (liveStreamFeed) liveStreamFeed.innerHTML = '';
+  const rateBadge = document.getElementById('liveStreamRateBadge');
+  if (rateBadge) {
+    rateBadge.textContent = '0 events buffered (60s window)';
+  }
+}
+
 async function loadLiveBufferIfEmpty() {
   if (!liveStreamFeed || liveStreamFeed.children.length > 0) return;
   try {
     const res = await fetch('/api/buffer?durationMs=60000');
     const data = await res.json();
     if (data.events && Array.isArray(data.events)) {
-      const sorted = [...data.events].reverse();
-      for (const e of sorted.slice(0, 80)) {
-        appendLiveFeedEvent(e);
+      // Iterate oldest-to-newest (tail 80) so prepend() places newest on top
+      const recent = data.events.slice(-80);
+      for (const e of recent) {
+        appendLiveFeedEvent(e, true);
       }
     }
   } catch {
@@ -1545,16 +1853,16 @@ function filterLiveDeckEvents(planeFilter) {
   const rows = liveStreamFeed.querySelectorAll('.term-row');
   rows.forEach((row) => {
     const rowPlane = row.getAttribute('data-plane');
-    if (planeFilter === 'ALL' || rowPlane === planeFilter) {
-      row.style.display = 'flex';
-    } else {
-      row.style.display = 'none';
-    }
+    const rowText = (row.textContent || '').toLowerCase();
+    const planeMatch = planeFilter === 'ALL' || rowPlane === planeFilter;
+    const textMatch = !liveSearchQuery || rowText.includes(liveSearchQuery);
+    row.style.display = planeMatch && textMatch ? 'flex' : 'none';
   });
 }
 
-function appendLiveFeedEvent(evt) {
+function appendLiveFeedEvent(evt, forceRender = false) {
   if (!liveStreamFeed) return;
+  if (liveStreamPaused && !forceRender) return;
   liveStreamCount++;
   const rateBadge = document.getElementById('liveStreamRateBadge');
   if (rateBadge) {
@@ -1565,19 +1873,23 @@ function appendLiveFeedEvent(evt) {
   const isErr = evt.severity === 'error' || evt.severity === 'fatal';
   row.className = `term-row live-feed-row ${isErr ? 'stderr' : ''}`;
   row.setAttribute('data-plane', evt.plane);
-
-  if (currentLiveFilter !== 'ALL' && evt.plane !== currentLiveFilter) {
-    row.style.display = 'none';
-  }
+  row.title = 'Click to expand / collapse full telemetry payload';
 
   const summary =
     evt.plane === 'NETWORK'
-      ? `${evt.payload?.method || 'GET'} ${evt.payload?.url || ''} -> HTTP ${evt.payload?.status} (${evt.payload?.durationMs || 12}ms)`
+      ? `${evt.payload?.method || 'GET'} ${evt.payload?.url || ''} -> HTTP ${evt.payload?.status ?? 'ERR'} (${evt.payload?.durationMs ?? 0}ms)`
       : evt.plane === 'TERMINAL'
       ? (evt.payload?.text || '').trim().slice(0, 240)
       : evt.type === 'UI_CLICK'
       ? `Clicked ${evt.payload?.selector || ''} ("${evt.payload?.text || ''}")`
+      : evt.type === 'UI_NAVIGATE'
+      ? `Navigated to ${evt.payload?.to || ''}`
       : evt.payload?.message || evt.type;
+
+  const concisePayload =
+    evt.type === 'DOM_SNAPSHOT' && evt.payload?.html
+      ? { ...evt.payload, html: `[DOM Snapshot ${evt.payload.html.length} chars]` }
+      : evt.payload || {};
 
   row.innerHTML = `
     <div class="term-meta">
@@ -1587,7 +1899,22 @@ function appendLiveFeedEvent(evt) {
       <span class="feed-time">${new Date(evt.timestampMs).toLocaleTimeString()}</span>
     </div>
     <div class="feed-summary">${escapeHtml(summary)}</div>
+    <pre class="live-payload-drawer" style="display:none;">${escapeHtml(JSON.stringify(concisePayload, null, 2).slice(0, 3000))}</pre>
   `;
+
+  row.addEventListener('click', () => {
+    const drawer = row.querySelector('.live-payload-drawer');
+    if (drawer) {
+      drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+
+  const planeMatch = currentLiveFilter === 'ALL' || evt.plane === currentLiveFilter;
+  const textMatch = !liveSearchQuery || (row.textContent || '').toLowerCase().includes(liveSearchQuery);
+  if (!planeMatch || !textMatch) {
+    row.style.display = 'none';
+  }
+
   liveStreamFeed.prepend(row);
   while (liveStreamFeed.children.length > 120) {
     liveStreamFeed.lastChild.remove();
@@ -1632,8 +1959,10 @@ function quickCompareLatest() {
   const selB = document.getElementById('diffSelectB');
   if (!selA || !selB || capsulesList.length === 0) return;
 
-  // Find healthy baseline
-  const healthyIdx = capsulesList.findIndex((c) => c.status === 'HEALTHY' || c.status === 'IDLE');
+  // Find latest healthy baseline (HEALTHY_SNAPSHOT or SNAPSHOT)
+  const healthyIdx = capsulesList.findIndex(
+    (c) => c.status !== 'FAULT_DETECTED' && c.status !== 'ANOMALY'
+  );
   if (healthyIdx !== -1) {
     selA.selectedIndex = healthyIdx;
   } else if (capsulesList.length > 1) {
@@ -1642,8 +1971,10 @@ function quickCompareLatest() {
     selA.selectedIndex = 0;
   }
 
-  // Find fault comparison
-  const faultIdx = capsulesList.findIndex((c) => c.status === 'FAULT_DETECTED' || c.status === 'ANOMALY');
+  // Find latest fault comparison
+  const faultIdx = capsulesList.findIndex(
+    (c) => c.status === 'FAULT_DETECTED' || c.status === 'ANOMALY'
+  );
   if (faultIdx !== -1) {
     selB.selectedIndex = faultIdx;
   } else {
@@ -1770,7 +2101,7 @@ async function runCapsuleDiff() {
       (d.newCausalChains && d.newCausalChains.length > 0);
 
     const regressedRoutesCount = d.routeDiffs.filter((r) => r.regression).length;
-    const totalRoutesCount = d.routeDiffs.length;
+    const totalRoutesCount = d.totalRoutesAudited ?? d.routeDiffs.length;
 
     let maxLatencyDelta = 0;
     d.routeDiffs.forEach((r) => {
@@ -1892,8 +2223,12 @@ async function runCapsuleDiff() {
     `;
 
     // 3. Route Table Rows
+    const emptyRouteMsg =
+      totalRoutesCount > 0
+        ? `All ${totalRoutesCount} audited HTTP route(s) remained stable with zero status inversions or latency regressions.`
+        : 'No HTTP traffic routes recorded in selected capsules.';
     const tableRowsHtml = d.routeDiffs.length === 0
-      ? `<tr><td colspan="5" class="empty-table-cell">No HTTP traffic routes recorded in selected capsules.</td></tr>`
+      ? `<tr><td colspan="5" class="empty-table-cell">${emptyRouteMsg}</td></tr>`
       : d.routeDiffs.map((r) => {
           const isReg = r.regression;
           const statusBefore = r.before ? `HTTP ${r.before.lastStatus}` : 'Not called';
@@ -1965,19 +2300,24 @@ async function runCapsuleDiff() {
     // 4. Causal Chains Card
     let causalHtml = '';
     if (d.newCausalChains && d.newCausalChains.length > 0) {
-      const chainsList = d.newCausalChains.map((c) => `
+      const chainsList = d.newCausalChains
+        .map((c) => {
+          const culpritLabel = `${c.culpritFile || 'runtime'}${c.culpritLine ? ':' + c.culpritLine : ''}`;
+          return `
         <div class="causal-diff-chain">
           <div class="chain-header">
-            <span class="chain-conf-badge">CONFIDENCE: ${escapeHtml(c.confidenceLevel || 'HIGH')} (${c.confidenceScore || 96}%)</span>
-            <span class="chain-culprit-pill">CULPRIT: ${escapeHtml(c.culpritFile || 'unknown')}:${c.culpritLine || '?'}</span>
+            <span class="chain-conf-badge">${escapeHtml(c.confidence || 'CORRELATED')}</span>
+            <span class="chain-culprit-pill">CULPRIT: ${escapeHtml(culpritLabel)}</span>
           </div>
-          <h4 class="chain-headline">${escapeHtml(c.headline || 'Unhandled Crash Exception')}</h4>
+          <h4 class="chain-headline">${escapeHtml(c.headline || c.faultSummary || 'Unhandled Crash Exception')}</h4>
           <div class="chain-details">
-            <div class="chain-cause"><strong>Trigger:</strong> ${escapeHtml(c.triggerEvent?.payload?.text || c.triggerEvent?.type || 'UI Gesture')}</div>
-            <div class="chain-fault"><strong>Crash:</strong> ${escapeHtml(c.faultEvent?.payload?.text || c.faultEvent?.type || 'Process Error')}</div>
+            <div class="chain-cause"><strong>Trigger:</strong> ${escapeHtml(c.triggerSummary || 'Runtime Event')}</div>
+            <div class="chain-fault"><strong>Fault:</strong> ${escapeHtml(c.faultSummary || 'Unhandled Exception')}</div>
           </div>
         </div>
-      `).join('');
+      `;
+        })
+        .join('');
 
       causalHtml = `
         <div class="diff-card">
@@ -1998,12 +2338,19 @@ async function runCapsuleDiff() {
     // 5. Git Modified Files Card
     let gitHtml = '';
     if (d.gitModifiedFilesAfter && d.gitModifiedFilesAfter.length > 0) {
-      const filesList = d.gitModifiedFilesAfter.map((f) => `
+      const filesList = d.gitModifiedFilesAfter
+        .map((f) => {
+          const filePath = typeof f === 'string' ? f : f.path || 'unknown';
+          const status = typeof f === 'string' ? 'M' : f.status || 'M';
+          const isNew = typeof f === 'object' && f.isNew;
+          return `
         <div class="git-diff-row">
-          <span class="git-diff-status">MODIFIED</span>
-          <code class="git-diff-file">${escapeHtml(f)}</code>
+          <span class="git-diff-status">${escapeHtml(status)}${isNew ? ' · NEW' : ''}</span>
+          <code class="git-diff-file">${escapeHtml(filePath)}</code>
         </div>
-      `).join('');
+      `;
+        })
+        .join('');
 
       gitHtml = `
         <div class="diff-card">
@@ -2012,7 +2359,7 @@ async function runCapsuleDiff() {
               <span class="dch-glyph">⎇</span>
               <span>Git Working Tree Modifications</span>
             </div>
-            <span class="dch-meta">${d.gitCommitChange}</span>
+            <span class="dch-meta">${escapeHtml(d.gitCommitChange)}</span>
           </div>
           <div class="diff-card-body">
             <div class="git-diff-list">
@@ -2035,11 +2382,7 @@ async function runCapsuleDiff() {
 
     document.getElementById('btnJumpToCrashInCockpit')?.addEventListener('click', async () => {
       await selectCapsule(d.capsuleB.id);
-      document.querySelectorAll('.mode-btn').forEach((b) => b.classList.remove('active'));
-      document.getElementById('modeInspectorBtn')?.classList.add('active');
-      document.getElementById('diffStage').style.display = 'none';
-      document.getElementById('inspectorStage').style.display = 'flex';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      switchMode('inspector');
       showToast(`⚡ Switched to 4-Plane Cockpit for ${d.capsuleB.title}`);
     });
 
@@ -2067,10 +2410,12 @@ function formatJsonOrText(val) {
 function showToast(msg) {
   const el = document.getElementById('studioToast');
   if (!el) return;
+  if (toastTimer) clearTimeout(toastTimer);
   el.textContent = msg;
   el.style.display = 'block';
-  setTimeout(() => {
+  toastTimer = setTimeout(() => {
     el.style.display = 'none';
+    toastTimer = null;
   }, 4200);
 }
 

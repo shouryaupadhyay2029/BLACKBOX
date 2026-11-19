@@ -116,8 +116,9 @@ While running:
 | `blackbox run "<cmd>" [--proxy IN:OUT]` | Supervise any dev server with 60s rolling flight recorder & optional HTTP wiretap proxy |
 | `blackbox studio [--port 9876]` | Start the Blackbox Daemon & Time-Travel Studio UI standalone |
 | `blackbox freeze [--title "..."]` | Freeze the active 60-second rolling buffer into a permanent `.blackbox.json` capsule |
-| `blackbox capsules` | List all saved Time-Travel Bug Capsules in `.blackbox/capsules` |
-| `blackbox inspect [id\|latest]` | Print the full Causal Fault Chain & AI Root-Cause Diagnostic Markdown to `stdout` |
+| `blackbox capsules [--faults]` | List all saved Time-Travel Bug Capsules in `.blackbox/capsules` (filter faults with `--faults`) |
+| `blackbox inspect [id\|latest\|latest_fault]` | Print the full Causal Fault Chain & AI Root-Cause Diagnostic Markdown to `stdout` |
+| `blackbox diff [capA] [capB]` | Compare Golden Baseline vs Crash capsule for HTTP regressions, new fault chains & Git drift |
 | `blackbox mcp` | Start the stdio Model Context Protocol (MCP) JSON-RPC 2.0 server for AI coding agents |
 | `blackbox doctor` | Run environment, port, vault, and live daemon health diagnostics |
 | `blackbox --version` | Print installed Blackbox CLI version |

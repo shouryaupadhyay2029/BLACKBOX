@@ -13,6 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BlackboxDaemonServer } from '../src/daemon/server.js';
 import { BlackboxMcpServer } from '../src/mcp/mcp-server.js';
+import { parseStackAndCode } from '../src/core/stack-parser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,7 +36,7 @@ async function runVerification() {
   });
 
   await daemon.start();
-  console.log('✔ [1/9] Blackbox Daemon Server booted on port', testPort);
+  console.log('✔ [1/12] Blackbox Daemon Server booted on port', testPort);
 
   // Spawn the supervised Demo Backend Server
   const demoServerScript = path.join(ROOT_DIR, 'src/demo/demo-server.js');
@@ -48,7 +49,7 @@ async function runVerification() {
 
   // Wait for demo server to listen
   await sleep(900);
-  console.log('✔ [2/9] Supervised Backend ("nexuspay-api") spawned & hooked into PTY/Stream collector');
+  console.log('✔ [2/12] Supervised Backend ("nexuspay-api") spawned & hooked into PTY/Stream collector');
 
   // Step A: Simulate Healthy Baseline Flow & Freeze Healthy Capsule
   const baseTraceId = 'tr_healthy_001';
@@ -117,7 +118,7 @@ async function runVerification() {
   });
   const healthyCapsuleData = await healthyFreezeRes.json();
   assert.equal(healthyCapsuleData.ok, true);
-  console.log('✔ [3/9] Healthy Baseline Capsule frozen:', healthyCapsuleData.capsule.id);
+  console.log('✔ [3/12] Healthy Baseline Capsule frozen:', healthyCapsuleData.capsule.id);
 
   // Step B: Simulate Real Full-Stack Crash (Browser Click -> POST /api/checkout -> Backend stderr Stack Trace -> HTTP 500)
   const crashTraceId = 'tr_crash_checkout_999';
@@ -214,7 +215,7 @@ async function runVerification() {
     'Expected local source code X-Ray snippet extracted from demo-server.js'
   );
 
-  console.log('✔ [4/9] End-to-End Causal Fault Chain verified:');
+  console.log('✔ [4/12] End-to-End Causal Fault Chain verified:');
   console.log('        Headline :', crashCapsule.causal.rootCauseSummary.headline);
   console.log(
     '        Culprit  :',
@@ -222,14 +223,21 @@ async function runVerification() {
   );
   console.log('        Confidence:', primaryChain.confidence);
 
-  // Step C: Verify Capsule Regression Diff Engine
+  // Step C: Verify Capsule Regression Diff Engine (including real normalized causal chains & totalRoutesAudited)
   const diffRes = await fetch(
     `http://127.0.0.1:${testPort}/api/capsules/diff?a=${healthyCapsuleData.capsule.id}&b=${crashCapsule.id}`
   );
   const diffJson = await diffRes.json();
   assert.equal(diffJson.ok, true);
   assert.equal(diffJson.diff.statusChange, 'HEALTHY_SNAPSHOT -> FAULT_DETECTED');
-  console.log('✔ [5/9] Capsule Differential & Regression Engine verified');
+  assert.ok(diffJson.diff.totalRoutesAudited >= 2, 'Expected totalRoutesAudited >= 2');
+  assert.ok(diffJson.diff.newCausalChains.length >= 1, 'Expected at least 1 newly introduced causal chain');
+  assert.ok(
+    diffJson.diff.newCausalChains[0].culpritFile.includes('demo-server.js'),
+    'Expected normalized culpritFile in newCausalChains'
+  );
+  assert.equal(diffJson.diff.newCausalChains[0].culpritLine, 77);
+  console.log('✔ [5/12] Capsule Differential & Regression Engine verified (real culprit + route audit)');
 
   // Step D: Verify Model Context Protocol (MCP) JSON-RPC 2.0 Server
   const mcp = new BlackboxMcpServer({
@@ -251,13 +259,13 @@ async function runVerification() {
     method: 'tools/call',
     params: {
       name: 'get_latest_crash_capsule',
-      arguments: { capsuleId: 'latest' },
+      arguments: { capsuleId: 'latest_fault' },
     },
   });
   const mcpText = callRpc.result.content[0].text;
   assert.ok(mcpText.includes('BLACKBOX Flight Recorder — Full-Stack Bug Capsule'));
   assert.ok(mcpText.includes('partnerShare'));
-  console.log('✔ [6/9] MCP Server JSON-RPC 2.0 tools verified (`get_latest_crash_capsule`)');
+  console.log('✔ [6/12] MCP Server JSON-RPC 2.0 tools verified (`get_latest_crash_capsule` + `latest_fault`)');
 
   // Step E: Verify On-Demand Source Code X-Ray REST API (/api/source)
   const culpritFile = crashCapsule.causal.rootCauseSummary.culpritFile;
@@ -271,9 +279,17 @@ async function runVerification() {
   assert.equal(sourceJson.ok, true);
   assert.ok(sourceJson.snippet, 'Expected source code snippet from /api/source');
   assert.equal(sourceJson.snippet.targetLine, 77);
-  console.log('✔ [7/9] On-Demand Source Code X-Ray API verified (`/api/source`)');
+  console.log('✔ [7/12] On-Demand Source Code X-Ray API verified (`/api/source`)');
 
-  // Step F: Verify Self-Differential comparison
+  // Step F: Verify Vite / Browser URL & Firefox Stack Frame Resolution
+  const viteStack = `TypeError: Cannot read properties of null\n    at calculateAndChargeOrder (http://localhost:5173/src/demo/demo-server.js?t=1731420000:77:12)`;
+  const parsedVite = parseStackAndCode(viteStack, ROOT_DIR);
+  assert.equal(parsedVite.hasStack, true);
+  assert.ok(parsedVite.primaryUserFrame?.snippet, 'Expected Vite localhost URL to resolve to disk file');
+  assert.equal(parsedVite.primaryUserFrame.snippet.targetLine, 77);
+  console.log('✔ [8/12] Vite / Browser URL Stack-to-Disk Source X-Ray Resolution verified');
+
+  // Step G: Verify Self-Differential comparison
   const selfDiffRes = await fetch(
     `http://127.0.0.1:${testPort}/api/capsules/diff?a=${crashCapsule.id}&b=${crashCapsule.id}`
   );
@@ -281,9 +297,33 @@ async function runVerification() {
   assert.equal(selfDiffJson.ok, true);
   assert.equal(selfDiffJson.diff.isIdentical, true);
   assert.equal(selfDiffJson.diff.newCausalChains.length, 0);
-  console.log('✔ [8/9] Self-Differential Invariance verified (zero false regressions)');
+  console.log('✔ [9/12] Self-Differential Invariance verified (zero false regressions)');
 
-  // Step G: Verify Capsule Deletion API (DELETE /api/capsules/:id)
+  // Step H: Verify Capsule Rename & Engineer Notes API (PATCH /api/capsules/:id)
+  const patchRes = await fetch(`http://127.0.0.1:${testPort}/api/capsules/${crashCapsule.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: 'Verified Checkout Null-Ref Reproduction',
+      notes: 'Reproduced after toggling instant USD settlement.',
+    }),
+  });
+  const patchJson = await patchRes.json();
+  assert.equal(patchJson.ok, true);
+  assert.equal(patchJson.capsule.title, 'Verified Checkout Null-Ref Reproduction');
+  assert.ok(patchJson.capsule.aiDiagnosticMarkdown.includes('Reproduced after toggling instant USD settlement.'));
+  console.log('✔ [10/12] Capsule Label & Engineer Notes Update API verified (`PATCH /api/capsules/:id`)');
+
+  // Step I: Verify Live Buffer Clear API (POST /api/buffer/clear)
+  const clearRes = await fetch(`http://127.0.0.1:${testPort}/api/buffer/clear`, { method: 'POST' });
+  const clearJson = await clearRes.json();
+  assert.equal(clearJson.ok, true);
+  const statusAfterClear = await (await fetch(`http://127.0.0.1:${testPort}/api/status`)).json();
+  assert.equal(statusAfterClear.buffer.activeEvents, 0);
+  assert.ok(statusAfterClear.projectName, 'Expected projectName in /api/status');
+  console.log('✔ [11/12] Live Ring Buffer Clear & Status Project Telemetry verified');
+
+  // Step J: Verify Capsule Deletion API (DELETE /api/capsules/:id) & Cleanup Baseline
   const delRes = await fetch(`http://127.0.0.1:${testPort}/api/capsules/${crashCapsule.id}`, {
     method: 'DELETE',
   });
@@ -291,10 +331,13 @@ async function runVerification() {
   assert.equal(delJson.ok, true);
   const afterDelRes = await fetch(`http://127.0.0.1:${testPort}/api/capsules/${crashCapsule.id}`);
   assert.equal(afterDelRes.status, 404);
-  console.log('✔ [9/9] Archival Vault Deletion & Index Pruning verified');
+  await fetch(`http://127.0.0.1:${testPort}/api/capsules/${healthyCapsuleData.capsule.id}`, {
+    method: 'DELETE',
+  });
+  console.log('✔ [12/12] Archival Vault Deletion & Index Pruning verified');
 
   daemon.stop();
-  console.log('\n🎉 ALL 9 BLACKBOX SUBSYSTEMS PASSED VERIFICATION WITH 100% PRECISION!');
+  console.log('\n🎉 ALL 12 BLACKBOX SUBSYSTEMS PASSED VERIFICATION WITH 100% PRECISION!');
   process.exit(0);
 }
 

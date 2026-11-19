@@ -17,6 +17,9 @@
   window.__BLACKBOX_AGENT_ACTIVE__ = true;
   window.__KALA_AGENT_ACTIVE__ = true;
 
+  // Capture original fetch immediately before any telemetry fallback can reference it
+  const origFetch = window.fetch.bind(window);
+
   // Determine Blackbox Daemon endpoint
   const scriptEl = document.currentScript;
   const endpointAttr =
@@ -165,6 +168,14 @@
       const hudNodes = clone.querySelectorAll('#__blackbox_hud_host__, #__kala_hud_host__, script');
       hudNodes.forEach((n) => n.remove());
 
+      // Inject <base> so relative CSS, fonts, and images resolve cleanly inside Studio's sandboxed iframe
+      const head = clone.querySelector('head');
+      if (head && !head.querySelector('base')) {
+        const baseEl = document.createElement('base');
+        baseEl.setAttribute('href', window.location.origin + '/');
+        head.insertBefore(baseEl, head.firstChild);
+      }
+
       // Sync live input, textarea, and select values into the cloned attributes
       const origInputs = document.querySelectorAll('input, textarea, select');
       const cloneInputs = clone.querySelectorAll('input, textarea, select');
@@ -269,7 +280,11 @@
   window.addEventListener(
     'click',
     (e) => {
-      if (e.target && e.target.closest && e.target.closest('#__kala_hud_host__')) {
+      if (
+        e.target &&
+        e.target.closest &&
+        (e.target.closest('#__blackbox_hud_host__') || e.target.closest('#__kala_hud_host__'))
+      ) {
         return;
       }
       const target = e.target;
@@ -318,6 +333,67 @@
     true
   );
 
+  // Form Submissions & SPA Navigation Tracking
+  window.addEventListener(
+    'submit',
+    (e) => {
+      const form = e.target;
+      const traceId = genTraceId();
+      const selector = getSelector(form);
+      lastActionTrace = {
+        traceId,
+        timestampMs: Date.now(),
+        selector,
+        text: `Submit ${selector}`,
+      };
+      sendEvent({
+        plane: 'BROWSER',
+        type: 'UI_SUBMIT',
+        severity: 'info',
+        traceId,
+        payload: {
+          selector,
+          tagName: 'FORM',
+          text: `Submit ${selector}`,
+        },
+      });
+    },
+    true
+  );
+
+  let lastTrackedUrl = window.location.href;
+  function emitRouteChange(kind) {
+    const nextUrl = window.location.href;
+    if (nextUrl === lastTrackedUrl) return;
+    const prevUrl = lastTrackedUrl;
+    lastTrackedUrl = nextUrl;
+    sendEvent({
+      plane: 'BROWSER',
+      type: 'UI_NAVIGATE',
+      severity: 'info',
+      traceId: lastActionTrace?.traceId || null,
+      payload: {
+        kind,
+        from: prevUrl,
+        to: nextUrl,
+      },
+    });
+    setTimeout(() => captureDomSnapshot('POST_NAVIGATE'), 120);
+  }
+
+  window.addEventListener('hashchange', () => emitRouteChange('hashchange'));
+  window.addEventListener('popstate', () => emitRouteChange('popstate'));
+  try {
+    const origPushState = history.pushState.bind(history);
+    history.pushState = function (...pushArgs) {
+      const res = origPushState(...pushArgs);
+      emitRouteChange('pushState');
+      return res;
+    };
+  } catch {
+    // ignore
+  }
+
   // Hotkey: Alt + Shift + B to freeze capsule anytime
   window.addEventListener(
     'keydown',
@@ -331,7 +407,18 @@
   );
 
   // --- 4. Fetch & XMLHttpRequest Causal Interceptor ---
-  const origFetch = window.fetch.bind(window);
+  function sanitizeHeaderMap(headersObj) {
+    const out = {};
+    try {
+      headersObj.forEach((v, k) => {
+        out[k] = /authorization|cookie|secret|token|api-key/i.test(k) ? '***REDACTED***' : v;
+      });
+    } catch {
+      // ignore
+    }
+    return out;
+  }
+
   window.fetch = async function blackboxInterceptedFetch(input, init = {}) {
     const urlStr = typeof input === 'string' ? input : input?.url || String(input);
 
@@ -390,6 +477,8 @@
               startTimeMs,
               durationMs,
               triggerSelector: lastActionTrace?.selector || null,
+              requestHeaders: sanitizeHeaderMap(headers),
+              responseHeaders: sanitizeHeaderMap(response.headers),
               requestBody,
               responseBody: parsedRes,
             },
@@ -439,7 +528,7 @@
           .join(' ')
           .slice(0, 4000);
 
-        if (message.includes('[KALA]')) return;
+        if (message.includes('[BLACKBOX]') || message.includes('[KALA]')) return;
 
         sendEvent({
           plane: 'BROWSER',
@@ -596,14 +685,43 @@
           font-weight: 700;
           margin-left: 8px;
         }
+        .blackbox-min-btn {
+          background: transparent;
+          border: 1px solid rgba(175, 174, 162, 0.25);
+          color: #AFAEA2;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 11px;
+          padding: 0;
+        }
+        .blackbox-min-btn:hover {
+          color: #F4F3EE;
+          border-color: rgba(175, 174, 162, 0.6);
+        }
+        .blackbox-pill.minimized {
+          padding: 7px 10px;
+          gap: 6px;
+        }
+        .blackbox-pill.minimized .blackbox-brand,
+        .blackbox-pill.minimized .blackbox-stats,
+        .blackbox-pill.minimized .blackbox-btn,
+        .blackbox-pill.minimized .blackbox-link {
+          display: none;
+        }
       </style>
       <div class="blackbox-toast" id="blackboxToast"></div>
-      <div class="blackbox-pill">
+      <div class="blackbox-pill" id="blackboxPill">
         <span class="blackbox-dot" id="blackboxDot"></span>
         <span class="blackbox-brand">BLACKBOX</span>
         <span class="blackbox-stats" id="blackboxStats">60s Ring Buffer</span>
         <button class="blackbox-btn" id="blackboxFreezeBtn" title="Shortcut: Alt+Shift+B">Freeze Capsule</button>
         <a class="blackbox-link" href="${BLACKBOX_HTTP}" target="_blank" title="Open Blackbox Studio">Studio ↗</a>
+        <button class="blackbox-min-btn" id="blackboxMinBtn" title="Minimize / Expand Blackbox HUD">—</button>
       </div>
     `;
 
@@ -611,8 +729,15 @@
     hudStatsEl = shadow.getElementById('blackboxStats');
     hudDotEl = shadow.getElementById('blackboxDot');
     hudToastEl = shadow.getElementById('blackboxToast');
+    const pillEl = shadow.getElementById('blackboxPill');
+    const minBtn = shadow.getElementById('blackboxMinBtn');
     const freezeBtn = shadow.getElementById('blackboxFreezeBtn');
     freezeBtn.addEventListener('click', () => triggerFreezeNow('HUD_BUTTON_CLICK'));
+    minBtn.addEventListener('click', () => {
+      const collapsed = pillEl.classList.toggle('minimized');
+      minBtn.textContent = collapsed ? '+' : '—';
+      minBtn.title = collapsed ? 'Expand Blackbox HUD' : 'Minimize Blackbox HUD';
+    });
     updateHudStatus();
   }
 

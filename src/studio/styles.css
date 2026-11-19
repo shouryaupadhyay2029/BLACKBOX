@@ -3783,3 +3783,277 @@ body::before {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================================================
+   REFINED STUDIO CONTROLS: VAULT FILTERS, WATERFALL BARS, COLORIZED DIFF & LIVE DECK
+   ========================================================================== */
+.dot.offline {
+  background: var(--crimson-bright);
+  box-shadow: 0 0 8px var(--crimson-bright);
+  animation: none;
+}
+
+.autofreeze-toggle {
+  user-select: none;
+  white-space: nowrap;
+}
+
+.vault-filter-pills {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.vault-pill {
+  flex: 1;
+  background: rgba(14, 18, 42, 0.55);
+  border: 1px solid var(--stone-border);
+  color: var(--stone-muted);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vault-pill:hover {
+  color: var(--stone-light);
+  border-color: var(--stone-grey);
+}
+
+.vault-pill.active {
+  color: #FFFFFF;
+  background: var(--crimson-soft);
+  border-color: var(--crimson-red);
+}
+
+.cap-culprit-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #FCA5A5;
+  background: rgba(210, 19, 25, 0.12);
+  border: 1px solid rgba(210, 19, 25, 0.3);
+  border-radius: 2px;
+  padding: 2px 6px;
+  margin: 4px 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-edit-meta {
+  flex: none;
+  padding: 3px 9px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.btn-edit-meta:hover {
+  opacity: 1;
+}
+
+.capsule-note-banner {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-left: 2px solid #38BDF8;
+  background: rgba(56, 189, 248, 0.08);
+  color: #BAE6FD;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  border-radius: 2px;
+}
+
+.clickable-scrub {
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.clickable-scrub:hover {
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.net-url-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.net-url-text {
+  color: #38BDF8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.net-dur-track {
+  height: 3px;
+  width: 100%;
+  background: rgba(148, 163, 184, 0.14);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.net-dur-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, #38BDF8);
+  border-radius: 2px;
+}
+
+.net-dur-fill.err {
+  background: linear-gradient(90deg, #F59E0B, #EF4444);
+}
+
+/* Colorized Git Working Tree Diff & Clickable File Chips */
+.git-mod-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--stone-border);
+  background: rgba(11, 14, 32, 0.5);
+}
+
+.git-mod-pill {
+  background: rgba(14, 18, 42, 0.85);
+  border: 1px solid var(--stone-border);
+  color: var(--stone-light);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.git-mod-pill:hover {
+  border-color: #38BDF8;
+  color: #FFFFFF;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.git-mod-pill .git-st {
+  color: #FCD34D;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.colorized-diff-box {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-x: auto;
+  padding: 8px 0;
+  background: #060812;
+}
+
+.git-diff-line {
+  padding: 0 12px;
+  white-space: pre;
+}
+
+.git-diff-line.diff-hdr {
+  color: #E2E8F0;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.08);
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.git-diff-line.diff-hunk {
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.09);
+}
+
+.git-diff-line.diff-add {
+  color: #6EE7B7;
+  background: rgba(16, 185, 129, 0.13);
+}
+
+.git-diff-line.diff-del {
+  color: #FCA5A5;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.git-diff-line.diff-ctx {
+  color: #94A3B8;
+}
+
+/* Scrubber Keyboard Shortcut Strip */
+.scrubber-shortcuts {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--stone-muted);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 12px;
+  border-left: 1px solid var(--stone-border);
+}
+
+.scrubber-shortcuts kbd {
+  background: rgba(14, 18, 42, 0.9);
+  border: 1px solid var(--stone-border-strong);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 9.5px;
+  color: var(--stone-light);
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 1200px) {
+  .scrubber-shortcuts {
+    display: none;
+  }
+}
+
+/* Live Deck Search & Expandable JSON Drawer */
+.live-search-group {
+  flex: 1;
+  min-width: 220px;
+  max-width: 420px;
+}
+
+.live-search-input {
+  width: 100%;
+  background: rgba(6, 8, 18, 0.85);
+  border: 1px solid var(--stone-border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  color: var(--stone-light);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.live-search-input:focus {
+  border-color: #38BDF8;
+}
+
+.live-feed-row {
+  cursor: pointer;
+}
+
+.live-payload-drawer {
+  margin: 8px 0 2px;
+  padding: 10px;
+  background: #04060D;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #CBD5E1;
+  overflow-x: auto;
+  max-height: 240px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

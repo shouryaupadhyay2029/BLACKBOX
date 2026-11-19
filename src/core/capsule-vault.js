@@ -112,6 +112,7 @@ export class CapsuleVault {
       filePath,
     };
 
+    this.capsulesIndex = this._loadIndex();
     this.capsulesIndex.unshift(summaryEntry);
     if (this.capsulesIndex.length > 100) {
       this.capsulesIndex.length = 100;
@@ -130,15 +131,25 @@ export class CapsuleVault {
   }
 
   /**
-   * Loads a full capsule by ID (or returns the latest capsule if id === 'latest').
+   * Loads a full capsule by ID (supports 'latest', 'latest_fault', exact ID, or unambiguous short prefix/suffix).
    * @param {string} id
    */
   getCapsule(id = 'latest') {
     this.capsulesIndex = this._loadIndex();
-    const target =
-      id === 'latest'
-        ? this.capsulesIndex[0]
-        : this.capsulesIndex.find((c) => c.id === id);
+    let target = null;
+    if (id === 'latest') {
+      target = this.capsulesIndex[0] || null;
+    } else if (id === 'latest_fault') {
+      target =
+        this.capsulesIndex.find((c) => c.status === 'FAULT_DETECTED') ||
+        this.capsulesIndex[0] ||
+        null;
+    } else {
+      target =
+        this.capsulesIndex.find((c) => c.id === id) ||
+        this.capsulesIndex.find((c) => c.id.startsWith(id) || c.id.endsWith(id)) ||
+        null;
+    }
 
     if (!target) return null;
 
@@ -159,6 +170,41 @@ export class CapsuleVault {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Updates mutable developer metadata (`title` and/or `notes`) for an existing capsule.
+   * @param {string} id
+   * @param {object} patch
+   * @param {string} [patch.title]
+   * @param {string} [patch.notes]
+   */
+  updateCapsule(id, patch = {}) {
+    const capsule = this.getCapsule(id);
+    if (!capsule) return null;
+
+    if (typeof patch.title === 'string' && patch.title.trim()) {
+      capsule.title = patch.title.trim().slice(0, 220);
+    }
+    if (typeof patch.notes === 'string') {
+      capsule.notes = patch.notes.trim().slice(0, 4000);
+    }
+
+    capsule.aiDiagnosticMarkdown = this.compileAiDiagnosticPrompt(capsule);
+
+    const filePath = path.join(this.storageDir, `${capsule.id}.blackbox.json`);
+    fs.writeFileSync(filePath, JSON.stringify(capsule, null, 2), 'utf8');
+
+    this.capsulesIndex = this._loadIndex();
+    const entry = this.capsulesIndex.find((c) => c.id === capsule.id);
+    if (entry) {
+      entry.title = capsule.title;
+      entry.notes = capsule.notes;
+      entry.filePath = filePath;
+      this._saveIndex();
+    }
+
+    return capsule;
   }
 
   /**
@@ -275,30 +321,72 @@ export class CapsuleVault {
       }
     }
 
+    const chainMeta = (c) => {
+      const frame = c.backendError?.primaryFrame || c.browserError?.primaryFrame || null;
+      const gitHit = c.gitDiffOverlaps?.[0] || null;
+      const culpritFile =
+        frame?.snippet?.fileName || frame?.resolvedPath || frame?.rawFile || gitHit?.file || null;
+      const culpritPath = frame?.resolvedPath || frame?.rawFile || gitHit?.file || null;
+      const culpritLine = frame?.lineNumber || gitHit?.crashLine || null;
+      const triggerSummary = c.triggerUi
+        ? `Clicked "${c.triggerUi.text || c.triggerUi.selector || 'Element'}" (${c.triggerUi.selector || 'UI'})`
+        : c.networkRequest
+        ? `${c.networkRequest.method || 'GET'} ${c.networkRequest.url || ''}`
+        : 'Runtime Event';
+      const faultSummary = c.backendError
+        ? (c.backendError.rawText || '').trim().split(/\r?\n/)[0].slice(0, 160)
+        : c.browserError
+        ? (c.browserError.message || 'Browser Exception').slice(0, 160)
+        : c.networkRequest
+        ? `HTTP ${c.networkRequest.status} on ${c.networkRequest.method} ${c.networkRequest.url}`
+        : 'Unhandled Exception';
+      const headline =
+        c.steps && c.steps.length > 0
+          ? c.steps.map((s) => s.title).join(' → ')
+          : faultSummary;
+      const sig = `${culpritPath || ''}:${culpritLine || ''}:${c.networkRequest?.url || ''}:${c.browserError?.message || ''}`;
+      return {
+        sig,
+        chainId: c.chainId,
+        severity: c.severity || 'ERROR',
+        confidence: c.confidence || 'CORRELATED (90%)',
+        culpritFile: culpritFile || 'runtime',
+        culpritPath,
+        culpritLine,
+        culpritFunction: frame?.functionName || null,
+        headline,
+        triggerSummary,
+        faultSummary,
+        networkRequest: c.networkRequest || null,
+      };
+    };
+
     let newCausalChains = [];
     if (!isIdentical) {
-      const chainsA = capA.causal?.causalChains || [];
-      const signaturesA = new Set(
-        chainsA.map(
-          (c) =>
-            `${c.culprit?.culpritFile || ''}:${c.culprit?.culpritLine || ''}:${c.networkRequest?.url || ''}`
-        )
-      );
-      newCausalChains = (capB.causal?.causalChains || []).filter((c) => {
-        const sig = `${c.culprit?.culpritFile || ''}:${c.culprit?.culpritLine || ''}:${c.networkRequest?.url || ''}`;
-        return !signaturesA.has(sig);
-      });
+      const chainsA = (capA.causal?.causalChains || []).map(chainMeta);
+      const signaturesA = new Set(chainsA.map((c) => c.sig));
+      newCausalChains = (capB.causal?.causalChains || [])
+        .map(chainMeta)
+        .filter((c) => !signaturesA.has(c.sig));
     }
 
+    const modFilesA = new Set((capA.git?.modifiedFiles || []).map((f) => (typeof f === 'string' ? f : f.path)));
+    const gitModifiedFilesAfter = isIdentical
+      ? []
+      : (capB.git?.modifiedFiles || []).map((f) =>
+          typeof f === 'string' ? { status: 'M', path: f, isNew: !modFilesA.has(f) } : { ...f, isNew: !modFilesA.has(f.path) }
+        );
+
     return {
-      capsuleA: { id: capA.id, title: capA.title, createdAt: capA.createdAt },
-      capsuleB: { id: capB.id, title: capB.title, createdAt: capB.createdAt },
+      capsuleA: { id: capA.id, title: capA.title, status: capA.status, createdAt: capA.createdAt },
+      capsuleB: { id: capB.id, title: capB.title, status: capB.status, createdAt: capB.createdAt },
       isIdentical,
       statusChange: isIdentical ? `${capA.status} (Identical)` : `${capA.status} -> ${capB.status}`,
+      totalRoutesAudited: allRoutes.size,
       routeDiffs,
       newCausalChains,
       gitCommitChange: `${capA.git?.headCommit || 'none'} -> ${capB.git?.headCommit || 'none'}`,
-      gitModifiedFilesAfter: isIdentical ? [] : (capB.git?.modifiedFiles || []),
+      gitModifiedFilesAfter,
     };
   }
 
@@ -317,6 +405,9 @@ export class CapsuleVault {
     lines.push(`- **Trigger:** \`${capsule.triggerReason}\``);
     lines.push(`- **Diagnosis Status:** \`${summary.status || capsule.status}\``);
     lines.push(`- **Headline:** ${summary.headline || capsule.title}`);
+    if (capsule.notes) {
+      lines.push(`- **Engineer Notes:** ${capsule.notes}`);
+    }
     if (summary.culpritFile) {
       lines.push(
         `- **Primary Culprit Location:** \`${summary.culpritFile}${
@@ -392,6 +483,21 @@ export class CapsuleVault {
             `${chain.browserError.message}\n${chain.browserError.stack || ''}`.trim()
           );
           lines.push('```');
+
+          const bSnippet = chain.browserError.primaryFrame?.snippet;
+          if (bSnippet && !chain.backendError?.primaryFrame?.snippet) {
+            lines.push(
+              `#### Local Source Code X-Ray (\`${bSnippet.filePath}:${bSnippet.targetLine}\`)`
+            );
+            lines.push('```tsx');
+            for (const ln of bSnippet.lines) {
+              const prefix = ln.isTarget ? '>>> ' : '    ';
+              lines.push(
+                `${prefix}${String(ln.lineNumber).padStart(4, ' ')} | ${ln.code}`
+              );
+            }
+            lines.push('```');
+          }
         }
       }
     }

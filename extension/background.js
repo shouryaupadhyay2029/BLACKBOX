@@ -1,6 +1,6 @@
 /**
- * KALA Chrome Extension — Background Service Worker
- * Handles global keyboard shortcut (Alt+Shift+B) and communicates with the KALA Daemon.
+ * BLACKBOX Chrome/Edge Extension — Background Service Worker
+ * Handles global keyboard shortcut (Alt+Shift+B) and communicates with the Blackbox Daemon.
  */
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'freeze-capsule') {

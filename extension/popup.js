@@ -5,21 +5,25 @@ async function refreshPopup() {
   try {
     const res = await fetch(`${BLACKBOX_URL}/api/status`);
     const data = await res.json();
-    badge.textContent = 'Daemon Online';
+    badge.textContent = `Online · ${data.projectName || 'localhost'}`;
+    badge.style.color = '#34d399';
     document.getElementById('bufEvents').textContent = `${data.buffer.activeEvents} events (${data.buffer.memoryMB} MB)`;
     document.getElementById('bufTraces').textContent = data.buffer.activeTraces;
     document.getElementById('gitBranch').textContent = data.git.branch
-      ? `${data.git.branch}${data.git.isDirty ? ' (dirty)' : ''}`
+      ? `${data.git.branch}${data.git.isDirty ? ' (dirty)' : ' (clean)'}`
       : 'N/A';
     document.getElementById('capCount').textContent = data.totalCapsules;
   } catch {
     badge.textContent = 'Daemon Offline';
     badge.style.color = '#f87171';
+    document.getElementById('bufEvents').textContent = 'Run: blackbox run "<cmd>"';
   }
 }
 
 document.getElementById('freezeBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('freezeBtn');
   try {
+    btn.textContent = 'Freezing 60s Buffer...';
     const res = await fetch(`${BLACKBOX_URL}/api/freeze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -30,7 +34,10 @@ document.getElementById('freezeBtn').addEventListener('click', async () => {
       chrome.tabs.create({ url: data.studioUrl });
     }
   } catch {
-    alert('Blackbox Daemon is not running on port 9876. Start it with: npx blackbox demo');
+    btn.textContent = 'Daemon Offline (:9876)';
+    setTimeout(() => {
+      btn.textContent = '❄️ Freeze Bug Capsule (Alt+Shift+B)';
+    }, 2500);
   }
 });
 

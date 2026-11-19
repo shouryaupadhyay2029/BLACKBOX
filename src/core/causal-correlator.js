@@ -30,14 +30,22 @@ export function buildCausalAnalysis(slice, gitState, cwd = process.cwd()) {
     const relTimeMs = Math.max(0, +(evt.timestampMs - startTimeMs).toFixed(2));
 
     if (evt.plane === 'BROWSER') {
-      if (evt.type === 'UI_CLICK' || evt.type === 'UI_SUBMIT' || evt.type === 'UI_KEYDOWN') {
+      if (
+        evt.type === 'UI_CLICK' ||
+        evt.type === 'UI_SUBMIT' ||
+        evt.type === 'UI_KEYDOWN' ||
+        evt.type === 'UI_NAVIGATE'
+      ) {
         uiActions.push({ ...evt, relTimeMs });
         timelineMarkers.push({
           id: evt.id,
           relTimeMs,
           timestampMs: evt.timestampMs,
           kind: 'ui_action',
-          label: `${evt.type.replace('UI_', '')}: ${evt.payload?.selector || evt.payload?.text || 'Element'}`,
+          label:
+            evt.type === 'UI_NAVIGATE'
+              ? `NAVIGATE: ${evt.payload?.to || evt.payload?.url || 'route'}`
+              : `${evt.type.replace('UI_', '')}: ${evt.payload?.selector || evt.payload?.text || 'Element'}`,
           severity: 'info',
         });
       } else if (
@@ -149,7 +157,7 @@ export function buildCausalAnalysis(slice, gitState, cwd = process.cwd()) {
         return false;
       }
       // If t log text contains a different trace ID, do not link
-      const otherTraceMatch = /(?:X-Kala-Trace-Id|traceId|trace_id|trace:)[=:\s]+([a-zA-Z0-9_-]{6,64})/i.exec(
+      const otherTraceMatch = /(?:X-Blackbox-Trace-Id|X-Kala-Trace-Id|traceId|trace_id|trace:)[=:\s]+([a-zA-Z0-9_-]{6,64})/i.exec(
         t.payload?.text || ''
       );
       if (otherTraceMatch && net.traceId && otherTraceMatch[1] !== net.traceId) {
@@ -334,6 +342,7 @@ export function buildCausalAnalysis(slice, gitState, cwd = process.cwd()) {
         message: bErr.payload?.message,
         stack: bErr.payload?.stack,
         primaryFrame: bErr.stackInfo?.primaryUserFrame || null,
+        frames: allFrames,
       },
       gitDiffOverlaps: gitOverlaps,
     });
@@ -415,12 +424,13 @@ function buildChainSteps({
   }
 
   if (resultingBrowserErr) {
+    const bFrame = resultingBrowserErr.stackInfo?.primaryUserFrame;
     steps.push({
       plane: 'BROWSER',
       relTimeMs: +(resultingBrowserErr.timestampMs - startTimeMs).toFixed(1),
       title: `Browser Exception: ${(resultingBrowserErr.payload?.message || '').slice(0, 110)}`,
-      detail: resultingBrowserErr.stackInfo?.primaryUserFrame
-        ? `at ${resultingBrowserErr.stackInfo.primaryUserFrame.rawFile}:${resultingBrowserErr.stackInfo.primaryUserFrame.lineNumber}`
+      detail: bFrame
+        ? `at ${bFrame.snippet?.fileName || bFrame.rawFile}:${bFrame.lineNumber}${bFrame.functionName ? ` in ${bFrame.functionName}()` : ''}`
         : 'Uncaught client error',
     });
   }
@@ -463,7 +473,13 @@ function synthesizeRootCauseSummary(causalChains, gitState) {
   } else if (primary.backendError) {
     headline = `Backend runtime crash in ${frame ? `${frame.snippet?.fileName || frame.rawFile}:${frame.lineNumber}` : primary.backendError.processName}`;
   } else if (primary.browserError) {
-    headline = `Frontend uncaught exception: ${(primary.browserError.message || '').slice(0, 90)}`;
+    const clickPrefix = primary.triggerUi
+      ? `Clicking "${primary.triggerUi.text || primary.triggerUi.selector}" caused `
+      : '';
+    const locSuffix = frame
+      ? ` in ${frame.snippet?.fileName || frame.rawFile}:${frame.lineNumber}`
+      : '';
+    headline = `${clickPrefix}Frontend exception${locSuffix}: ${(primary.browserError.message || '').slice(0, 90)}`;
   } else {
     headline = `HTTP ${primary.networkRequest?.status} error on ${primary.networkRequest?.method} ${primary.networkRequest?.url}`;
   }

@@ -9,9 +9,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Regex patterns for common runtime stack frames
+// Regex patterns for common runtime stack frames (V8/Node, Firefox/Safari, Python, Go/Rust)
 const V8_FRAME_REGEX =
   /^\s*at\s+(?:(?<fn>.+?)\s+\((?<fileWithParen>.+?):(?<line>\d+)(?::(?<col>\d+))?\)|(?<fileBare>.+?):(?<lineBare>\d+)(?::(?<colBare>\d+))?)\s*$/;
+
+const FIREFOX_SAFARI_FRAME_REGEX =
+  /^\s*(?<fn>[^@\s]*)@(?<file>https?:\/\/[^\s]+?|file:\/\/[^\s]+?):(?<line>\d+)(?::(?<col>\d+))?\s*$/;
 
 const PYTHON_FRAME_REGEX =
   /^\s*File\s+"(?<file>[^"]+)",\s+line\s+(?<line>\d+)(?:,\s+in\s+(?<fn>[^\s\r\n]+))?/;
@@ -47,9 +50,34 @@ export function resolveLocalFile(rawFile, cwd = process.cwd()) {
   try {
     if (candidate.startsWith('file://')) {
       candidate = fileURLToPath(candidate);
+    } else if (/^https?:\/\//i.test(candidate)) {
+      const parsed = new URL(candidate);
+      let urlPath = decodeURIComponent(parsed.pathname);
+      // Support Vite /@fs/C:/path/to/file.ts absolute mounts
+      if (urlPath.startsWith('/@fs/')) {
+        urlPath = urlPath.slice(5);
+        if (!/^[A-Za-z]:/.test(urlPath) && !urlPath.startsWith('/')) {
+          urlPath = '/' + urlPath;
+        }
+        candidate = urlPath;
+      } else {
+        candidate = urlPath.replace(/^\/+/, '');
+      }
     }
   } catch {
-    candidate = candidate.replace(/^file:\/\/\/?/, '');
+    candidate = candidate.replace(/^file:\/\/\/?/, '').replace(/^https?:\/\/[^/]+\/?/, '');
+  }
+
+  // Strip Vite/Webpack cache-busting query strings (e.g. ?t=1731420000 or ?v=abc)
+  candidate = candidate.split('?')[0].split('#')[0];
+
+  // Ignore Vite pre-bundled dependency chunks in .vite/deps & Blackbox's own SDK
+  if (
+    candidate.includes('.vite/deps') ||
+    candidate.includes('node_modules') ||
+    candidate.endsWith('sdk/browser-agent.js')
+  ) {
+    return null;
   }
 
   const attempts = [
@@ -121,6 +149,7 @@ export function parseStackAndCode(rawText, cwd = process.cwd()) {
   for (const line of lines) {
     const match =
       V8_FRAME_REGEX.exec(line) ||
+      FIREFOX_SAFARI_FRAME_REGEX.exec(line) ||
       PYTHON_FRAME_REGEX.exec(line) ||
       GO_RUST_FRAME_REGEX.exec(line);
 
