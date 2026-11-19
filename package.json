@@ -9,10 +9,8 @@
     "./sdk": "./src/sdk/browser-agent.js"
   },
   "bin": {
-    "blackbox": "./bin/blackbox.js",
-    "blackbox-mcp": "./bin/blackbox-mcp.js",
-    "kala": "./bin/blackbox.js",
-    "kala-mcp": "./bin/blackbox-mcp.js"
+    "blackbox": "bin/blackbox.js",
+    "blackbox-mcp": "bin/blackbox-mcp.js"
   },
   "files": [
     "bin/",
