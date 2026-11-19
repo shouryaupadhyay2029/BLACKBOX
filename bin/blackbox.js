@@ -134,7 +134,8 @@ async function main() {
   const port = Number(parseFlag('--port', process.env.BLACKBOX_PORT || process.env.KALA_PORT || 9876));
 
   if (subcommand === '--version' || subcommand === '-v' || subcommand === 'version') {
-    console.log('blackbox-flight-recorder v1.0.0');
+    const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
+    console.log(`${pkg.name} v${pkg.version}`);
     return;
   }
 
