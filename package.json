@@ -48,6 +48,14 @@
   ],
   "author": "Shourya Upadhyay",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shouryaupadhyay2029/BLACKBOX.git"
+  },
+  "homepage": "https://github.com/shouryaupadhyay2029/BLACKBOX#readme",
+  "bugs": {
+    "url": "https://github.com/shouryaupadhyay2029/BLACKBOX/issues"
+  },
   "dependencies": {
     "ws": "^8.18.0"
   }

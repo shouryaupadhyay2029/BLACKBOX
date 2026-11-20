@@ -38,22 +38,22 @@ Clone the repository anywhere on your machine and run the cross-platform install
 
 **macOS / Linux / WSL:**
 ```bash
-git clone https://github.com/shourya-upadhyay/blackbox.git
-cd blackbox
+git clone https://github.com/shouryaupadhyay2029/BLACKBOX.git
+cd BLACKBOX
 ./install.sh
 ```
 
 **Windows (PowerShell):**
 ```powershell
-git clone https://github.com/shourya-upadhyay/blackbox.git
-cd blackbox
+git clone https://github.com/shouryaupadhyay2029/BLACKBOX.git
+cd BLACKBOX
 .\install.ps1
 ```
 
 **Manual Universal Link (Any OS):**
 ```bash
-git clone https://github.com/shourya-upadhyay/blackbox.git
-cd blackbox
+git clone https://github.com/shouryaupadhyay2029/BLACKBOX.git
+cd BLACKBOX
 npm install && npm link
 ```
 
