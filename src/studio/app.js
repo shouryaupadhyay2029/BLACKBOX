@@ -617,9 +617,9 @@ function renderStaticEventLists(capsule) {
             const durMs = e.payload?.durationMs ?? 0;
             const barPct = Math.min(100, Math.max(4, Math.round((durMs / maxNetDur) * 100)));
             const statusClass =
-              status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx';
+              status === 0 || status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx';
             return `
-              <div class="net-row ${status >= 400 ? 'error-row' : ''}" data-net-idx="${idx}" data-rel-ms="${relMs}" title="Click to inspect payload & jump scrubber to +${(relMs / 1000).toFixed(2)}s">
+              <div class="net-row ${status === 0 || status >= 400 ? 'error-row' : ''}" data-net-idx="${idx}" data-rel-ms="${relMs}" title="Click to inspect payload & jump scrubber to +${(relMs / 1000).toFixed(2)}s">
                 <span class="status-pill ${statusClass}">${status || 'ERR'}</span>
                 <strong style="color:#e2e8f0">${escapeHtml(e.payload?.method || 'GET')}</strong>
                 <span class="net-url-col">
@@ -759,7 +759,7 @@ function renderNetworkPayloadDetail(netEvt) {
     <div class="xray-card ${isErr ? 'xray-card-fault' : ''}">
       <div class="xray-header">
         <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-          <span class="status-pill ${status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx'}">${status || 'ERR'} ${statusMeaning}</span>
+          <span class="status-pill ${status === 0 || status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx'}">${status || 'ERR'} ${statusMeaning}</span>
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.method || 'GET')} ${escapeHtml(p.url || '')} · ${p.durationMs || 0}ms</span>
         </div>
         <button class="mini-btn" id="btnCopyCurl" style="flex:none;padding:2px 8px;">📋 Copy cURL</button>

@@ -481,7 +481,11 @@ function synthesizeRootCauseSummary(causalChains, gitState) {
       : '';
     headline = `${clickPrefix}Frontend exception${locSuffix}: ${(primary.browserError.message || '').slice(0, 90)}`;
   } else {
-    headline = `HTTP ${primary.networkRequest?.status} error on ${primary.networkRequest?.method} ${primary.networkRequest?.url}`;
+    const st = primary.networkRequest?.status;
+    headline =
+      st && st > 0
+        ? `HTTP ${st} error on ${primary.networkRequest?.method} ${primary.networkRequest?.url}`
+        : `Network error (server unreachable) on ${primary.networkRequest?.method || 'GET'} ${primary.networkRequest?.url || ''}`;
   }
 
   let explanation = headline;

@@ -468,8 +468,23 @@
   window.fetch = async function blackboxInterceptedFetch(input, init = {}) {
     const urlStr = typeof input === 'string' ? input : input?.url || String(input);
 
-    // Do not intercept Blackbox's own telemetry calls
-    if (urlStr.includes(':9876') || urlStr.includes('/__blackbox__') || urlStr.includes('/__kala__')) {
+    // Do not intercept Blackbox's own telemetry calls or dev-server HMR / restart pings
+    const rawAccept =
+      (init.headers && (init.headers.Accept || init.headers.accept)) ||
+      (init.headers instanceof Headers && init.headers.get('accept')) ||
+      '';
+    if (
+      urlStr.includes(':9876') ||
+      urlStr.includes('/__blackbox__') ||
+      urlStr.includes('/__kala__') ||
+      urlStr.includes('/__vite_ping') ||
+      urlStr.includes('/@vite/') ||
+      urlStr.includes('/@react-refresh') ||
+      urlStr.includes('/_next/webpack-hmr') ||
+      urlStr.includes('/sockjs-node') ||
+      urlStr.includes('.hot-update.') ||
+      String(rawAccept).includes('text/x-vite-ping')
+    ) {
       return origFetch(input, init);
     }
 
@@ -574,7 +589,13 @@
           .join(' ')
           .slice(0, 4000);
 
-        if (message.includes('[BLACKBOX]') || message.includes('[KALA]')) return;
+        if (
+          message.includes('[BLACKBOX]') ||
+          message.includes('[KALA]') ||
+          /^\[vite\]\s+(connecting|connected|server connection lost|hot updated)/i.test(message.trim())
+        ) {
+          return;
+        }
 
         sendEvent({
           plane: 'BROWSER',

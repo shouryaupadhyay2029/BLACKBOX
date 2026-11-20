@@ -4616,3 +4616,32 @@ body::before {
 .gfs-stat.del {
   color: #FB7185;
 }
+
+
+/* ==========================================================================
+   COMPACT CONSOLE/TERMINAL ROWS & NON-ALARMING PLAYHEAD HIGHLIGHT
+   ========================================================================== */
+.term-row {
+  flex: 0 0 auto;
+  white-space: normal;
+  padding: 9px 12px;
+}
+
+.term-row > div:last-child {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 4px;
+}
+
+.term-row:not(.stderr).active-at-t {
+  border-left-color: #38BDF8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.log-list,
+.terminal-output {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+}
