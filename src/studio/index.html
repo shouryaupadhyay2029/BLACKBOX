@@ -155,7 +155,7 @@
         <div class="pane" id="paneBrowser">
           <div class="pane-header">
             <div class="pane-title">
-              <span class="plane-badge plane-browser">1 · BROWSER</span>
+              <div class="hex-term-dots pane-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div><span class="plane-badge plane-browser">PLANE 01 · BROWSER</span>
               <span>WHAT YOU CLICKED</span><span class="plane-status-pill" id="plane1Status">IDLE</span>
             </div>
             <div class="pane-tabs">
@@ -203,7 +203,7 @@
         <div class="pane" id="paneNetwork">
           <div class="pane-header">
             <div class="pane-title">
-              <span class="plane-badge plane-network">2 · NETWORK</span>
+              <div class="hex-term-dots pane-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div><span class="plane-badge plane-network">PLANE 02 · NETWORK</span>
               <span>API REQUESTS</span><span class="plane-status-pill" id="plane2Status">IDLE</span>
             </div>
             <div class="pane-tabs">
@@ -213,11 +213,11 @@
           </div>
           <div class="pane-body">
             <div class="tab-panel active" id="p2-waterfall">
-              <div class="waterfall-list" id="networkWaterfallList"></div>
+              <div class="waterfall-list" id="networkWaterfallList"><div class="friendly-empty-card"><div class="fec-kicker">→ standby · plane 02 http wiretap</div><div class="fec-title">Listening for API &amp; Network Traffic</div><div class="fec-sub">Every fetch/XHR call and proxied HTTP request appears here with status pills, relative latency bars, and trace correlation.</div></div></div>
             </div>
             <div class="tab-panel" id="p2-payload">
               <div class="payload-inspector" id="networkPayloadInspector">
-                <div class="empty-hint">Click any network request row to inspect its Trace-ID, headers, request body, and response payload.</div>
+                <div class="friendly-empty-card"><div class="fec-kicker">→ standby · plane 02 payload inspector</div><div class="fec-title">Select Any Request to Inspect</div><div class="fec-sub">Click a request row in the waterfall to inspect its causal Trace-ID, headers, request body, response payload, and 1-click cURL command.</div></div>
               </div>
             </div>
           </div>
@@ -227,7 +227,7 @@
         <div class="pane" id="paneTerminal">
           <div class="pane-header">
             <div class="pane-title">
-              <span class="plane-badge plane-terminal">3 · CODE &amp; CRASH</span>
+              <div class="hex-term-dots pane-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div><span class="plane-badge plane-terminal">PLANE 03 · CODE</span>
               <span>EXACT BROKEN LINE</span><span class="plane-status-pill" id="plane3Status">IDLE</span>
             </div>
             <div class="pane-tabs">
@@ -239,7 +239,7 @@
             <!-- Tab 1: Full-Width Clean Source Code X-Ray -->
             <div class="tab-panel active" id="p3-xray">
               <div class="xray-container" id="sourceXrayContainer">
-                <div class="empty-hint">When a backend or frontend stack trace is captured, Blackbox automatically resolves the local file on disk and highlights the exact crashing line here.</div>
+                <div class="friendly-empty-card"><div class="fec-kicker">→ standby · plane 03 source x-ray</div><div class="fec-title">Awaiting Stack Trace Capture</div><div class="fec-sub">Trigger a frontend or backend error — Blackbox automatically resolves local source maps &amp; files on disk and highlights the exact crashing line here.</div></div>
               </div>
             </div>
 
@@ -254,7 +254,7 @@
         <div class="pane" id="paneGitAi">
           <div class="pane-header">
             <div class="pane-title">
-              <span class="plane-badge plane-git">4 · GIT &amp; AI FIX</span>
+              <div class="hex-term-dots pane-dots"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span></div><span class="plane-badge plane-git">PLANE 04 · GIT &amp; AI</span>
               <span>RECENT CHANGES</span><span class="plane-status-pill" id="plane4Status">IDLE</span>
             </div>
             <div class="pane-tabs">
@@ -264,7 +264,7 @@
           </div>
           <div class="pane-body">
             <div class="tab-panel active" id="p4-git">
-              <div class="git-inspector" id="gitInspectorContainer"></div>
+              <div class="git-inspector" id="gitInspectorContainer"><div class="friendly-empty-card"><div class="fec-kicker">→ standby · plane 04 git working tree</div><div class="fec-title">Watching Uncommitted Code Changes</div><div class="fec-sub">Freeze a capsule or trigger a crash to inspect color-coded Git diffs with automatic stack-to-hunk culprit overlap detection.</div></div></div>
             </div>
             <div class="tab-panel" id="p4-aiprompt">
               <div class="ai-packet-header-bar">

@@ -4645,3 +4645,252 @@ body::before {
   gap: 6px;
   padding: 10px 12px;
 }
+
+
+/* ==========================================================================
+   UNIFIED HEX-TERMINAL & SETUP-CARD DESIGN FOR ALL 4 PLANE CARDS
+   ========================================================================== */
+.quad-grid {
+  gap: 22px;
+}
+
+.pane {
+  background: rgba(10, 13, 28, 0.92) !important;
+  border: 1px solid rgba(175, 174, 162, 0.24) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  overflow: hidden;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+}
+
+.pane:hover {
+  border-color: rgba(210, 19, 25, 0.48) !important;
+  box-shadow: 0 28px 68px rgba(0, 0, 0, 0.82), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.pane.pane-fault {
+  border-color: rgba(210, 19, 25, 0.55) !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.78),
+    0 0 0 1px rgba(210, 19, 25, 0.16),
+    inset 0 1px 0 rgba(255, 100, 110, 0.18) !important;
+}
+
+.pane-header {
+  height: 48px !important;
+  padding: 0 16px !important;
+  background: rgba(14, 18, 42, 0.92) !important;
+  border-bottom: 1px solid rgba(175, 174, 162, 0.18) !important;
+  gap: 12px;
+}
+
+.pane-dots {
+  gap: 6px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.pane-dots span {
+  width: 9px !important;
+  height: 9px !important;
+}
+
+.pane-title {
+  gap: 9px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  color: #F8FAFC !important;
+  min-width: 0;
+}
+
+.pane-title > span:not(.plane-badge):not(.plane-status-pill) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plane-badge {
+  font-family: var(--font-mono) !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.11em !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.plane-browser {
+  color: #7DD3FC !important;
+  background: rgba(56, 189, 248, 0.11) !important;
+  border: 1px solid rgba(56, 189, 248, 0.32) !important;
+}
+
+.plane-network {
+  color: #D8B4FE !important;
+  background: rgba(168, 85, 247, 0.12) !important;
+  border: 1px solid rgba(168, 85, 247, 0.34) !important;
+}
+
+.plane-terminal {
+  color: #FCD34D !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+  border: 1px solid rgba(245, 158, 11, 0.34) !important;
+}
+
+.plane-git {
+  color: #6EE7B7 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.34) !important;
+}
+
+/* Rounded Segmented Tab Switcher (Matches Hex Setup / Install Tabs) */
+.pane-tabs {
+  display: flex;
+  align-items: center;
+  gap: 3px !important;
+  background: #050711 !important;
+  border: 1px solid rgba(175, 174, 162, 0.2) !important;
+  border-radius: 7px !important;
+  padding: 3px !important;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  border: 1px solid transparent !important;
+  border-radius: 5px !important;
+  padding: 4px 10px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  color: #94A3B8 !important;
+  background: transparent !important;
+  transition: all 0.16s ease !important;
+}
+
+.tab-btn:hover {
+  color: #F8FAFC !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.tab-btn.active {
+  color: #FFFFFF !important;
+  background: rgba(210, 19, 25, 0.2) !important;
+  border: 1px solid rgba(210, 19, 25, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(210, 19, 25, 0.2);
+}
+
+/* Deep Obsidian Terminal Canvas inside Plane Body */
+.pane-body {
+  background: #060814 !important;
+}
+
+.xray-container,
+.git-inspector,
+.payload-inspector {
+  padding: 14px 16px !important;
+}
+
+.xray-card {
+  background: #050711 !important;
+  border: 1px solid rgba(175, 174, 162, 0.2) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+
+.xray-header {
+  background: rgba(18, 23, 48, 0.72) !important;
+  border-bottom: 1px solid rgba(175, 174, 162, 0.16) !important;
+  padding: 9px 14px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+}
+
+.dom-viewport-bar {
+  background: rgba(18, 23, 48, 0.65) !important;
+  border-bottom: 1px solid rgba(175, 174, 162, 0.16) !important;
+  padding: 8px 14px !important;
+}
+
+.ai-packet-header-bar {
+  background: rgba(18, 23, 48, 0.68) !important;
+  border-bottom: 1px solid rgba(175, 174, 162, 0.16) !important;
+  padding: 10px 14px !important;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #CBD5E1;
+}
+
+/* Sleek Terminal-Style Standby / Empty Cards (No more bare floating text!) */
+.friendly-empty-card {
+  margin: 16px !important;
+  padding: 20px 22px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(175, 174, 162, 0.2) !important;
+  background: #050711 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.fec-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #F43F5E;
+  margin-bottom: 8px;
+}
+
+.fec-title {
+  font-family: var(--font-sans) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  margin-bottom: 6px !important;
+}
+
+.fec-sub {
+  font-family: var(--font-sans) !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  color: #94A3B8 !important;
+  max-width: 560px;
+}
+
+.git-file-card {
+  background: #050711 !important;
+  border: 1px solid rgba(175, 174, 162, 0.2) !important;
+  border-radius: 8px !important;
+}
+
+.git-file-summary {
+  background: rgba(18, 23, 48, 0.72) !important;
+  border-bottom: 1px solid rgba(175, 174, 162, 0.15) !important;
+}
+
+.btn-copy-loc,
+#btnCopyCurl,
+#btnCopyRawMarkdown,
+.git-open-xray {
+  background: rgba(210, 19, 25, 0.14) !important;
+  border: 1px solid rgba(210, 19, 25, 0.38) !important;
+  color: #FFE4E6 !important;
+  border-radius: 5px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-copy-loc:hover,
+#btnCopyCurl:hover,
+#btnCopyRawMarkdown:hover,
+.git-open-xray:hover {
+  background: rgba(210, 19, 25, 0.3) !important;
+  border-color: rgba(244, 63, 94, 0.75) !important;
+  color: #FFFFFF !important;
+}
