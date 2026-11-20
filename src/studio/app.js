@@ -121,7 +121,37 @@ async function initStudio() {
   }
 
   connectStudioWebSocket();
+  setupPlaneTerminalRevealObserver();
   setInterval(fetchDaemonStatus, 4000);
+}
+
+function setupPlaneTerminalRevealObserver() {
+  const quadGrid = document.getElementById('quadGrid');
+  if (!quadGrid || typeof IntersectionObserver === 'undefined') return;
+  let replayedOnce = false;
+  const obs = new IntersectionObserver(
+    (entries) => {
+      if (replayedOnce) return;
+      if (entries.some((e) => e.isIntersecting)) {
+        replayedOnce = true;
+        obs.disconnect();
+        if (performance.now() > 1200) {
+          const nodes = quadGrid.querySelectorAll(
+            '.plane-ascii-logo, .plane-term-block .hex-term-welcome, .term-line-1, .term-line-2, .term-cmd-type, .term-cmd-type-2, .term-out-line, .term-cursor-line'
+          );
+          nodes.forEach((n) => {
+            n.style.animation = 'none';
+          });
+          void quadGrid.offsetWidth;
+          nodes.forEach((n) => {
+            n.style.animation = '';
+          });
+        }
+      }
+    },
+    { threshold: 0.12 }
+  );
+  obs.observe(quadGrid);
 }
 
 function connectStudioWebSocket() {
@@ -290,6 +320,7 @@ function renderCapsuleSidebar() {
               capsuleStatusTag.textContent = 'STANDBY';
               capsuleStatusTag.className = 'status-tag';
               causalChainFlow.innerHTML = '';
+              resetPlanesToStandby();
             }
           }
         }
@@ -298,6 +329,94 @@ function renderCapsuleSidebar() {
       }
     });
   });
+}
+
+// Signature Blackbox CLI ASCII headers for each of the 4 Flight Telemetry Planes
+const PLANE_ASCII = {
+  replay: `██████╗ ███████╗██████╗ ██╗      █████╗ ██╗   ██╗
+██╔══██╗██╔════╝██╔══██╗██║     ██╔══██╗╚██╗ ██╔╝
+██████╔╝█████╗  ██████╔╝██║     ███████║ ╚████╔╝ 
+██╔══██╗██╔══╝  ██╔═══╝ ██║     ██╔══██║  ╚██╔╝  
+██║  ██║███████╗██║     ███████╗██║  ██║   ██║   
+╚═╝  ╚═╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝   `,
+  network: `███╗   ██╗███████╗████████╗██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗
+████╗  ██║██╔════╝╚══██╔══╝██║    ██║██╔═══██╗██╔══██╗██║ ██╔╝
+██╔██╗ ██║█████╗     ██║   ██║ █╗ ██║██║   ██║██████╔╝█████╔╝ 
+██║╚██╗██║██╔══╝     ██║   ██║███╗██║██║   ██║██╔══██╗██╔═██╗ 
+██║ ╚████║███████╗   ██║   ╚███╔███╔╝╚██████╔╝██║  ██║██║  ██╗
+╚═╝  ╚═══╝╚══════╝   ╚═╝    ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝`,
+  xray: `██╗  ██╗      ██████╗  █████╗ ██╗   ██╗
+╚██╗██╔╝      ██╔══██╗██╔══██╗╚██╗ ██╔╝
+ ╚███╔╝ █████╗██████╔╝███████║ ╚████╔╝ 
+ ██╔██╗ ╚════╝██╔══██╗██╔══██║  ╚██╔╝  
+██╔╝ ██╗      ██║  ██║██║  ██║   ██║   
+╚═╝  ╚═╝      ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   `,
+  gitai: ` ██████╗ ██╗████████╗         █████╗ ██╗
+██╔════╝ ██║╚══██╔══╝  ██╗   ██╔══██╗██║
+██║  ███╗██║   ██║   ██████╗ ███████║██║
+██║   ██║██║   ██║   ╚═██╔═╝ ██╔══██║██║
+╚██████╔╝██║   ██║     ╚═╝   ██║  ██║██║
+ ╚═════╝ ╚═╝   ╚═╝           ╚═╝  ╚═╝╚═╝`,
+};
+
+function resetPlanesToStandby() {
+  lastRenderedDomEventId = null;
+  if (domStageWrapper) domStageWrapper.classList.remove('has-snapshot');
+  if (domUrlPill) domUrlPill.textContent = 'http://localhost/...';
+  if (domClickBadge) domClickBadge.textContent = 'Idle at T';
+  if (cursorLaser) cursorLaser.style.display = 'none';
+  if (consoleCount) consoleCount.textContent = '0';
+  if (netCount) netCount.textContent = '0';
+  if (termCount) termCount.textContent = '0';
+  ['plane1Status', 'plane2Status', 'plane3Status', 'plane4Status'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.textContent = 'IDLE';
+      el.className = 'plane-status-pill';
+    }
+  });
+  ['paneBrowser', 'paneNetwork', 'paneTerminal', 'paneGitAi'].forEach((id) => {
+    document.getElementById(id)?.classList.remove('pane-fault');
+  });
+  if (networkWaterfallList) {
+    networkWaterfallList.innerHTML = `<div class="plane-term-block">
+      <pre class="plane-ascii-logo">${PLANE_ASCII.network}</pre>
+      <div class="hex-term-welcome">Plane 02 · HTTP Wiretap &amp; Fetch Interceptor.<br/>Listening on localhost for API requests, JSON payloads &amp; 5xx faults.</div>
+      <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox trace --plane network --headers</span></div>
+      <div class="hex-term-res">
+        <span class="term-out-line d1"><span class="term-ok">✓</span> Zero-config fetch/XHR + Wiretap Proxy hooks armed</span>
+        <span class="term-out-line d2"><span class="term-ok">✓</span> Trace correlation header: <span class="term-cyan">X-Blackbox-Trace-Id</span></span>
+        <span class="term-out-line d3"><span class="term-ok">❄️</span> Waiting for API telemetry in 60s circular ring buffer...</span>
+      </div>
+      <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
+    </div>`;
+  }
+  if (sourceXrayContainer) {
+    sourceXrayContainer.innerHTML = `<div class="plane-term-block">
+      <pre class="plane-ascii-logo">${PLANE_ASCII.xray}</pre>
+      <div class="hex-term-welcome">Plane 03 · Source Code X-Ray &amp; Live VLQ SourceMap Engine.<br/>Resolves Node.js, Vite/React TSX, Python, Go &amp; Rust stack traces to disk.</div>
+      <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox xray --watch --sourcemap vlq</span></div>
+      <div class="hex-term-res">
+        <span class="term-out-line d1"><span class="term-ok">✓</span> Zero-dependency Source Map v3 VLQ resolver armed</span>
+        <span class="term-out-line d2"><span class="term-ok">✓</span> Reads exact local source lines &amp; marks <span class="term-red">◀ CRASHED HERE</span></span>
+        <span class="term-out-line d3"><span class="term-ok">❄️</span> Trigger a crash or freeze a capsule to X-Ray exact broken code...</span>
+      </div>
+      <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
+    </div>`;
+  }
+  if (gitInspectorContainer) {
+    gitInspectorContainer.innerHTML = `<div class="plane-term-block">
+      <pre class="plane-ascii-logo">${PLANE_ASCII.gitai}</pre>
+      <div class="hex-term-welcome">Plane 04 · Git Working-Tree Correlator &amp; AI MCP Bridge.<br/>Cross-references crash stack lines against uncommitted local file hunks.</div>
+      <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox git-correlate --head --pin-culprit</span></div>
+      <div class="hex-term-res">
+        <span class="term-out-line d1"><span class="term-ok">✓</span> Uncommitted diff hunk overlap scanner active</span>
+        <span class="term-out-line d2"><span class="term-ok">✓</span> Culprit file automatically pinned first (<span class="term-red">★ CULPRIT FILE</span>)</span>
+        <span class="term-out-line d3"><span class="term-ok">✓</span> AI Root-Cause Dossier ready for <span class="term-cyan">Cursor / Claude / Copilot</span></span>
+      </div>
+      <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
+    </div>`;
+  }
 }
 
 // --- 2. Loading & Rendering a Capsule into the 4-Pane Time Machine ---
@@ -537,12 +656,20 @@ function renderStaticEventLists(capsule) {
 
   browserConsoleList.innerHTML =
     consoleEvents.length === 0
-      ? `<div class="friendly-empty-card">
-          <div class="fec-title">No Console Errors Recorded</div>
-          <div class="fec-sub">Browser console stayed clean during this 60-second window.</div>
+      ? `<div class="plane-term-block">
+          <div class="hex-term-welcome">Plane 01 · Browser Console &amp; Uncaught Exception Collector.</div>
+          <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox inspect --plane console</span></div>
+          <div class="hex-term-res">
+            <span class="term-out-line d1"><span class="term-ok">✓</span> 0 uncaught exceptions or console errors in 60s window</span>
+            <span class="term-out-line d2"><span class="term-ok">✓</span> DOM &amp; click interactions captured cleanly on <span class="term-cyan">SCREEN REPLAY</span></span>
+          </div>
+          <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
         </div>`
-      : consoleEvents
-          .map((e) => {
+      : `<div class="plane-term-header plane-reveal">
+          <div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox logs --browser --count ${consoleEvents.length}</span></div>
+        </div>` +
+        consoleEvents
+          .map((e, idx) => {
             const relMs = Math.max(0, e.timestampMs - startMs);
             const isErr = e.severity === 'error' || e.severity === 'fatal';
             const rawMsg = String(e.payload?.message || '');
@@ -558,17 +685,19 @@ function renderStaticEventLists(capsule) {
                 : e.severity === 'warn'
                 ? 'Warning'
                 : 'Log';
+            const delay = Math.min(idx, 10) * 32;
             return `
-              <div class="term-row log-row clickable-scrub ${isErr ? 'stderr console-err-card' : ''}" data-rel-ms="${relMs}" title="Click to jump time-travel scrubber to +${(relMs / 1000).toFixed(3)}s">
+              <div class="term-row log-row clickable-scrub plane-reveal ${isErr ? 'stderr console-err-card' : ''}" style="animation-delay:${delay}ms" data-rel-ms="${relMs}" title="Click to jump time-travel scrubber to +${(relMs / 1000).toFixed(3)}s">
                 <div class="term-meta">
-                  <span class="console-level-pill ${isErr ? 'err' : e.severity === 'warn' ? 'warn' : 'info'}">${escapeHtml(badgeLabel)}</span>
+                  <span class="console-level-pill ${isErr ? 'err' : e.severity === 'warn' ? 'warn' : 'info'}">${isErr ? '💥 ' : '✓ '}${escapeHtml(badgeLabel)}</span>
                   <span class="console-time-tag">+${(relMs / 1000).toFixed(2)}s</span>
                 </div>
                 <div class="${isErr ? 'console-err-msg' : ''}">${escapeHtml(firstLine)}</div>
               </div>
             `;
           })
-          .join('');
+          .join('') +
+        `<div class="plane-term-foot"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>`;
 
   browserConsoleList.querySelectorAll('.clickable-scrub').forEach((row) => {
     row.addEventListener('click', () => {
@@ -588,26 +717,37 @@ function renderStaticEventLists(capsule) {
 
   const netSummaryHtml =
     failedNets.length > 0
-      ? `<div class="plane-alert-strip fault">
-          <span class="pas-dot"></span>
-          <span><strong>${failedNets.length} API request${failedNets.length > 1 ? 's' : ''} failed</strong> (${escapeHtml(failedNets[0].payload?.method || 'GET')} ${escapeHtml(failedNets[0].payload?.url || '')} → HTTP ${failedNets[0].payload?.status || 'ERR'}). Click any row to see what was sent &amp; returned.</span>
+      ? `<div class="plane-term-banner fault plane-reveal">
+          <div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox trace --http --status-audit</span></div>
+          <div class="hex-term-res">
+            <span class="term-out-line d1"><span class="term-fault">💥</span> <span class="term-red">${failedNets.length} API request${failedNets.length > 1 ? 's' : ''} failed</span> · <span class="term-cyan">${escapeHtml(failedNets[0].payload?.method || 'GET')} ${escapeHtml(failedNets[0].payload?.url || '')}</span> → HTTP ${failedNets[0].payload?.status || 'ERR'}</span>
+            <span class="term-out-line d2"><span class="term-dim">Click any row below to inspect sent &amp; returned payloads + Copy cURL</span></span>
+          </div>
         </div>`
       : netEvents.length > 0
-      ? `<div class="plane-alert-strip ok">
-          <span class="pas-dot ok"></span>
-          <span>All <strong>${netEvents.length} API request${netEvents.length > 1 ? 's' : ''}</strong> succeeded (HTTP 2xx/3xx). Click any row to inspect payloads.</span>
+      ? `<div class="plane-term-banner ok plane-reveal">
+          <div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox trace --http --status-audit</span></div>
+          <div class="hex-term-res">
+            <span class="term-out-line d1"><span class="term-ok">✓</span> All <span class="term-cyan">${netEvents.length} API request${netEvents.length > 1 ? 's' : ''}</span> succeeded (HTTP 2xx/3xx) · Click any row to inspect payloads</span>
+          </div>
         </div>`
       : '';
 
   networkWaterfallList.innerHTML =
     netEvents.length === 0
-      ? `<div class="friendly-empty-card">
-          <div class="fec-title">${hasFrontendCrash ? 'No API Calls Involved in This Crash' : 'No Network Requests Captured'}</div>
-          <div class="fec-sub">${
-            hasFrontendCrash
-              ? 'This error happened directly inside browser JavaScript before any backend API request was sent. Check <strong>Plane 1 (What You Clicked)</strong> and <strong>Plane 3 (Exact Broken Line)</strong>.'
-              : 'No fetch/XHR or proxied HTTP requests occurred in this 60-second window.'
-          }</div>
+      ? `<div class="plane-term-block">
+          <pre class="plane-ascii-logo">${PLANE_ASCII.network}</pre>
+          <div class="hex-term-welcome">Plane 02 · HTTP Wiretap &amp; Fetch Interceptor.</div>
+          <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox trace --http --capsule ${escapeHtml((capsule.id || 'latest').slice(-8))}</span></div>
+          <div class="hex-term-res">
+            <span class="term-out-line d1"><span class="term-ok">✓</span> 0 failed network calls in 60s rolling window</span>
+            ${
+              hasFrontendCrash
+                ? '<span class="term-out-line d2"><span class="term-ok">✓</span> Diagnosis: <span class="term-cyan">Pure client-side JS exception</span> (no backend API involved)</span><span class="term-out-line d3"><span class="term-dim">Inspect Plane 01 (What You Clicked) &amp; Plane 03 (Exact Broken Line)</span></span>'
+                : '<span class="term-out-line d2"><span class="term-dim">No fetch/XHR or proxied HTTP traffic occurred during this window.</span></span>'
+            }
+          </div>
+          <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
         </div>`
       : netSummaryHtml +
         netEvents
@@ -618,20 +758,22 @@ function renderStaticEventLists(capsule) {
             const barPct = Math.min(100, Math.max(4, Math.round((durMs / maxNetDur) * 100)));
             const statusClass =
               status === 0 || status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx';
+            const delay = Math.min(idx, 10) * 32;
             return `
-              <div class="net-row ${status === 0 || status >= 400 ? 'error-row' : ''}" data-net-idx="${idx}" data-rel-ms="${relMs}" title="Click to inspect payload & jump scrubber to +${(relMs / 1000).toFixed(2)}s">
+              <div class="net-row plane-reveal ${status === 0 || status >= 400 ? 'error-row' : ''}" style="animation-delay:${delay}ms" data-net-idx="${idx}" data-rel-ms="${relMs}" title="Click to inspect payload & jump scrubber to +${(relMs / 1000).toFixed(2)}s">
                 <span class="status-pill ${statusClass}">${status || 'ERR'}</span>
                 <strong style="color:#e2e8f0">${escapeHtml(e.payload?.method || 'GET')}</strong>
                 <span class="net-url-col">
                   <span class="net-url-text">${escapeHtml(e.payload?.url || '/')}</span>
-                  <span class="net-dur-track"><span class="net-dur-fill ${status >= 400 ? 'err' : ''}" style="width:${barPct}%"></span></span>
+                  <span class="net-dur-track"><span class="net-dur-fill ${status === 0 || status >= 400 ? 'err' : ''}" style="width:${barPct}%"></span></span>
                 </span>
                 <span style="color:#94a3b8;text-align:right;">${durMs}ms</span>
                 <span style="color:#64748b;text-align:right;">+${(relMs / 1000).toFixed(2)}s</span>
               </div>
             `;
           })
-          .join('');
+          .join('') +
+        `<div class="plane-term-foot"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>`;
 
   networkWaterfallList.querySelectorAll('.net-row').forEach((row) => {
     row.addEventListener('click', () => {
@@ -655,8 +797,15 @@ function renderStaticEventLists(capsule) {
   if (defaultNet) {
     renderNetworkPayloadDetail(defaultNet);
   } else {
-    networkPayloadInspector.innerHTML =
-      '<div class="empty-hint">No HTTP requests captured in this capsule.</div>';
+    networkPayloadInspector.innerHTML = `<div class="plane-term-block">
+      <div class="hex-term-welcome">Plane 02 · Request &amp; Response Payload Inspector.</div>
+      <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox inspect --payload --capsule ${escapeHtml((capsule.id || 'latest').slice(-8))}</span></div>
+      <div class="hex-term-res">
+        <span class="term-out-line d1"><span class="term-ok">✓</span> 0 HTTP payloads recorded in this capsule window</span>
+        <span class="term-out-line d2"><span class="term-dim">Whenever fetch/XHR or Wiretap traffic occurs, JSON bodies &amp; 1-click cURL appear here.</span></span>
+      </div>
+      <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
+    </div>`;
   }
 
   // 3. Backend Terminal Stream
@@ -665,14 +814,26 @@ function renderStaticEventLists(capsule) {
 
   terminalStreamList.innerHTML =
     termEvents.length === 0
-      ? '<div class="empty-hint">No backend terminal output captured in this window.</div>'
-      : termEvents
-          .map((e) => {
+      ? `<div class="plane-term-block">
+          <div class="hex-term-welcome">Plane 03 · Supervised Backend Terminal PTY Stream.</div>
+          <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox logs --pty --capsule ${escapeHtml((capsule.id || 'latest').slice(-8))}</span></div>
+          <div class="hex-term-res">
+            <span class="term-out-line d1"><span class="term-ok">✓</span> 0 backend stdout/stderr lines captured in this 60s window</span>
+            <span class="term-out-line d2"><span class="term-dim">Launch via <span class="term-cyan">blackbox run "npm run dev"</span> to stream supervised server output here.</span></span>
+          </div>
+          <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
+        </div>`
+      : `<div class="plane-term-header plane-reveal">
+          <div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox logs --pty --count ${termEvents.length}</span></div>
+        </div>` +
+        termEvents
+          .map((e, idx) => {
             const relMs = Math.max(0, e.timestampMs - startMs);
             const isStderr =
               e.type === 'TERMINAL_STDERR' || e.severity === 'error' || e.severity === 'fatal';
+            const delay = Math.min(idx, 12) * 26;
             return `
-              <div class="term-row clickable-scrub ${isStderr ? 'stderr' : ''}" data-rel-ms="${relMs}" title="Click to jump time-travel scrubber to +${(relMs / 1000).toFixed(3)}s">
+              <div class="term-row clickable-scrub plane-reveal ${isStderr ? 'stderr' : ''}" style="animation-delay:${delay}ms" data-rel-ms="${relMs}" title="Click to jump time-travel scrubber to +${(relMs / 1000).toFixed(3)}s">
                 <div class="term-meta">
                   <span>[${escapeHtml(e.source || 'app')} · ${
               isStderr ? 'stderr' : 'stdout'
@@ -683,7 +844,8 @@ function renderStaticEventLists(capsule) {
               </div>
             `;
           })
-          .join('');
+          .join('') +
+        `<div class="plane-term-foot"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>`;
 
   terminalStreamList.querySelectorAll('.clickable-scrub').forEach((row) => {
     row.addEventListener('click', () => {
@@ -756,7 +918,10 @@ function renderNetworkPayloadDetail(netEvt) {
   const hasResHeaders = p.responseHeaders && Object.keys(p.responseHeaders).length > 0;
 
   networkPayloadInspector.innerHTML = `
-    <div class="xray-card ${isErr ? 'xray-card-fault' : ''}">
+    <div class="plane-term-header plane-reveal">
+      <div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox inspect --http ${escapeHtml(p.method || 'GET')} ${escapeHtml(p.url || '/')}</span></div>
+    </div>
+    <div class="xray-card plane-reveal ${isErr ? 'xray-card-fault' : ''}">
       <div class="xray-header">
         <div style="display:flex;align-items:center;gap:8px;min-width:0;">
           <span class="status-pill ${status === 0 || status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx'}">${status || 'ERR'} ${statusMeaning}</span>
@@ -802,6 +967,7 @@ function renderNetworkPayloadDetail(netEvt) {
         }
       </div>
     </div>
+    <div class="plane-term-foot"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
   `;
 
   document.getElementById('btnCopyCurl')?.addEventListener('click', async () => {
@@ -827,23 +993,27 @@ async function inspectSourceFile(filePath, line = 1) {
     const snippet = data.snippet;
     const codeLines = snippet.lines
       .map(
-        (ln) => `
-        <div class="xray-line ${ln.isTarget ? 'target-line' : ''}">
+        (ln, i) => `
+        <div class="xray-line plane-reveal ${ln.isTarget ? 'target-line' : ''}" style="animation-delay:${Math.min(i, 12) * 20}ms">
           <span class="ln-num">${ln.isTarget ? '▶ ' : ''}${ln.lineNumber}</span>
-          <span>${escapeHtml(ln.code)}</span>
+          <span class="ln-code">${escapeHtml(ln.code)}</span>
         </div>
       `
       )
       .join('');
 
     sourceXrayContainer.innerHTML = `
-      <div class="xray-card">
+      <div class="plane-term-header plane-reveal">
+        <div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox inspect ${escapeHtml(snippet.fileName)}:${snippet.targetLine}</span></div>
+      </div>
+      <div class="xray-card plane-reveal">
         <div class="xray-header">
           <span>📄 ${escapeHtml(snippet.fileName)}:${snippet.targetLine}</span>
           <span style="font-size:10px;color:#94a3b8">${escapeHtml(snippet.filePath)}</span>
         </div>
-        <div>${codeLines}</div>
+        <div class="xray-code-body">${codeLines}</div>
       </div>
+      <div class="plane-term-foot"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
     `;
     activatePaneTab('p3', 'xray');
     document.getElementById('paneTerminal')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -897,9 +1067,15 @@ function renderSourceXrayPane(capsule) {
   }
 
   if (snippets.length === 0) {
-    sourceXrayContainer.innerHTML = `<div class="friendly-empty-card">
-      <div class="fec-title">No Broken Code Line Triggered</div>
-      <div class="fec-sub">This capsule is a clean snapshot with no uncaught runtime exceptions. Whenever an error fires in your frontend or backend, Blackbox opens the exact file from disk and highlights the crashing line right here.</div>
+    sourceXrayContainer.innerHTML = `<div class="plane-term-block">
+      <pre class="plane-ascii-logo">${PLANE_ASCII.xray}</pre>
+      <div class="hex-term-welcome">Plane 03 · Source Code X-Ray &amp; Live VLQ SourceMap Engine.</div>
+      <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox xray --capsule ${escapeHtml((capsule.id || 'latest').slice(-8))}</span></div>
+      <div class="hex-term-res">
+        <span class="term-out-line d1"><span class="term-ok">✓</span> Status: <span class="term-cyan">HEALTHY SNAPSHOT</span> (0 uncaught exceptions in 60s window)</span>
+        <span class="term-out-line d2"><span class="term-dim">Whenever a frontend or backend crash occurs, Blackbox maps it to disk and highlights the exact line here.</span></span>
+      </div>
+      <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
     </div>`;
     return;
   }
@@ -907,26 +1083,24 @@ function renderSourceXrayPane(capsule) {
   const primary = snippets[0];
   const fnLabel =
     primary.frame.functionName && primary.frame.functionName !== '<anonymous>'
-      ? `inside <code>${escapeHtml(primary.frame.functionName)}()</code>`
-      : 'in module scope';
+      ? `${escapeHtml(primary.frame.functionName)}()`
+      : 'module scope';
 
-  const errorBannerHtml = rawErrorMsg
-    ? `
-    <div class="crash-diagnosis-callout">
-      <div class="cdc-top">
-        <span class="cdc-type-pill">${escapeHtml(errorKind)}</span>
-        <span class="cdc-where">Crashed ${fnLabel} · <strong>${escapeHtml(primary.snippet.fileName)}:${primary.snippet.targetLine}</strong></span>
+  const errorBannerHtml = `
+    <div class="plane-term-banner fault plane-reveal">
+      <div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox xray ${escapeHtml(primary.snippet.fileName)}:${primary.snippet.targetLine}</span></div>
+      <div class="hex-term-res">
+        <span class="term-out-line d1"><span class="term-fault">💥</span> <span class="term-red">${escapeHtml(errorKind)}:</span> ${escapeHtml((rawErrorMsg || 'Runtime Exception').replace(/^Uncaught\s+/i, '').slice(0, 200))}</span>
+        <span class="term-out-line d2"><span class="term-ok">✓</span> Culprit: <span class="term-cyan">${escapeHtml(primary.snippet.fileName)}:${primary.snippet.targetLine}</span> in <span class="term-hl">${fnLabel}</span></span>
       </div>
-      <div class="cdc-msg">${escapeHtml(rawErrorMsg.replace(/^Uncaught\s+/i, '').slice(0, 220))}</div>
     </div>
-  `
-    : '';
+  `;
 
   const renderCard = ({ frame, snippet }, isPrimary) => {
     const codeLines = snippet.lines
       .map(
-        (ln) => `
-        <div class="xray-line ${ln.isTarget ? 'target-line' : ''}">
+        (ln, i) => `
+        <div class="xray-line plane-reveal ${ln.isTarget ? 'target-line' : ''}" style="animation-delay:${Math.min(i, 12) * 20}ms">
           <span class="ln-num">${ln.lineNumber}</span>
           <span class="ln-code">${escapeHtml(ln.code)}</span>
           ${ln.isTarget ? '<span class="ln-crash-tag">◀ CRASHED HERE</span>' : ''}
@@ -936,7 +1110,7 @@ function renderSourceXrayPane(capsule) {
       .join('');
 
     return `
-      <div class="xray-card ${isPrimary ? 'xray-card-fault' : ''}">
+      <div class="xray-card plane-reveal ${isPrimary ? 'xray-card-fault' : ''}">
         <div class="xray-header">
           <span class="xray-file-title">📄 ${escapeHtml(snippet.fileName)}<strong>:${snippet.targetLine}</strong> <span class="xray-fn-muted">(${escapeHtml(frame.functionName || 'anonymous')})</span></span>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -957,7 +1131,7 @@ function renderSourceXrayPane(capsule) {
         </details>`
       : '';
 
-  sourceXrayContainer.innerHTML = `${errorBannerHtml}${renderCard(primary, true)}${extraCardsHtml}`;
+  sourceXrayContainer.innerHTML = `${errorBannerHtml}${renderCard(primary, true)}${extraCardsHtml}<div class="plane-term-foot"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>`;
 
   sourceXrayContainer.querySelectorAll('.btn-copy-loc').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -1010,9 +1184,15 @@ function renderGitAndAiPane(capsule) {
 
   const git = capsule.git || {};
   if (!git.isGitRepo) {
-    gitInspectorContainer.innerHTML = `<div class="friendly-empty-card">
-      <div class="fec-title">Not a Git Repository</div>
-      <div class="fec-sub">Initialize Git in this project to correlate crashes directly against your recent uncommitted edits.</div>
+    gitInspectorContainer.innerHTML = `<div class="plane-term-block">
+      <pre class="plane-ascii-logo">${PLANE_ASCII.gitai}</pre>
+      <div class="hex-term-welcome">Plane 04 · Git Working-Tree Correlator &amp; AI MCP Bridge.</div>
+      <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">git rev-parse --is-inside-work-tree</span></div>
+      <div class="hex-term-res">
+        <span class="term-out-line d1"><span class="term-dim">Not a Git repository — run <span class="term-cyan">git init</span> to correlate crashes against uncommitted edits.</span></span>
+        <span class="term-out-line d2"><span class="term-ok">✓</span> AI Fix Prompt still compiled &amp; ready in the <span class="term-cyan">AI FIX PROMPT</span> tab</span>
+      </div>
+      <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
     </div>`;
     return;
   }
@@ -1026,32 +1206,36 @@ function renderGitAndAiPane(capsule) {
   const overlapBanner =
     overlaps.length > 0
       ? `
-      <div class="git-verdict-card hit">
-        <div class="gvc-top">
-          <span class="gvc-badge hit">🎯 LIKELY CAUSE · RECENT EDIT OVERLAP</span>
+      <div class="plane-term-banner fault plane-reveal">
+        <div class="hex-term-line" style="justify-content:space-between;">
+          <span style="min-width:0;display:flex;align-items:center;gap:8px;flex:1;"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox git-correlate --head ${escapeHtml(git.headCommit || '')}</span></span>
           <button class="mini-btn" id="btnInspectGitHit" style="flex:none;padding:2px 9px;">Open Line ${overlaps[0].crashLine} →</button>
         </div>
-        <div class="gvc-text">
-          Your uncommitted edit in <strong>${escapeHtml(overlaps[0].file)}</strong> (lines <code>${escapeHtml(overlaps[0].hunkRange)}</code>) directly overlaps crashing line <strong>${overlaps[0].crashLine}</strong>.
+        <div class="hex-term-res">
+          <span class="term-out-line d1"><span class="term-fault">💥</span> <span class="term-red">DIRECT HIT:</span> <span class="term-cyan">${escapeHtml(overlaps[0].file)}:${overlaps[0].crashLine}</span> overlaps uncommitted edit hunk <span class="term-hl">${escapeHtml(overlaps[0].hunkRange)}</span></span>
+          <span class="term-out-line d2"><span class="term-ok">✓</span> Culprit file pinned first below · AI Root-Cause Dossier compiled for MCP</span>
         </div>
       </div>
     `
       : git.isDirty
       ? `
-      <div class="git-verdict-card info">
-        <div class="gvc-top">
-          <span class="gvc-badge info">🌿 ${escapeHtml(git.branch || 'main')} @ ${escapeHtml(git.headCommit || '')}</span>
-          <span class="gvc-count">${git.modifiedFiles?.length || 0} uncommitted file(s)</span>
-        </div>
-        <div class="gvc-text">
-          Showing your uncommitted working-tree edits below. Click any file to inspect its full code in Plane 3.
+      <div class="plane-term-banner ok plane-reveal">
+        <div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">git status --branch ${escapeHtml(git.branch || 'main')}@${escapeHtml(git.headCommit || '')}</span></div>
+        <div class="hex-term-res">
+          <span class="term-out-line d1"><span class="term-ok">✓</span> <span class="term-cyan">${git.modifiedFiles?.length || 0} uncommitted file(s)</span> tracked in working tree · Click any file to inspect</span>
         </div>
       </div>
     `
       : `
-      <div class="friendly-empty-card">
-        <div class="fec-title">Clean Git Working Tree (${escapeHtml(git.branch || 'main')} @ ${escapeHtml(git.headCommit || '')})</div>
-        <div class="fec-sub">No uncommitted file edits since your last commit.</div>
+      <div class="plane-term-block">
+        <pre class="plane-ascii-logo">${PLANE_ASCII.gitai}</pre>
+        <div class="hex-term-welcome">Plane 04 · Git Working-Tree Correlator &amp; AI MCP Bridge.</div>
+        <div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">git status --branch ${escapeHtml(git.branch || 'main')}@${escapeHtml(git.headCommit || '')}</span></div>
+        <div class="hex-term-res">
+          <span class="term-out-line d1"><span class="term-ok">✓</span> Working tree clean (0 uncommitted modifications since HEAD)</span>
+          <span class="term-out-line d2"><span class="term-ok">✓</span> AI Fix Prompt ready in the <span class="term-cyan">AI FIX PROMPT</span> tab</span>
+        </div>
+        <div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>
       </div>
     `;
 
@@ -1097,7 +1281,7 @@ function renderGitAndAiPane(capsule) {
     filesHtml = `<div class="xray-card"><div class="colorized-diff-box">${renderColorizedDiff(git.rawDiff)}</div></div>`;
   }
 
-  gitInspectorContainer.innerHTML = `${overlapBanner}${filesHtml}`;
+  gitInspectorContainer.innerHTML = `${overlapBanner}${filesHtml}${git.isDirty ? '<div class="plane-term-foot"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div>' : ''}`;
 
   if (overlaps.length > 0) {
     document.getElementById('btnInspectGitHit')?.addEventListener('click', () => {
@@ -1156,8 +1340,12 @@ function syncTimeScrubber(relMs) {
   scrubberEventReadout.textContent = `${visibleCount} / ${events.length} events`;
 
   // 1. Update DOM Replay Viewport
-  if (activeDomEvt && activeDomEvt.id !== lastRenderedDomEventId) {
+  if (!activeDomEvt || !activeDomEvt.payload?.html) {
+    if (domStageWrapper) domStageWrapper.classList.remove('has-snapshot');
+    if (domUrlPill && !activeDomEvt) domUrlPill.textContent = 'http://localhost/...';
+  } else if (activeDomEvt.id !== lastRenderedDomEventId) {
     lastRenderedDomEventId = activeDomEvt.id;
+    if (domStageWrapper) domStageWrapper.classList.add('has-snapshot');
     domUrlPill.textContent = activeDomEvt.payload?.url || 'http://localhost/...';
     
     if (activeDomEvt.payload?.viewport) {
@@ -1679,6 +1867,7 @@ function setupVaultToggle() {
           capsuleStatusTag.textContent = 'STANDBY';
           capsuleStatusTag.className = 'status-tag';
           causalChainFlow.innerHTML = '';
+          resetPlanesToStandby();
         }
       } catch (err) {
         showToast(`Clear vault failed: ${err.message}`);

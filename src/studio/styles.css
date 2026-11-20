@@ -4894,3 +4894,271 @@ body::before {
   border-color: rgba(244, 63, 94, 0.75) !important;
   color: #FFFFFF !important;
 }
+
+
+/* ==========================================================================
+   SIGNATURE BLACKBOX CLI TERMINAL AESTHETIC & REVEAL ANIMATIONS FOR ALL 4 PLANES
+   ========================================================================== */
+#paneBrowser  { --plane-offset: 0ms; }
+#paneNetwork  { --plane-offset: 90ms; }
+#paneTerminal { --plane-offset: 180ms; }
+#paneGitAi    { --plane-offset: 270ms; }
+
+@keyframes bbLogoBoot {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+    filter: brightness(1.7);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: brightness(1);
+  }
+}
+
+@keyframes bbTypeCmd {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.9;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes bbTermReveal {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.plane-ascii-logo {
+  margin: 0 0 2px;
+  font-family: var(--font-mono);
+  font-size: 7.4px;
+  line-height: 1.08;
+  color: #FFFFFF;
+  letter-spacing: -0.04em;
+  text-shadow: 0 0 11px rgba(255, 255, 255, 0.36);
+  user-select: none;
+  white-space: pre;
+  overflow: hidden;
+  animation: bbLogoBoot 0.36s cubic-bezier(0.16, 1, 0.3, 1) var(--plane-offset, 0ms) both;
+}
+
+.plane-reveal {
+  animation: bbTermReveal 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.term-cmd-type {
+  display: inline-block;
+  max-width: calc(100% - 34px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  animation: bbTypeCmd 0.56s steps(36, end) calc(var(--plane-offset, 0ms) + 160ms) both;
+}
+
+.term-cmd-type-2 {
+  display: inline-block;
+  max-width: calc(100% - 34px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  animation: bbTypeCmd 0.52s steps(34, end) calc(var(--plane-offset, 0ms) + 740ms) both;
+}
+
+.plane-term-block {
+  padding: 20px 22px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--stone-light);
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  background: #060814;
+}
+
+.plane-term-block .hex-term-welcome {
+  color: #94A3B8;
+  font-size: 11.5px;
+  line-height: 1.55;
+  border-bottom: 1px dashed rgba(175, 174, 162, 0.22);
+  padding-bottom: 11px;
+  animation: bbTermReveal 0.28s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--plane-offset, 0ms) + 70ms) both;
+}
+
+.plane-term-block .hex-term-res {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 18px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #CBD5E1;
+}
+
+.term-out-line {
+  display: block;
+  animation: bbTermReveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.term-out-line.d1 { animation-delay: calc(var(--plane-offset, 0ms) + 420ms); }
+.term-out-line.d2 { animation-delay: calc(var(--plane-offset, 0ms) + 520ms); }
+.term-out-line.d3 { animation-delay: calc(var(--plane-offset, 0ms) + 620ms); }
+.term-out-line.d4 { animation-delay: calc(var(--plane-offset, 0ms) + 980ms); }
+.term-out-line.d5 { animation-delay: calc(var(--plane-offset, 0ms) + 1080ms); }
+.term-out-line.d6 { animation-delay: calc(var(--plane-offset, 0ms) + 1180ms); }
+
+.term-line-1 {
+  animation: bbTermReveal 0.22s ease calc(var(--plane-offset, 0ms) + 140ms) both;
+}
+
+.term-line-2 {
+  animation: bbTermReveal 0.22s ease calc(var(--plane-offset, 0ms) + 720ms) both;
+}
+
+.term-cursor-line {
+  margin-top: 2px;
+  animation: bbTermReveal 0.22s ease calc(var(--plane-offset, 0ms) + 1240ms) both;
+}
+
+/* Plane 1: Full-canvas Blackbox CLI terminal when awaiting snapshot; clean scaled viewport when live */
+#domStageWrapper:not(.has-snapshot) {
+  padding: 0 !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  background: #060814 !important;
+  overflow-y: auto !important;
+}
+
+#domStageWrapper:not(.has-snapshot) .dom-stage-viewport {
+  display: none !important;
+}
+
+#domStageWrapper.has-snapshot .dom-standby-terminal {
+  display: none !important;
+}
+
+.dom-standby-terminal {
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.plane-term-header {
+  padding: 6px 6px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px dashed rgba(175, 174, 162, 0.2);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.plane-term-banner {
+  padding: 12px 15px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: #050711;
+  border: 1px solid rgba(175, 174, 162, 0.2);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.plane-term-banner .hex-term-res {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.plane-term-banner.fault {
+  border-color: rgba(210, 19, 25, 0.45);
+  box-shadow: inset 3px 0 0 #D21319, 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+
+.plane-term-banner.ok {
+  border-color: rgba(16, 185, 129, 0.32);
+  box-shadow: inset 3px 0 0 #10B981;
+}
+
+.plane-term-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 6px 4px;
+  margin-top: 8px;
+  border-top: 1px dashed rgba(175, 174, 162, 0.16);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* Smooth crisp crimson block cursor inside all 4 planes (matches Hero Blackbox CLI) */
+.plane-term-block .term-cursor,
+.plane-term-foot .term-cursor {
+  display: inline-block;
+  color: #D21319;
+  font-weight: 700;
+  animation: termBlink 1s infinite steps(2);
+}
+
+/* Storage & AI Prompt secondary tabs aligned to obsidian CLI theme */
+.storage-term-wrap {
+  padding: 14px 16px;
+  background: #060814;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#browserStoragePre,
+#aiMarkdownPreview {
+  background: #050711 !important;
+  color: #CBD5E1;
+  font-family: var(--font-mono);
+  border: 1px solid rgba(175, 174, 162, 0.16);
+  border-radius: 8px;
+}
+
+/* Keep terminal stream & network rows matching the crisp monospace CLI rhythm */
+.waterfall-list {
+  padding: 12px 14px;
+}
+
+.net-row {
+  font-family: var(--font-mono) !important;
+  border-radius: 6px;
+}
+
+.git-file-card {
+  animation: bbTermReveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plane-ascii-logo,
+  .plane-reveal,
+  .term-cmd-type,
+  .term-cmd-type-2,
+  .term-out-line,
+  .term-line-1,
+  .term-line-2,
+  .term-cursor-line,
+  .git-file-card {
+    animation: none !important;
+    clip-path: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -179,8 +179,37 @@
                 </div>
               </div>
               <div class="dom-stage-wrapper" id="domStageWrapper">
+                <div class="plane-term-block dom-standby-terminal" id="domStandbyTerminal">
+                  <pre class="plane-ascii-logo">██████╗ ███████╗██████╗ ██╗      █████╗ ██╗   ██╗
+██╔══██╗██╔════╝██╔══██╗██║     ██╔══██╗╚██╗ ██╔╝
+██████╔╝█████╗  ██████╔╝██║     ███████║ ╚████╔╝ 
+██╔══██╗██╔══╝  ██╔═══╝ ██║     ██╔══██║  ╚██╔╝  
+██║  ██║███████╗██║     ███████╗██║  ██║   ██║   
+╚═╝  ╚═╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝   </pre>
+                  <div class="hex-term-welcome">
+                    Plane 01 · Visual DOM Replay &amp; Laser Click Stage.<br />
+                    Trigger an error or press <span class="term-hl">`Alt+Shift+B`</span> in your app to time-travel replay.
+                  </div>
+                  <div class="hex-term-line term-line-1">
+                    <span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox capture --plane browser --dom-baseline</span>
+                  </div>
+                  <div class="hex-term-res">
+                    <span class="term-out-line d1"><span class="term-ok">✓</span> Sticky DOM &amp; Canvas PNG snapshot engine armed</span>
+                    <span class="term-out-line d2"><span class="term-ok">✓</span> Red laser click-coordinate crosshair standing by</span>
+                    <span class="term-out-line d3"><span class="term-ok">✓</span> SDK hook ready at <span class="term-cyan">http://localhost:9876/sdk/browser-agent.js</span></span>
+                  </div>
+                  <div class="hex-term-line term-line-2">
+                    <span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type-2">blackbox replay --sync scrubber</span>
+                  </div>
+                  <div class="hex-term-res">
+                    <span class="term-out-line d4"><span class="term-ok">❄️</span> Awaiting frozen capsule or live browser DOM stream...</span>
+                  </div>
+                  <div class="hex-term-line term-cursor-line">
+                    <span class="term-prompt">→ ~</span> <span class="term-cursor">█</span>
+                  </div>
+                </div>
                 <div class="dom-stage-viewport" id="domStageViewport">
-                  <iframe id="domReplayFrame" sandbox="allow-same-origin" title="DOM Snapshot Replay"></iframe>
+                  <iframe id="domReplayFrame" sandbox="allow-same-origin" title="DOM Snapshot Replay" srcdoc="<!DOCTYPE html><html><body style='margin:0;background:#060814;'></body></html>"></iframe>
                   <div class="cursor-laser" id="cursorLaser" style="display:none;">
                     <div class="laser-ring"></div>
                     <div class="laser-label" id="cursorLaserLabel">Click</div>
@@ -190,11 +219,11 @@
             </div>
             <!-- Console Tab -->
             <div class="tab-panel" id="p1-console">
-              <div class="log-list" id="browserConsoleList"></div>
+              <div class="log-list" id="browserConsoleList"><div class="plane-term-block"><div class="hex-term-welcome">Plane 01 · Browser Console &amp; Uncaught Exception Collector.<br/>Captures runtime errors, unhandled rejections &amp; console logs in real time.</div><div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox logs --plane console --watch</span></div><div class="hex-term-res"><span class="term-out-line d1"><span class="term-ok">✓</span> Window error &amp; unhandledrejection traps armed</span><span class="term-out-line d2"><span class="term-ok">✓</span> Click any console error row to jump scrubber to exact millisecond</span></div><div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div></div></div>
             </div>
             <!-- Storage Tab -->
             <div class="tab-panel" id="p1-storage">
-              <pre class="code-block" id="browserStoragePre">{}</pre>
+              <div class="storage-term-wrap"><div class="plane-term-header"><div class="hex-term-line"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox inspect --storage localStorage,sessionStorage,cookies</span></div></div><pre class="code-block" id="browserStoragePre">{}</pre></div>
             </div>
           </div>
         </div>
@@ -213,11 +242,41 @@
           </div>
           <div class="pane-body">
             <div class="tab-panel active" id="p2-waterfall">
-              <div class="waterfall-list" id="networkWaterfallList"><div class="friendly-empty-card"><div class="fec-kicker">→ standby · plane 02 http wiretap</div><div class="fec-title">Listening for API &amp; Network Traffic</div><div class="fec-sub">Every fetch/XHR call and proxied HTTP request appears here with status pills, relative latency bars, and trace correlation.</div></div></div>
+              <div class="waterfall-list" id="networkWaterfallList">
+                <div class="plane-term-block">
+                  <pre class="plane-ascii-logo">███╗   ██╗███████╗████████╗██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗
+████╗  ██║██╔════╝╚══██╔══╝██║    ██║██╔═══██╗██╔══██╗██║ ██╔╝
+██╔██╗ ██║█████╗     ██║   ██║ █╗ ██║██║   ██║██████╔╝█████╔╝ 
+██║╚██╗██║██╔══╝     ██║   ██║███╗██║██║   ██║██╔══██╗██╔═██╗ 
+██║ ╚████║███████╗   ██║   ╚███╔███╔╝╚██████╔╝██║  ██║██║  ██╗
+╚═╝  ╚═══╝╚══════╝   ╚═╝    ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝</pre>
+                  <div class="hex-term-welcome">
+                    Plane 02 · HTTP Wiretap &amp; Fetch Interceptor.<br />
+                    Listening on localhost for API requests, JSON payloads &amp; 5xx faults.
+                  </div>
+                  <div class="hex-term-line term-line-1">
+                    <span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox trace --plane network --headers</span>
+                  </div>
+                  <div class="hex-term-res">
+                    <span class="term-out-line d1"><span class="term-ok">✓</span> Zero-config fetch/XHR + Wiretap Proxy hooks armed</span>
+                    <span class="term-out-line d2"><span class="term-ok">✓</span> Trace correlation header: <span class="term-cyan">X-Blackbox-Trace-Id</span></span>
+                    <span class="term-out-line d3"><span class="term-ok">✓</span> 1-click reproducible cURL export ready per trace</span>
+                  </div>
+                  <div class="hex-term-line term-line-2">
+                    <span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type-2">blackbox watch --status 4xx,5xx</span>
+                  </div>
+                  <div class="hex-term-res">
+                    <span class="term-out-line d4"><span class="term-ok">❄️</span> Waiting for API telemetry in 60s circular ring buffer...</span>
+                  </div>
+                  <div class="hex-term-line term-cursor-line">
+                    <span class="term-prompt">→ ~</span> <span class="term-cursor">█</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="tab-panel" id="p2-payload">
               <div class="payload-inspector" id="networkPayloadInspector">
-                <div class="friendly-empty-card"><div class="fec-kicker">→ standby · plane 02 payload inspector</div><div class="fec-title">Select Any Request to Inspect</div><div class="fec-sub">Click a request row in the waterfall to inspect its causal Trace-ID, headers, request body, response payload, and 1-click cURL command.</div></div>
+                <div class="plane-term-block"><div class="hex-term-welcome">Plane 02 · Request &amp; Response Payload Inspector.</div><div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox inspect --payload --curl</span></div><div class="hex-term-res"><span class="term-out-line d1"><span class="term-ok">✓</span> Click any request in the waterfall to inspect JSON payloads &amp; headers</span><span class="term-out-line d2"><span class="term-ok">✓</span> Copy reproducible <span class="term-cyan">curl -X</span> command in 1 click</span></div><div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div></div>
               </div>
             </div>
           </div>
@@ -239,13 +298,41 @@
             <!-- Tab 1: Full-Width Clean Source Code X-Ray -->
             <div class="tab-panel active" id="p3-xray">
               <div class="xray-container" id="sourceXrayContainer">
-                <div class="friendly-empty-card"><div class="fec-kicker">→ standby · plane 03 source x-ray</div><div class="fec-title">Awaiting Stack Trace Capture</div><div class="fec-sub">Trigger a frontend or backend error — Blackbox automatically resolves local source maps &amp; files on disk and highlights the exact crashing line here.</div></div>
+                <div class="plane-term-block">
+                  <pre class="plane-ascii-logo">██╗  ██╗      ██████╗  █████╗ ██╗   ██╗
+╚██╗██╔╝      ██╔══██╗██╔══██╗╚██╗ ██╔╝
+ ╚███╔╝ █████╗██████╔╝███████║ ╚████╔╝ 
+ ██╔██╗ ╚════╝██╔══██╗██╔══██║  ╚██╔╝  
+██╔╝ ██╗      ██║  ██║██║  ██║   ██║   
+╚═╝  ╚═╝      ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   </pre>
+                  <div class="hex-term-welcome">
+                    Plane 03 · Source Code X-Ray &amp; Live VLQ SourceMap Engine.<br />
+                    Resolves Node.js, Vite/React TSX, Python, Go &amp; Rust stack traces to disk.
+                  </div>
+                  <div class="hex-term-line term-line-1">
+                    <span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox xray --watch --sourcemap vlq</span>
+                  </div>
+                  <div class="hex-term-res">
+                    <span class="term-out-line d1"><span class="term-ok">✓</span> Zero-dependency Source Map v3 VLQ resolver armed</span>
+                    <span class="term-out-line d2"><span class="term-ok">✓</span> Reads exact local source lines &amp; marks <span class="term-red">◀ CRASHED HERE</span></span>
+                    <span class="term-out-line d3"><span class="term-ok">✓</span> Supervised PTY stdout/stderr stream linked in <span class="term-cyan">TERMINAL</span> tab</span>
+                  </div>
+                  <div class="hex-term-line term-line-2">
+                    <span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type-2">blackbox locate --culprit latest</span>
+                  </div>
+                  <div class="hex-term-res">
+                    <span class="term-out-line d4"><span class="term-ok">❄️</span> Trigger a crash or freeze a capsule to X-Ray exact broken code...</span>
+                  </div>
+                  <div class="hex-term-line term-cursor-line">
+                    <span class="term-prompt">→ ~</span> <span class="term-cursor">█</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <!-- Tab 2: Terminal PTY Stream -->
             <div class="tab-panel" id="p3-terminal">
-              <div class="terminal-output" id="terminalStreamList"></div>
+              <div class="terminal-output" id="terminalStreamList"><div class="plane-term-block"><div class="hex-term-welcome">Plane 03 · Supervised Backend Terminal PTY Stream.<br/>Captures real-time stdout &amp; stderr from your supervised dev server.</div><div class="hex-term-line term-line-1"><span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox logs --pty --stderr</span></div><div class="hex-term-res"><span class="term-out-line d1"><span class="term-ok">✓</span> Run via <span class="term-cyan">blackbox run "npm run dev"</span> to link backend stdout/stderr</span><span class="term-out-line d2"><span class="term-ok">✓</span> Auto-parses stack traces &amp; cross-links <span class="term-cyan">X-Blackbox-Trace-Id</span></span></div><div class="hex-term-line term-cursor-line"><span class="term-prompt">→ ~</span> <span class="term-cursor">█</span></div></div></div>
             </div>
           </div>
         </div>
@@ -264,11 +351,41 @@
           </div>
           <div class="pane-body">
             <div class="tab-panel active" id="p4-git">
-              <div class="git-inspector" id="gitInspectorContainer"><div class="friendly-empty-card"><div class="fec-kicker">→ standby · plane 04 git working tree</div><div class="fec-title">Watching Uncommitted Code Changes</div><div class="fec-sub">Freeze a capsule or trigger a crash to inspect color-coded Git diffs with automatic stack-to-hunk culprit overlap detection.</div></div></div>
+              <div class="git-inspector" id="gitInspectorContainer">
+                <div class="plane-term-block">
+                  <pre class="plane-ascii-logo"> ██████╗ ██╗████████╗         █████╗ ██╗
+██╔════╝ ██║╚══██╔══╝  ██╗   ██╔══██╗██║
+██║  ███╗██║   ██║   ██████╗ ███████║██║
+██║   ██║██║   ██║   ╚═██╔═╝ ██╔══██║██║
+╚██████╔╝██║   ██║     ╚═╝   ██║  ██║██║
+ ╚═════╝ ╚═╝   ╚═╝           ╚═╝  ╚═╝╚═╝</pre>
+                  <div class="hex-term-welcome">
+                    Plane 04 · Git Working-Tree Correlator &amp; AI MCP Bridge.<br />
+                    Cross-references crash stack lines against uncommitted local file hunks.
+                  </div>
+                  <div class="hex-term-line term-line-1">
+                    <span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type">blackbox git-correlate --head --pin-culprit</span>
+                  </div>
+                  <div class="hex-term-res">
+                    <span class="term-out-line d1"><span class="term-ok">✓</span> Uncommitted diff hunk overlap scanner active</span>
+                    <span class="term-out-line d2"><span class="term-ok">✓</span> Culprit file automatically pinned first (<span class="term-red">★ CULPRIT FILE</span>)</span>
+                    <span class="term-out-line d3"><span class="term-ok">✓</span> Colorized unified diff ready with 1-click X-Ray jump</span>
+                  </div>
+                  <div class="hex-term-line term-line-2">
+                    <span class="term-prompt">→ ~</span> <span class="term-cmd term-cmd-type-2">blackbox mcp --compile-dossier</span>
+                  </div>
+                  <div class="hex-term-res">
+                    <span class="term-out-line d4"><span class="term-ok">✓</span> AI Root-Cause Dossier ready for <span class="term-cyan">Cursor / Claude / Copilot</span></span>
+                  </div>
+                  <div class="hex-term-line term-cursor-line">
+                    <span class="term-prompt">→ ~</span> <span class="term-cursor">█</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="tab-panel" id="p4-aiprompt">
               <div class="ai-packet-header-bar">
-                <span>Paste into Cursor / Claude / ChatGPT for a 1-shot fix (click + payload + code + Git diff)</span>
+                <span><span class="term-prompt">→ ~</span> <span class="term-cmd">blackbox ai-prompt --mcp</span> <span class="term-dim">· Paste into Cursor / Claude / ChatGPT for a 1-shot fix</span></span>
                 <button class="mini-btn" id="btnCopyRawMarkdown">✦ Copy AI Fix Prompt</button>
               </div>
               <pre class="code-block" id="aiMarkdownPreview">Select a capsule to view its compiled AI Root-Cause Diagnostic Packet.</pre>
